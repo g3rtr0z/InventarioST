@@ -41,6 +41,7 @@ function App() {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [activeTab, setActiveTab] = useState<'general' | 'sedes'>('general');
   const [showStats, setShowStats] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -251,28 +252,28 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-[1200px] mx-auto px-4 py-6">
-        {/* Header simple */}
-        <header className="mb-6">
-          <div className="flex justify-between items-start mb-2">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <header className="mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900 mb-1">
-                Inventario - Departamento de Informática
+              <h1 className="text-3xl font-bold text-gray-900 mb-1">
+                Inventario
               </h1>
-              <p className="text-sm text-gray-600">Sistema de gestión de equipos</p>
+              <p className="text-sm text-gray-500">Departamento de Informática</p>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowStats(true)}
-                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 hover:border-gray-400 rounded"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                 title="Ver estadísticas"
               >
                 Estadísticas
               </button>
               <button
                 onClick={handleExportExcel}
-                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 hover:border-gray-400 rounded"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                 title="Exportar a Excel"
               >
                 Exportar
@@ -293,100 +294,118 @@ function App() {
 
 
         {/* Panel de búsqueda y filtros */}
-        <div className="mb-6 space-y-3">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Buscar por nombre, marca, modelo, serie, ubicación..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
-            />
-            <button
-              onClick={handleAddItem}
-              className="w-10 h-10 bg-green-500 text-white hover:bg-green-600 rounded flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 p-0"
-              title="Agregar Item"
-            >
-              <span className="text-2xl font-light leading-[1]">+</span>
-            </button>
-            <CategoriaManager
-              categorias={categorias}
-              onCategoriasChange={handleCategoriasChange}
-            />
+        <div className="mb-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                placeholder="Buscar por nombre, marca, modelo, serie, ubicación..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleAddItem}
+                  className="w-10 h-10 bg-green-600 text-white hover:bg-green-700 rounded-md flex items-center justify-center shadow-sm hover:shadow transition-all duration-200"
+                  title="Agregar Item"
+                >
+                  <span className="text-xl font-light leading-[1]">+</span>
+                </button>
+                <CategoriaManager
+                  categorias={categorias}
+                  onCategoriasChange={handleCategoriasChange}
+                />
+                <div className="flex gap-1 bg-gray-100 p-1 rounded-md">
+                  <button
+                    onClick={() => setViewMode('cards')}
+                    className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                      viewMode === 'cards' 
+                        ? 'bg-white text-gray-900 shadow-sm' 
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Tarjetas
+                  </button>
+                  <button
+                    onClick={() => setViewMode('table')}
+                    className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                      viewMode === 'table' 
+                        ? 'bg-white text-gray-900 shadow-sm' 
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Tabla
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
           
-          <div className="flex gap-2 flex-wrap justify-between items-center">
-            <div className="flex gap-2 flex-wrap">
-              <select
-                value={filterSede}
-                onChange={(e) => setFilterSede(e.target.value)}
-                className="px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
-              >
-                <option value="Todas">Todas las sedes</option>
-                {SEDES.map(sede => (
-                  <option key={sede} value={sede}>{sede}</option>
-                ))}
-              </select>
-              
-              <select
-                value={filterEstado}
-                onChange={(e) => setFilterEstado(e.target.value)}
-                className="px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
-              >
-                <option value="Todos">Todos los estados</option>
-                <option value="Disponible">Disponible</option>
-                <option value="En Uso">En Uso</option>
-                <option value="Mantenimiento">Mantenimiento</option>
-                <option value="Baja">Baja</option>
-              </select>
-              
-              <select
-                value={filterCategoria}
-                onChange={(e) => setFilterCategoria(e.target.value)}
-                className="px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
-              >
-                <option value="Todas">Todas las categorías</option>
-                {categorias.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-              
-              {(filterEstado !== 'Todos' || filterCategoria !== 'Todas' || filterSede !== 'Todas') && (
-                <button
-                  onClick={() => {
-                    setFilterEstado('Todos');
-                    setFilterCategoria('Todas');
-                    setFilterSede('Todas');
-                  }}
-                  className="px-3 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm"
-                >
-                  Limpiar Filtros
-                </button>
-              )}
-            </div>
+          {/* Desplegable de Filtros */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="w-full px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 flex justify-between items-center transition-colors"
+            >
+              <span>Filtros de búsqueda</span>
+              <span className={`transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`}>
+                ▼
+              </span>
+            </button>
             
-            <div className="flex gap-1">
-              <button
-                onClick={() => setViewMode('cards')}
-                className={`px-3 py-2 text-sm border ${
-                  viewMode === 'cards' 
-                    ? 'bg-green-500 text-white border-green-500' 
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                Tarjetas
-              </button>
-              <button
-                onClick={() => setViewMode('table')}
-                className={`px-3 py-2 text-sm border ${
-                  viewMode === 'table' 
-                    ? 'bg-green-500 text-white border-green-500' 
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                Tabla
-              </button>
-            </div>
+            {showFilters && (
+              <div className="px-4 py-4 border-t border-gray-200 bg-gray-50">
+                <div className="flex flex-wrap gap-3">
+                  <select
+                    value={filterSede}
+                    onChange={(e) => setFilterSede(e.target.value)}
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                  >
+                    <option value="Todas">Todas las sedes</option>
+                    {SEDES.map(sede => (
+                      <option key={sede} value={sede}>{sede}</option>
+                    ))}
+                  </select>
+                  
+                  <select
+                    value={filterEstado}
+                    onChange={(e) => setFilterEstado(e.target.value)}
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                  >
+                    <option value="Todos">Todos los estados</option>
+                    <option value="Disponible">Disponible</option>
+                    <option value="En Uso">En Uso</option>
+                    <option value="Mantenimiento">Mantenimiento</option>
+                    <option value="Baja">Baja</option>
+                  </select>
+                  
+                  <select
+                    value={filterCategoria}
+                    onChange={(e) => setFilterCategoria(e.target.value)}
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                  >
+                    <option value="Todas">Todas las categorías</option>
+                    {categorias.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  
+                  {(filterEstado !== 'Todos' || filterCategoria !== 'Todas' || filterSede !== 'Todas') && (
+                    <button
+                      onClick={() => {
+                        setFilterEstado('Todos');
+                        setFilterCategoria('Todas');
+                        setFilterSede('Todas');
+                      }}
+                      className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -414,14 +433,14 @@ function App() {
 
       {/* Modal de Estadísticas */}
       {showStats && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 p-4">
-          <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-lg shadow-xl">
             {/* Header del modal */}
-            <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-800">Estadísticas</h2>
+            <div className="sticky top-0 bg-white px-6 py-5 border-b border-gray-200 flex justify-between items-center rounded-t-lg">
+              <h2 className="text-xl font-bold text-gray-900">Estadísticas</h2>
               <button
                 onClick={() => setShowStats(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                className="text-gray-400 hover:text-gray-600 text-2xl leading-none transition-colors"
               >
                 &times;
               </button>
@@ -430,23 +449,23 @@ function App() {
             {/* Contenido del modal */}
             <div className="p-6">
               {/* Pestañas */}
-              <div className="flex gap-4 mb-6">
+              <div className="flex gap-1 mb-6 border-b border-gray-200">
                 <button
                   onClick={() => setActiveTab('general')}
-                  className={`text-sm ${
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${
                     activeTab === 'general'
-                      ? 'text-gray-900 font-medium'
-                      : 'text-gray-500'
+                      ? 'text-gray-900 border-b-2 border-green-600'
+                      : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   Generales
                 </button>
                 <button
                   onClick={() => setActiveTab('sedes')}
-                  className={`text-sm ${
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${
                     activeTab === 'sedes'
-                      ? 'text-gray-900 font-medium'
-                      : 'text-gray-500'
+                      ? 'text-gray-900 border-b-2 border-green-600'
+                      : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   Por Sede
@@ -455,26 +474,26 @@ function App() {
 
               {/* Contenido de las pestañas */}
               {activeTab === 'general' && (
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  <div className="p-3 border border-gray-200">
-                    <div className="text-2xl font-semibold text-gray-900">{estadisticas.total}</div>
-                    <div className="text-xs text-gray-600">Total</div>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="text-3xl font-bold text-gray-900 mb-1">{estadisticas.total}</div>
+                    <div className="text-xs text-gray-600 font-medium">Total</div>
                   </div>
-                  <div className="p-3 border border-gray-200">
-                    <div className="text-2xl font-semibold text-green-600">{estadisticas.disponible}</div>
-                    <div className="text-xs text-gray-600">Disponibles</div>
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="text-3xl font-bold text-green-700 mb-1">{estadisticas.disponible}</div>
+                    <div className="text-xs text-gray-600 font-medium">Disponibles</div>
                   </div>
-                  <div className="p-3 border border-gray-200">
-                    <div className="text-2xl font-semibold text-blue-600">{estadisticas.enUso}</div>
-                    <div className="text-xs text-gray-600">En Uso</div>
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="text-3xl font-bold text-blue-700 mb-1">{estadisticas.enUso}</div>
+                    <div className="text-xs text-gray-600 font-medium">En Uso</div>
                   </div>
-                  <div className="p-3 border border-gray-200">
-                    <div className="text-2xl font-semibold text-yellow-600">{estadisticas.mantenimiento}</div>
-                    <div className="text-xs text-gray-600">Mantenimiento</div>
+                  <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div className="text-3xl font-bold text-yellow-700 mb-1">{estadisticas.mantenimiento}</div>
+                    <div className="text-xs text-gray-600 font-medium">Mantenimiento</div>
                   </div>
-                  <div className="p-3 border border-gray-200">
-                    <div className="text-2xl font-semibold text-red-600">{estadisticas.baja}</div>
-                    <div className="text-xs text-gray-600">Baja</div>
+                  <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                    <div className="text-3xl font-bold text-red-700 mb-1">{estadisticas.baja}</div>
+                    <div className="text-xs text-gray-600 font-medium">Baja</div>
                   </div>
                 </div>
               )}
@@ -500,33 +519,33 @@ function App() {
                       baja: itemsSede.filter(i => i.estado === 'Baja').length
                     };
 
-                    return (
-                      <div key={sede} className="p-4 border border-gray-200">
-                        <h3 className="text-base font-semibold text-gray-800 mb-3">{sede}</h3>
-                        <div className="grid grid-cols-5 gap-2">
-                          <div>
-                            <div className="text-lg font-semibold text-gray-900">{statsSede.total}</div>
-                            <div className="text-xs text-gray-600">Total</div>
-                          </div>
-                          <div>
-                            <div className="text-lg font-semibold text-green-600">{statsSede.disponible}</div>
-                            <div className="text-xs text-gray-600">Disponibles</div>
-                          </div>
-                          <div>
-                            <div className="text-lg font-semibold text-blue-600">{statsSede.enUso}</div>
-                            <div className="text-xs text-gray-600">En Uso</div>
-                          </div>
-                          <div>
-                            <div className="text-lg font-semibold text-yellow-600">{statsSede.mantenimiento}</div>
-                            <div className="text-xs text-gray-600">Mantenimiento</div>
-                          </div>
-                          <div>
-                            <div className="text-lg font-semibold text-red-600">{statsSede.baja}</div>
-                            <div className="text-xs text-gray-600">Baja</div>
-                          </div>
-                        </div>
+                return (
+                  <div key={sede} className="p-5 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">{sede}</h3>
+                    <div className="grid grid-cols-5 gap-3">
+                      <div>
+                        <div className="text-2xl font-bold text-gray-900 mb-1">{statsSede.total}</div>
+                        <div className="text-xs text-gray-600 font-medium">Total</div>
                       </div>
-                    );
+                      <div>
+                        <div className="text-2xl font-bold text-green-700 mb-1">{statsSede.disponible}</div>
+                        <div className="text-xs text-gray-600 font-medium">Disponibles</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-blue-700 mb-1">{statsSede.enUso}</div>
+                        <div className="text-xs text-gray-600 font-medium">En Uso</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-yellow-700 mb-1">{statsSede.mantenimiento}</div>
+                        <div className="text-xs text-gray-600 font-medium">Mantenimiento</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-red-700 mb-1">{statsSede.baja}</div>
+                        <div className="text-xs text-gray-600 font-medium">Baja</div>
+                      </div>
+                    </div>
+                  </div>
+                );
                   })}
                 </div>
               )}

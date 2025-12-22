@@ -53,17 +53,17 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
     <div>
       {/* Vista de Tarjetas */}
       {viewMode === 'cards' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
       {filteredItems.map(item => (
         <div
           key={item.id}
-          className="border border-gray-200 p-4"
+          className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow"
         >
-          <div className="flex justify-between items-start mb-3 pb-3 border-b border-gray-200">
-            <h3 className="text-base font-semibold text-gray-900">
+          <div className="flex justify-between items-start mb-4 pb-3 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">
               {item.nombre}
             </h3>
-            <span className={`text-xs font-medium ${getEstadoColor(item.estado)}`}>
+            <span className={`text-xs font-semibold px-2 py-1 rounded ${getEstadoColor(item.estado)}`}>
               {item.estado}
             </span>
           </div>
@@ -115,16 +115,16 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
             )}
           </div>
 
-          <div className="flex gap-2 pt-3 border-t border-gray-200">
+          <div className="flex gap-2 pt-4 border-t border-gray-200">
             <button
               onClick={() => onEdit(item)}
-              className="flex-1 px-3 py-1.5 bg-green-500 text-white text-sm hover:bg-green-600"
+              className="flex-1 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
             >
               Editar
             </button>
             <button
               onClick={() => onDelete(item.id)}
-              className="flex-1 px-3 py-1.5 bg-red-500 text-white text-sm hover:bg-red-600"
+              className="flex-1 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
             >
               Eliminar
             </button>
@@ -136,61 +136,59 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
 
       {/* Vista de Tabla */}
       {viewMode === 'table' && (
-        <div className="overflow-x-auto border border-gray-200">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-4 py-2 text-left text-gray-700 font-semibold">Nombre</th>
-                <th className="px-4 py-2 text-left text-gray-700 font-semibold">Categoría</th>
-                <th className="px-4 py-2 text-left text-gray-700 font-semibold">Marca/Modelo</th>
-                <th className="px-4 py-2 text-left text-gray-700 font-semibold">Serie</th>
-                <th className="px-4 py-2 text-left text-gray-700 font-semibold">Estado</th>
-                <th className="px-4 py-2 text-left text-gray-700 font-semibold">Ubicación</th>
-                <th className="px-4 py-2 text-left text-gray-700 font-semibold">Responsable</th>
-                <th className="px-4 py-2 text-left text-gray-700 font-semibold">Precio</th>
-                <th className="px-4 py-2 text-left text-gray-700 font-semibold">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredItems.map((item, index) => (
-                <tr 
-                  key={item.id} 
-                  className={`border-b border-gray-100 hover:bg-gray-50 ${
-                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                  }`}
-                >
-                  <td className="px-4 py-2 text-gray-900 font-medium">{item.nombre}</td>
-                  <td className="px-4 py-2 text-gray-700">{item.categoria}</td>
-                  <td className="px-4 py-2 text-gray-700">{item.marca} {item.modelo}</td>
-                  <td className="px-4 py-2 text-gray-700">{item.numeroSerie}</td>
-                  <td className="px-4 py-2">
-                    <span className={`text-xs font-medium ${getEstadoColor(item.estado)}`}>
-                      {item.estado}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 text-gray-700">{item.ubicacion}</td>
-                  <td className="px-4 py-2 text-gray-700">{item.responsable}</td>
-                  <td className="px-4 py-2 text-gray-700">{formatCurrency(item.precio)}</td>
-                  <td className="px-4 py-2">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => onEdit(item)}
-                        className="px-2 py-1 bg-green-500 text-white text-xs hover:bg-green-600"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => onDelete(item.id)}
-                        className="px-2 py-1 bg-red-500 text-white text-xs hover:bg-red-600"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </td>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nombre</th>
+                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Categoría</th>
+                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Marca/Modelo</th>
+                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Serie</th>
+                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Estado</th>
+                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Ubicación</th>
+                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Responsable</th>
+                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredItems.map((item) => (
+                  <tr 
+                    key={item.id} 
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-5 py-4 text-gray-900 font-medium">{item.nombre}</td>
+                    <td className="px-5 py-4 text-gray-700">{item.categoria}</td>
+                    <td className="px-5 py-4 text-gray-700">{item.marca} {item.modelo}</td>
+                    <td className="px-5 py-4 text-gray-700 font-mono text-xs">{item.numeroSerie}</td>
+                    <td className="px-5 py-4">
+                      <span className={`text-xs font-semibold px-2 py-1 rounded ${getEstadoColor(item.estado)}`}>
+                        {item.estado}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-gray-700">{item.ubicacion}</td>
+                    <td className="px-5 py-4 text-gray-700">{item.responsable}</td>
+                    <td className="px-5 py-4">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => onEdit(item)}
+                          className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 transition-colors"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => onDelete(item.id)}
+                          className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 transition-colors"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
