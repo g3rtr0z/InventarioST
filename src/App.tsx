@@ -499,7 +499,7 @@ function App() {
               )}
 
               {activeTab === 'sedes' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
                   {SEDES.map(sede => {
                     const itemsSede = items.filter(item => {
                       const ubicacionLower = item.ubicacion.toLowerCase();
@@ -520,35 +520,35 @@ function App() {
                     };
 
                 return (
-                  <div key={sede} className="p-5 bg-gray-50 rounded-lg border border-gray-200">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">{sede}</h3>
-                    <div className="grid grid-cols-5 gap-3">
-                      <div>
-                        <div className="text-2xl font-bold text-gray-900 mb-1">{statsSede.total}</div>
+                  <div key={sede} className="p-4 sm:p-5 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4">{sede}</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
+                      <div className="text-center sm:text-left">
+                        <div className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{statsSede.total}</div>
                         <div className="text-xs text-gray-600 font-medium">Total</div>
                       </div>
-                      <div>
-                        <div className="text-2xl font-bold text-green-700 mb-1">{statsSede.disponible}</div>
+                      <div className="text-center sm:text-left">
+                        <div className="text-xl sm:text-2xl font-bold text-green-700 mb-1">{statsSede.disponible}</div>
                         <div className="text-xs text-gray-600 font-medium">Disponibles</div>
                       </div>
-                      <div>
-                        <div className="text-2xl font-bold text-blue-700 mb-1">{statsSede.enUso}</div>
+                      <div className="text-center sm:text-left">
+                        <div className="text-xl sm:text-2xl font-bold text-blue-700 mb-1">{statsSede.enUso}</div>
                         <div className="text-xs text-gray-600 font-medium">En Uso</div>
                       </div>
-                      <div>
-                        <div className="text-2xl font-bold text-yellow-700 mb-1">{statsSede.mantenimiento}</div>
+                      <div className="text-center sm:text-left">
+                        <div className="text-xl sm:text-2xl font-bold text-yellow-700 mb-1">{statsSede.mantenimiento}</div>
                         <div className="text-xs text-gray-600 font-medium">Mantenimiento</div>
                       </div>
-                      <div>
-                        <div className="text-2xl font-bold text-red-700 mb-1">{statsSede.baja}</div>
+                      <div className="text-center sm:text-left">
+                        <div className="text-xl sm:text-2xl font-bold text-red-700 mb-1">{statsSede.baja}</div>
                         <div className="text-xs text-gray-600 font-medium">Baja</div>
                       </div>
                     </div>
                   </div>
                 );
-                  })}
-                </div>
-              )}
+              })}
+            </div>
+          )}
             </div>
           </div>
         </div>
