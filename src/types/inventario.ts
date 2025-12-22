@@ -20,6 +20,7 @@ export interface ItemInventario {
   fechaUltimoMantenimiento?: string;
   proximoMantenimiento?: string;
   piso?: string;
+  edificio?: string;
   tipoUso: 'Alumnos' | 'Administrativo';
   procesador?: string;
   ram?: string;

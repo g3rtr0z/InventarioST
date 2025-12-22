@@ -25,6 +25,7 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
     fechaUltimoMantenimiento: '',
     proximoMantenimiento: '',
     piso: '',
+    edificio: '',
     tipoUso: 'Administrativo',
     procesador: '',
     ram: '',
@@ -53,6 +54,7 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
         fechaUltimoMantenimiento: rest.fechaUltimoMantenimiento || '',
         proximoMantenimiento: rest.proximoMantenimiento || '',
         piso: rest.piso || '',
+        edificio: rest.edificio || '',
         tipoUso: rest.tipoUso || 'Administrativo',
         procesador: rest.procesador || '',
         ram: rest.ram || '',
@@ -74,6 +76,7 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
         fechaUltimoMantenimiento: '',
         proximoMantenimiento: '',
         piso: '',
+        edificio: '',
         tipoUso: 'Administrativo',
         procesador: '',
         ram: '',
@@ -260,6 +263,23 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
                 className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
               />
             </div>
+            <div>
+              <label htmlFor="edificio" className="block mb-1 text-sm text-gray-700">
+                Edificio
+              </label>
+              <select
+                id="edificio"
+                name="edificio"
+                value={formData.edificio}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
+              >
+                <option value="">Seleccionar Edificio</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+              </select>
+            </div>
+
             <div>
               <label htmlFor="piso" className="block mb-1 text-sm text-gray-700">
                 Piso

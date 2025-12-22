@@ -20,6 +20,7 @@ export const exportToExcel = (items: ItemInventario[], filename: string = 'inven
     'Observaciones': item.observaciones || '',
     'Último Mantenimiento': item.fechaUltimoMantenimiento || '',
     'Próximo Mantenimiento': item.proximoMantenimiento || '',
+    'Edificio': item.edificio || '',
     'Piso': item.piso || '',
     'Tipo de Uso': item.tipoUso,
     'Procesador': item.procesador || '',
@@ -48,6 +49,7 @@ export const exportToExcel = (items: ItemInventario[], filename: string = 'inven
     { wch: 30 }, // Observaciones
     { wch: 20 }, // Último Mantenimiento
     { wch: 20 }, // Próximo Mantenimiento
+    { wch: 10 }, // Edificio
     { wch: 10 }, // Piso
     { wch: 15 }, // Tipo de Uso
     { wch: 25 }, // Procesador

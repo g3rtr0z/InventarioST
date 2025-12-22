@@ -85,6 +85,12 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
               <span className="text-gray-600">Ubicación: </span>
               <span className="text-gray-900">{item.ubicacion}</span>
             </div>
+            {item.edificio && (
+              <div>
+                <span className="text-gray-600">Edificio: </span>
+                <span className="text-gray-900">{item.edificio}</span>
+              </div>
+            )}
             {item.piso && (
               <div>
                 <span className="text-gray-600">Piso: </span>
