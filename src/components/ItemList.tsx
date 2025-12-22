@@ -85,6 +85,20 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
               <span className="text-gray-600">Ubicación: </span>
               <span className="text-gray-900">{item.ubicacion}</span>
             </div>
+            {item.piso && (
+              <div>
+                <span className="text-gray-600">Piso: </span>
+                <span className="text-gray-900">{item.piso}</span>
+              </div>
+            )}
+            <div>
+              <span className="text-gray-600">Tipo de Uso: </span>
+              <span className={`text-gray-900 font-medium ${
+                item.tipoUso === 'Alumnos' ? 'text-blue-600' : 'text-green-600'
+              }`}>
+                {item.tipoUso}
+              </span>
+            </div>
             <div>
               <span className="text-gray-600">Responsable: </span>
               <span className="text-gray-900">{item.responsable}</span>
@@ -147,6 +161,8 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                   <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Serie</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Estado</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Ubicación</th>
+                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Piso</th>
+                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tipo de Uso</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Responsable</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Acciones</th>
                 </tr>
@@ -167,6 +183,16 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                       </span>
                     </td>
                     <td className="px-5 py-4 text-gray-700">{item.ubicacion}</td>
+                    <td className="px-5 py-4 text-gray-700">{item.piso || '-'}</td>
+                    <td className="px-5 py-4">
+                      <span className={`text-xs font-semibold px-2 py-1 rounded ${
+                        item.tipoUso === 'Alumnos' 
+                          ? 'bg-blue-100 text-blue-700' 
+                          : 'bg-green-100 text-green-700'
+                      }`}>
+                        {item.tipoUso}
+                      </span>
+                    </td>
                     <td className="px-5 py-4 text-gray-700">{item.responsable}</td>
                     <td className="px-5 py-4">
                       <div className="flex gap-2">

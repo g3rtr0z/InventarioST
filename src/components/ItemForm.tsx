@@ -23,7 +23,9 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
     descripcion: '',
     observaciones: '',
     fechaUltimoMantenimiento: '',
-    proximoMantenimiento: ''
+    proximoMantenimiento: '',
+    piso: '',
+    tipoUso: 'Administrativo'
   });
   const [nombreError, setNombreError] = useState<string>('');
 
@@ -46,7 +48,9 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
         descripcion: rest.descripcion || '',
         observaciones: rest.observaciones || '',
         fechaUltimoMantenimiento: rest.fechaUltimoMantenimiento || '',
-        proximoMantenimiento: rest.proximoMantenimiento || ''
+        proximoMantenimiento: rest.proximoMantenimiento || '',
+        piso: rest.piso || '',
+        tipoUso: rest.tipoUso || 'Administrativo'
       });
     } else {
       setFormData({
@@ -62,7 +66,9 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
         descripcion: '',
         observaciones: '',
         fechaUltimoMantenimiento: '',
-        proximoMantenimiento: ''
+        proximoMantenimiento: '',
+        piso: '',
+        tipoUso: 'Administrativo'
       });
       setNombreError(''); // Limpiar error al cambiar de item
     }
@@ -209,6 +215,22 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
                 <option value="Baja">Baja</option>
               </select>
             </div>
+            <div>
+              <label htmlFor="tipoUso" className="block mb-1 text-sm text-gray-700">
+                Tipo de Uso *
+              </label>
+              <select
+                id="tipoUso"
+                name="tipoUso"
+                value={formData.tipoUso}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
+              >
+                <option value="Administrativo">Administrativo</option>
+                <option value="Alumnos">Alumnos</option>
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -274,6 +296,20 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
                 onChange={handleChange}
                 required
                 placeholder="Ej: Oficina 101"
+                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="piso" className="block mb-1 text-sm text-gray-700">
+                Piso
+              </label>
+              <input
+                type="text"
+                id="piso"
+                name="piso"
+                value={formData.piso}
+                onChange={handleChange}
+                placeholder="Ej: 1, 2, 3, etc."
                 className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
               />
             </div>

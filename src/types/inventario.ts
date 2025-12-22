@@ -19,6 +19,8 @@ export interface ItemInventario {
   observaciones?: string;
   fechaUltimoMantenimiento?: string;
   proximoMantenimiento?: string;
+  piso?: string;
+  tipoUso: 'Alumnos' | 'Administrativo';
 }
 
 export type EstadoItem = 'Disponible' | 'En Uso' | 'Mantenimiento' | 'Baja';

@@ -19,7 +19,9 @@ export const exportToExcel = (items: ItemInventario[], filename: string = 'inven
     'Descripción': item.descripcion || '',
     'Observaciones': item.observaciones || '',
     'Último Mantenimiento': item.fechaUltimoMantenimiento || '',
-    'Próximo Mantenimiento': item.proximoMantenimiento || ''
+    'Próximo Mantenimiento': item.proximoMantenimiento || '',
+    'Piso': item.piso || '',
+    'Tipo de Uso': item.tipoUso
   }));
 
   // Crear un libro de trabajo
@@ -42,7 +44,9 @@ export const exportToExcel = (items: ItemInventario[], filename: string = 'inven
     { wch: 30 }, // Descripción
     { wch: 30 }, // Observaciones
     { wch: 20 }, // Último Mantenimiento
-    { wch: 20 }  // Próximo Mantenimiento
+    { wch: 20 }, // Próximo Mantenimiento
+    { wch: 10 }, // Piso
+    { wch: 15 }  // Tipo de Uso
   ];
   ws['!cols'] = colWidths;
   

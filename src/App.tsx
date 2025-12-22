@@ -41,6 +41,7 @@ function App() {
   const [filterEstado, setFilterEstado] = useState<string>('Todos');
   const [filterCategoria, setFilterCategoria] = useState<string>('Todas');
   const [filterSede, setFilterSede] = useState<string>('Todas');
+  const [filterTipoUso, setFilterTipoUso] = useState<string>('Todos');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [activeTab, setActiveTab] = useState<'general' | 'sedes'>('general');
   const [showStats, setShowStats] = useState(false);
@@ -260,6 +261,10 @@ function App() {
       if (!coincide) {
         return false;
       }
+    }
+    // Filtro por tipo de uso
+    if (filterTipoUso !== 'Todos' && item.tipoUso !== filterTipoUso) {
+      return false;
     }
     return true;
   });
@@ -505,12 +510,23 @@ function App() {
                     ))}
                   </select>
                   
-                  {(filterEstado !== 'Todos' || filterCategoria !== 'Todas' || filterSede !== 'Todas') && (
+                  <select
+                    value={filterTipoUso}
+                    onChange={(e) => setFilterTipoUso(e.target.value)}
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                  >
+                    <option value="Todos">Todos los tipos</option>
+                    <option value="Administrativo">Administrativo</option>
+                    <option value="Alumnos">Alumnos</option>
+                  </select>
+                  
+                  {(filterEstado !== 'Todos' || filterCategoria !== 'Todas' || filterSede !== 'Todas' || filterTipoUso !== 'Todos') && (
                     <button
                       onClick={() => {
                         setFilterEstado('Todos');
                         setFilterCategoria('Todas');
                         setFilterSede('Todas');
+                        setFilterTipoUso('Todos');
                       }}
                       className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                     >
