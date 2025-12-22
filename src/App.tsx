@@ -12,6 +12,7 @@ import {
   saveCategorias
 } from './services/inventarioService';
 import { isFirebaseReady } from './config/firebase';
+import { exportToExcel } from './utils/exportToExcel';
 
 const CATEGORIAS_DEFAULT = [
   'Computadora',
@@ -36,9 +37,14 @@ function App() {
   const [editingItem, setEditingItem] = useState<ItemInventario | null>(null);
   const [filterEstado, setFilterEstado] = useState<string>('Todos');
   const [filterCategoria, setFilterCategoria] = useState<string>('Todas');
+  const [filterSede, setFilterSede] = useState<string>('Todas');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [activeTab, setActiveTab] = useState<'general' | 'sedes'>('general');
+  const [showStats, setShowStats] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const SEDES = ['Manuel Rodriguez', 'Pedro de Valdivia'];
 
   // Suscribirse a cambios en tiempo real de items
   useEffect(() => {
@@ -184,8 +190,42 @@ function App() {
     if (filterCategoria !== 'Todas' && item.categoria !== filterCategoria) {
       return false;
     }
+    // Filtro por sede
+    if (filterSede !== 'Todas') {
+      const ubicacionLower = item.ubicacion.toLowerCase();
+      if (filterSede === 'Manuel Rodriguez') {
+        if (!ubicacionLower.includes('manuel') && !ubicacionLower.includes('rodriguez') && !ubicacionLower.includes('060')) {
+          return false;
+        }
+      } else if (filterSede === 'Pedro de Valdivia') {
+        if (!ubicacionLower.includes('pedro') && !ubicacionLower.includes('valdivia')) {
+          return false;
+        }
+      }
+    }
     return true;
   });
+
+  // Items filtrados también por búsqueda (para mostrar en la lista)
+  const filteredAndSearchedItems = filteredItems.filter(item =>
+    item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.marca.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.numeroSerie.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.ubicacion.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleExportExcel = () => {
+    // Exportar los items que están siendo mostrados (con filtros y búsqueda aplicados)
+    const itemsToExport = filteredAndSearchedItems.length > 0 ? filteredAndSearchedItems : filteredItems;
+    
+    if (itemsToExport.length === 0) {
+      alert('No hay items para exportar');
+      return;
+    }
+    exportToExcel(itemsToExport, 'inventario_departamento_informatica');
+  };
 
   const estadisticas = {
     total: items.length,
@@ -215,10 +255,30 @@ function App() {
       <div className="max-w-[1200px] mx-auto px-4 py-6">
         {/* Header simple */}
         <header className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-1">
-            Inventario - Departamento de Informática
-          </h1>
-          <p className="text-sm text-gray-600">Sistema de gestión de equipos</p>
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900 mb-1">
+                Inventario - Departamento de Informática
+              </h1>
+              <p className="text-sm text-gray-600">Sistema de gestión de equipos</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowStats(true)}
+                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 hover:border-gray-400 rounded"
+                title="Ver estadísticas"
+              >
+                Estadísticas
+              </button>
+              <button
+                onClick={handleExportExcel}
+                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 hover:border-gray-400 rounded"
+                title="Exportar a Excel"
+              >
+                Exportar
+              </button>
+            </div>
+          </div>
           {error && (
             <div className="mt-2 p-2 bg-red-50 border border-red-200 text-red-800 text-xs">
               {error}
@@ -231,31 +291,6 @@ function App() {
           )}
         </header>
 
-        {/* Estadísticas */}
-        <div className="mb-6">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="p-3 border border-gray-200">
-              <div className="text-2xl font-semibold text-gray-900">{estadisticas.total}</div>
-              <div className="text-xs text-gray-600">Total</div>
-            </div>
-            <div className="p-3 border border-gray-200">
-              <div className="text-2xl font-semibold text-green-600">{estadisticas.disponible}</div>
-              <div className="text-xs text-gray-600">Disponibles</div>
-            </div>
-            <div className="p-3 border border-gray-200">
-              <div className="text-2xl font-semibold text-blue-600">{estadisticas.enUso}</div>
-              <div className="text-xs text-gray-600">En Uso</div>
-            </div>
-            <div className="p-3 border border-gray-200">
-              <div className="text-2xl font-semibold text-yellow-600">{estadisticas.mantenimiento}</div>
-              <div className="text-xs text-gray-600">Mantenimiento</div>
-            </div>
-            <div className="p-3 border border-gray-200">
-              <div className="text-2xl font-semibold text-red-600">{estadisticas.baja}</div>
-              <div className="text-xs text-gray-600">Baja</div>
-            </div>
-          </div>
-        </div>
 
         {/* Panel de búsqueda y filtros */}
         <div className="mb-6 space-y-3">
@@ -283,6 +318,17 @@ function App() {
           <div className="flex gap-2 flex-wrap justify-between items-center">
             <div className="flex gap-2 flex-wrap">
               <select
+                value={filterSede}
+                onChange={(e) => setFilterSede(e.target.value)}
+                className="px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
+              >
+                <option value="Todas">Todas las sedes</option>
+                {SEDES.map(sede => (
+                  <option key={sede} value={sede}>{sede}</option>
+                ))}
+              </select>
+              
+              <select
                 value={filterEstado}
                 onChange={(e) => setFilterEstado(e.target.value)}
                 className="px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
@@ -305,11 +351,12 @@ function App() {
                 ))}
               </select>
               
-              {(filterEstado !== 'Todos' || filterCategoria !== 'Todas') && (
+              {(filterEstado !== 'Todos' || filterCategoria !== 'Todas' || filterSede !== 'Todas') && (
                 <button
                   onClick={() => {
                     setFilterEstado('Todos');
                     setFilterCategoria('Todas');
+                    setFilterSede('Todas');
                   }}
                   className="px-3 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm"
                 >
@@ -363,6 +410,129 @@ function App() {
           onSave={handleSaveItem}
           onCancel={handleCancelForm}
         />
+      )}
+
+      {/* Modal de Estadísticas */}
+      {showStats && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 p-4">
+          <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            {/* Header del modal */}
+            <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-800">Estadísticas</h2>
+              <button
+                onClick={() => setShowStats(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Contenido del modal */}
+            <div className="p-6">
+              {/* Pestañas */}
+              <div className="flex gap-4 mb-6">
+                <button
+                  onClick={() => setActiveTab('general')}
+                  className={`text-sm ${
+                    activeTab === 'general'
+                      ? 'text-gray-900 font-medium'
+                      : 'text-gray-500'
+                  }`}
+                >
+                  Generales
+                </button>
+                <button
+                  onClick={() => setActiveTab('sedes')}
+                  className={`text-sm ${
+                    activeTab === 'sedes'
+                      ? 'text-gray-900 font-medium'
+                      : 'text-gray-500'
+                  }`}
+                >
+                  Por Sede
+                </button>
+              </div>
+
+              {/* Contenido de las pestañas */}
+              {activeTab === 'general' && (
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div className="p-3 border border-gray-200">
+                    <div className="text-2xl font-semibold text-gray-900">{estadisticas.total}</div>
+                    <div className="text-xs text-gray-600">Total</div>
+                  </div>
+                  <div className="p-3 border border-gray-200">
+                    <div className="text-2xl font-semibold text-green-600">{estadisticas.disponible}</div>
+                    <div className="text-xs text-gray-600">Disponibles</div>
+                  </div>
+                  <div className="p-3 border border-gray-200">
+                    <div className="text-2xl font-semibold text-blue-600">{estadisticas.enUso}</div>
+                    <div className="text-xs text-gray-600">En Uso</div>
+                  </div>
+                  <div className="p-3 border border-gray-200">
+                    <div className="text-2xl font-semibold text-yellow-600">{estadisticas.mantenimiento}</div>
+                    <div className="text-xs text-gray-600">Mantenimiento</div>
+                  </div>
+                  <div className="p-3 border border-gray-200">
+                    <div className="text-2xl font-semibold text-red-600">{estadisticas.baja}</div>
+                    <div className="text-xs text-gray-600">Baja</div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'sedes' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {SEDES.map(sede => {
+                    const itemsSede = items.filter(item => {
+                      const ubicacionLower = item.ubicacion.toLowerCase();
+                      if (sede === 'Manuel Rodriguez') {
+                        return ubicacionLower.includes('manuel') || ubicacionLower.includes('rodriguez') || ubicacionLower.includes('060');
+                      } else if (sede === 'Pedro de Valdivia') {
+                        return ubicacionLower.includes('pedro') || ubicacionLower.includes('valdivia');
+                      }
+                      return false;
+                    });
+
+                    const statsSede = {
+                      total: itemsSede.length,
+                      disponible: itemsSede.filter(i => i.estado === 'Disponible').length,
+                      enUso: itemsSede.filter(i => i.estado === 'En Uso').length,
+                      mantenimiento: itemsSede.filter(i => i.estado === 'Mantenimiento').length,
+                      baja: itemsSede.filter(i => i.estado === 'Baja').length
+                    };
+
+                    return (
+                      <div key={sede} className="p-4 border border-gray-200">
+                        <h3 className="text-base font-semibold text-gray-800 mb-3">{sede}</h3>
+                        <div className="grid grid-cols-5 gap-2">
+                          <div>
+                            <div className="text-lg font-semibold text-gray-900">{statsSede.total}</div>
+                            <div className="text-xs text-gray-600">Total</div>
+                          </div>
+                          <div>
+                            <div className="text-lg font-semibold text-green-600">{statsSede.disponible}</div>
+                            <div className="text-xs text-gray-600">Disponibles</div>
+                          </div>
+                          <div>
+                            <div className="text-lg font-semibold text-blue-600">{statsSede.enUso}</div>
+                            <div className="text-xs text-gray-600">En Uso</div>
+                          </div>
+                          <div>
+                            <div className="text-lg font-semibold text-yellow-600">{statsSede.mantenimiento}</div>
+                            <div className="text-xs text-gray-600">Mantenimiento</div>
+                          </div>
+                          <div>
+                            <div className="text-lg font-semibold text-red-600">{statsSede.baja}</div>
+                            <div className="text-xs text-gray-600">Baja</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
