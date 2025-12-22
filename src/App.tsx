@@ -134,6 +134,21 @@ function App() {
   const handleSaveItem = async (item: ItemInventario) => {
     console.log('🔵 handleSaveItem llamado con:', item);
     try {
+      // Validar que el nombre sea único
+      const nombreNormalizado = item.nombre.trim().toLowerCase();
+      const nombreDuplicado = items.find(existingItem => {
+        const existingNombreNormalizado = existingItem.nombre.trim().toLowerCase();
+        // Si estamos editando, excluir el item actual de la validación
+        if (editingItem && existingItem.id === editingItem.id) {
+          return false;
+        }
+        return existingNombreNormalizado === nombreNormalizado;
+      });
+
+      if (nombreDuplicado) {
+        throw new Error(`El nombre "${item.nombre}" ya existe en la base de datos. Por favor, usa un nombre diferente.`);
+      }
+
       if (editingItem) {
         // Actualizar item existente
         console.log('🔵 Actualizando item existente:', item.id);
@@ -479,14 +494,15 @@ function App() {
       </div>
 
       {/* Modal de formulario */}
-      {showForm && (
-        <ItemForm
-          item={editingItem}
-          categorias={categorias}
-          onSave={handleSaveItem}
-          onCancel={handleCancelForm}
-        />
-      )}
+        {showForm && (
+          <ItemForm
+            item={editingItem}
+            categorias={categorias}
+            items={items}
+            onSave={handleSaveItem}
+            onCancel={handleCancelForm}
+          />
+        )}
 
       {/* Modal de Estadísticas */}
       {showStats && (

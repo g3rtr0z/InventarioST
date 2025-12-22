@@ -4,11 +4,12 @@ import type { ItemInventario } from '../types/inventario';
 interface ItemFormProps {
   item?: ItemInventario | null;
   categorias: string[];
+  items: ItemInventario[];
   onSave: (item: ItemInventario) => void;
   onCancel: () => void;
 }
 
-export default function ItemForm({ item, categorias, onSave, onCancel }: ItemFormProps) {
+export default function ItemForm({ item, categorias, items, onSave, onCancel }: ItemFormProps) {
   const [formData, setFormData] = useState<Omit<ItemInventario, 'id'>>({
     nombre: '',
     categoria: categorias.length > 0 ? categorias[0] : '',
@@ -24,6 +25,7 @@ export default function ItemForm({ item, categorias, onSave, onCancel }: ItemFor
     fechaUltimoMantenimiento: '',
     proximoMantenimiento: ''
   });
+  const [nombreError, setNombreError] = useState<string>('');
 
   useEffect(() => {
     if (item) {
@@ -62,6 +64,7 @@ export default function ItemForm({ item, categorias, onSave, onCancel }: ItemFor
         fechaUltimoMantenimiento: '',
         proximoMantenimiento: ''
       });
+      setNombreError(''); // Limpiar error al cambiar de item
     }
   }, [item, categorias]);
 
@@ -73,10 +76,46 @@ export default function ItemForm({ item, categorias, onSave, onCancel }: ItemFor
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
+
+    // Validar nombre único en tiempo real
+    if (name === 'nombre') {
+      const nombreNormalizado = value.trim().toLowerCase();
+      const nombreDuplicado = items.find(existingItem => {
+        const existingNombreNormalizado = existingItem.nombre.trim().toLowerCase();
+        // Si estamos editando, excluir el item actual de la validación
+        if (item && existingItem.id === item.id) {
+          return false;
+        }
+        return existingNombreNormalizado === nombreNormalizado;
+      });
+
+      if (nombreDuplicado && value.trim() !== '') {
+        setNombreError(`El nombre "${value}" ya existe en la base de datos.`);
+      } else {
+        setNombreError('');
+      }
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validar nombre único antes de enviar
+    const nombreNormalizado = formData.nombre.trim().toLowerCase();
+    const nombreDuplicado = items.find(existingItem => {
+      const existingNombreNormalizado = existingItem.nombre.trim().toLowerCase();
+      // Si estamos editando, excluir el item actual de la validación
+      if (item && existingItem.id === item.id) {
+        return false;
+      }
+      return existingNombreNormalizado === nombreNormalizado;
+    });
+
+    if (nombreDuplicado) {
+      setNombreError(`El nombre "${formData.nombre}" ya existe en la base de datos. Por favor, usa un nombre diferente.`);
+      return;
+    }
+
     const itemToSave: ItemInventario = {
       ...formData,
       id: item?.id || Date.now().toString()
@@ -120,8 +159,13 @@ export default function ItemForm({ item, categorias, onSave, onCancel }: ItemFor
                 onChange={handleChange}
                 required
                 placeholder="Ej: PC Oficina 1"
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
+                className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent rounded-md ${
+                  nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
+                }`}
               />
+              {nombreError && (
+                <p className="mt-1 text-sm text-red-600">{nombreError}</p>
+              )}
             </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
