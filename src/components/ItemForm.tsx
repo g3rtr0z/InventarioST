@@ -11,7 +11,7 @@ interface ItemFormProps {
 export default function ItemForm({ item, categorias, onSave, onCancel }: ItemFormProps) {
   const [formData, setFormData] = useState<Omit<ItemInventario, 'id'>>({
     nombre: '',
-    categoria: 'Computadora',
+    categoria: categorias.length > 0 ? categorias[0] : '',
     marca: '',
     modelo: '',
     numeroSerie: '',
@@ -19,7 +19,10 @@ export default function ItemForm({ item, categorias, onSave, onCancel }: ItemFor
     ubicacion: '',
     responsable: '',
     fechaAdquisicion: '',
-    descripcion: ''
+    descripcion: '',
+    observaciones: '',
+    fechaUltimoMantenimiento: '',
+    proximoMantenimiento: ''
   });
 
   useEffect(() => {
@@ -28,7 +31,21 @@ export default function ItemForm({ item, categorias, onSave, onCancel }: ItemFor
       const categoriaValida = categorias.includes(rest.categoria) 
         ? rest.categoria 
         : (categorias.length > 0 ? categorias[0] : '');
-      setFormData({ ...rest, categoria: categoriaValida });
+      setFormData({ 
+        nombre: rest.nombre,
+        categoria: categoriaValida,
+        marca: rest.marca,
+        modelo: rest.modelo,
+        numeroSerie: rest.numeroSerie,
+        estado: rest.estado,
+        ubicacion: rest.ubicacion,
+        responsable: rest.responsable,
+        fechaAdquisicion: rest.fechaAdquisicion || '',
+        descripcion: rest.descripcion || '',
+        observaciones: rest.observaciones || '',
+        fechaUltimoMantenimiento: rest.fechaUltimoMantenimiento || '',
+        proximoMantenimiento: rest.proximoMantenimiento || ''
+      });
     } else {
       setFormData({
         nombre: '',
@@ -40,14 +57,22 @@ export default function ItemForm({ item, categorias, onSave, onCancel }: ItemFor
         ubicacion: '',
         responsable: '',
         fechaAdquisicion: '',
-        descripcion: ''
+        descripcion: '',
+        observaciones: '',
+        fechaUltimoMantenimiento: '',
+        proximoMantenimiento: ''
       });
     }
   }, [item, categorias]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    if (type === 'number') {
+      const numValue = value === '' ? undefined : parseFloat(value);
+      setFormData(prev => ({ ...prev, [name]: numValue }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -76,22 +101,28 @@ export default function ItemForm({ item, categorias, onSave, onCancel }: ItemFor
         </div>
 
         {/* Formulario */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label htmlFor="nombre" className="block mb-1 text-sm text-gray-700">
-              Nombre del Equipo *
-            </label>
-            <input
-              type="text"
-              id="nombre"
-              name="nombre"
-              value={formData.nombre}
-              onChange={handleChange}
-              required
-              placeholder="Ej: PC Oficina 1"
-              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Sección: Información Básica */}
+          <div className="space-y-4">
+            <h3 className="text-base font-semibold text-gray-800 border-b border-gray-200 pb-2">
+              Información Básica
+            </h3>
+            
+            <div>
+              <label htmlFor="nombre" className="block mb-1 text-sm text-gray-700">
+                Nombre del Equipo *
+              </label>
+              <input
+                type="text"
+                id="nombre"
+                name="nombre"
+                value={formData.nombre}
+                onChange={handleChange}
+                required
+                placeholder="Ej: PC Oficina 1"
+                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
+              />
+            </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -219,34 +250,80 @@ export default function ItemForm({ item, categorias, onSave, onCancel }: ItemFor
               />
             </div>
           </div>
-
-          <div>
-            <label htmlFor="fechaAdquisicion" className="block mb-1 text-sm text-gray-700">
-              Fecha de Adquisición
-            </label>
-            <input
-              type="date"
-              id="fechaAdquisicion"
-              name="fechaAdquisicion"
-              value={formData.fechaAdquisicion}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
-            />
           </div>
 
-          <div>
-            <label htmlFor="descripcion" className="block mb-1 text-sm text-gray-700">
-              Descripción
-            </label>
-            <textarea
-              id="descripcion"
-              name="descripcion"
-              value={formData.descripcion}
-              onChange={handleChange}
-              rows={3}
-              placeholder="Información adicional..."
-              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 resize-y"
-            />
+          {/* Sección: Mantenimiento */}
+          <div className="space-y-4">
+            <h3 className="text-base font-semibold text-gray-800 border-b border-gray-200 pb-2">
+              Mantenimiento
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="fechaUltimoMantenimiento" className="block mb-1 text-sm text-gray-700">
+                  Último Mantenimiento
+                </label>
+                <input
+                  type="date"
+                  id="fechaUltimoMantenimiento"
+                  name="fechaUltimoMantenimiento"
+                  value={formData.fechaUltimoMantenimiento}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="proximoMantenimiento" className="block mb-1 text-sm text-gray-700">
+                  Próximo Mantenimiento
+                </label>
+                <input
+                  type="date"
+                  id="proximoMantenimiento"
+                  name="proximoMantenimiento"
+                  value={formData.proximoMantenimiento}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Sección: Observaciones */}
+          <div className="space-y-4">
+            <h3 className="text-base font-semibold text-gray-800 border-b border-gray-200 pb-2">
+              Observaciones y Descripción
+            </h3>
+            
+            <div>
+              <label htmlFor="descripcion" className="block mb-1 text-sm text-gray-700">
+                Descripción
+              </label>
+              <textarea
+                id="descripcion"
+                name="descripcion"
+                value={formData.descripcion}
+                onChange={handleChange}
+                rows={3}
+                placeholder="Información adicional sobre el equipo..."
+                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 resize-y"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="observaciones" className="block mb-1 text-sm text-gray-700">
+                Observaciones
+              </label>
+              <textarea
+                id="observaciones"
+                name="observaciones"
+                value={formData.observaciones}
+                onChange={handleChange}
+                rows={3}
+                placeholder="Notas adicionales, problemas conocidos, etc..."
+                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 resize-y"
+              />
+            </div>
           </div>
 
           {/* Botones */}

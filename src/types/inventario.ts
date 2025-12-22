@@ -10,6 +10,15 @@ export interface ItemInventario {
   responsable: string;
   fechaAdquisicion: string;
   descripcion: string;
+  // Campos adicionales
+  precio?: number;
+  proveedor?: string;
+  fechaGarantia?: string;
+  fechaVencimientoGarantia?: string;
+  numeroFactura?: string;
+  observaciones?: string;
+  fechaUltimoMantenimiento?: string;
+  proximoMantenimiento?: string;
 }
 
 export type EstadoItem = 'Disponible' | 'En Uso' | 'Mantenimiento' | 'Baja';
