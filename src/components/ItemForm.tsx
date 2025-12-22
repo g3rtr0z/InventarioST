@@ -326,18 +326,18 @@ export default function ItemForm({ item, categorias, onSave, onCancel }: ItemFor
             </div>
           </div>
 
-          {/* Botones */}
+                  {/* Botones */}
           <div className="flex gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 px-4 py-2 bg-gray-300 text-gray-800 hover:bg-gray-400"
+              className="flex-1 px-4 py-2 bg-gray-300 text-gray-800 hover:bg-gray-400 rounded-md transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-green-500 text-white hover:bg-green-600"
+              className="flex-1 px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-md transition-colors"
             >
               {item ? 'Actualizar' : 'Guardar'}
             </button>

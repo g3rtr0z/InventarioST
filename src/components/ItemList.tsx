@@ -118,13 +118,13 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
           <div className="flex gap-2 pt-4 border-t border-gray-200">
             <button
               onClick={() => onEdit(item)}
-              className="flex-1 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+              className="flex-1 px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
             >
               Editar
             </button>
             <button
               onClick={() => onDelete(item.id)}
-              className="flex-1 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
+              className="flex-1 px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
             >
               Eliminar
             </button>

@@ -1,24 +1,24 @@
 import { useState } from 'react';
 
-interface CategoriaManagerProps {
-  categorias: string[];
-  onCategoriasChange: (categorias: string[]) => void;
+interface SedeManagerProps {
+  sedes: string[];
+  onSedesChange: (sedes: string[]) => void;
 }
 
-export default function CategoriaManager({ categorias, onCategoriasChange }: CategoriaManagerProps) {
-  const [nuevaCategoria, setNuevaCategoria] = useState('');
+export default function SedeManager({ sedes, onSedesChange }: SedeManagerProps) {
+  const [nuevaSede, setNuevaSede] = useState('');
   const [showManager, setShowManager] = useState(false);
 
   const handleAgregar = () => {
-    if (nuevaCategoria.trim() && !categorias.includes(nuevaCategoria.trim())) {
-      onCategoriasChange([...categorias, nuevaCategoria.trim()]);
-      setNuevaCategoria('');
+    if (nuevaSede.trim() && !sedes.includes(nuevaSede.trim())) {
+      onSedesChange([...sedes, nuevaSede.trim()]);
+      setNuevaSede('');
     }
   };
 
-  const handleEliminar = (categoria: string) => {
-    if (window.confirm(`¿Estás seguro de eliminar la categoría "${categoria}"?`)) {
-      onCategoriasChange(categorias.filter(cat => cat !== categoria));
+  const handleEliminar = (sede: string) => {
+    if (window.confirm(`¿Estás seguro de eliminar la sede "${sede}"?`)) {
+      onSedesChange(sedes.filter(s => s !== sede));
     }
   };
 
@@ -35,7 +35,7 @@ export default function CategoriaManager({ categorias, onCategoriasChange }: Cat
         onClick={() => setShowManager(true)}
         className="px-3 py-2.5 bg-gray-500 text-white hover:bg-gray-600 rounded-md transition-colors text-sm"
       >
-        Categorías
+        Sedes
       </button>
 
       {showManager && (
@@ -43,7 +43,7 @@ export default function CategoriaManager({ categorias, onCategoriasChange }: Cat
           <div className="bg-white w-full max-w-md">
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-gray-900">Gestionar Categorías</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Gestionar Sedes</h2>
               <button
                 onClick={() => setShowManager(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -54,49 +54,49 @@ export default function CategoriaManager({ categorias, onCategoriasChange }: Cat
 
             {/* Contenido */}
             <div className="p-6">
-              {/* Agregar nueva categoría */}
+              {/* Agregar nueva sede */}
               <div className="mb-6">
                 <label className="block mb-2 text-sm text-gray-700">
-                  Agregar Nueva Categoría
+                  Agregar Nueva Sede
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    value={nuevaCategoria}
-                    onChange={(e) => setNuevaCategoria(e.target.value)}
+                    value={nuevaSede}
+                    onChange={(e) => setNuevaSede(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Nombre de la categoría"
+                    placeholder="Nombre de la sede"
                     className="flex-1 px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
                   />
                   <button
                     onClick={handleAgregar}
                     className="px-3 py-1.5 bg-green-600 text-white hover:bg-green-700 rounded-md transition-colors"
-                    disabled={!nuevaCategoria.trim()}
+                    disabled={!nuevaSede.trim()}
                   >
                     +
                   </button>
                 </div>
               </div>
 
-              {/* Lista de categorías */}
+              {/* Lista de sedes */}
               <div>
                 <label className="block mb-3 text-sm text-gray-700">
-                  Categorías ({categorias.length})
+                  Sedes ({sedes.length})
                 </label>
-                {categorias.length === 0 ? (
+                {sedes.length === 0 ? (
                   <p className="text-gray-500 text-sm text-center py-4">
-                    No hay categorías
+                    No hay sedes
                   </p>
                 ) : (
                   <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {categorias.map((categoria, index) => (
+                    {sedes.map((sede, index) => (
                       <div
                         key={index}
                         className="flex items-center justify-between p-2 border border-gray-200"
                       >
-                        <span className="text-gray-900">{categoria}</span>
+                        <span className="text-gray-900">{sede}</span>
                         <button
-                          onClick={() => handleEliminar(categoria)}
+                          onClick={() => handleEliminar(sede)}
                           className="text-red-500 hover:text-red-700 px-2"
                           title="Eliminar"
                         >
@@ -124,3 +124,4 @@ export default function CategoriaManager({ categorias, onCategoriasChange }: Cat
     </>
   );
 }
+

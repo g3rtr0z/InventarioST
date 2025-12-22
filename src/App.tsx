@@ -3,6 +3,7 @@ import type { ItemInventario } from './types/inventario';
 import ItemList from './components/ItemList';
 import ItemForm from './components/ItemForm';
 import CategoriaManager from './components/CategoriaManager';
+import SedeManager from './components/SedeManager';
 import {
   subscribeToItems,
   subscribeToCategorias,
@@ -42,10 +43,9 @@ function App() {
   const [activeTab, setActiveTab] = useState<'general' | 'sedes'>('general');
   const [showStats, setShowStats] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [sedes, setSedes] = useState<string[]>(['Manuel Rodriguez', 'Pedro de Valdivia']);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const SEDES = ['Manuel Rodriguez', 'Pedro de Valdivia'];
 
   // Suscribirse a cambios en tiempo real de items
   useEffect(() => {
@@ -194,14 +194,14 @@ function App() {
     // Filtro por sede
     if (filterSede !== 'Todas') {
       const ubicacionLower = item.ubicacion.toLowerCase();
-      if (filterSede === 'Manuel Rodriguez') {
-        if (!ubicacionLower.includes('manuel') && !ubicacionLower.includes('rodriguez') && !ubicacionLower.includes('060')) {
-          return false;
-        }
-      } else if (filterSede === 'Pedro de Valdivia') {
-        if (!ubicacionLower.includes('pedro') && !ubicacionLower.includes('valdivia')) {
-          return false;
-        }
+      const sedeLower = filterSede.toLowerCase();
+      // Buscar si la ubicación contiene alguna palabra clave de la sede
+      const palabrasSede = sedeLower.split(' ');
+      const coincide = palabrasSede.some(palabra => 
+        palabra.length > 2 && ubicacionLower.includes(palabra)
+      );
+      if (!coincide) {
+        return false;
       }
     }
     return true;
@@ -257,7 +257,7 @@ function App() {
         {/* Header */}
         <header className="mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-            <div>
+      <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-1">
                 Inventario
               </h1>
@@ -266,14 +266,14 @@ function App() {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowStats(true)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                 title="Ver estadísticas"
               >
                 Estadísticas
               </button>
               <button
                 onClick={handleExportExcel}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                 title="Exportar a Excel"
               >
                 Exportar
@@ -307,10 +307,10 @@ function App() {
               />
               <button
                 onClick={handleAddItem}
-                className="w-10 h-10 bg-green-600 text-white hover:bg-green-700 rounded-md flex items-center justify-center shadow-sm hover:shadow transition-all duration-200 flex-shrink-0"
+                className="px-3 py-2.5 bg-green-600 text-white hover:bg-green-700 rounded-md transition-colors text-sm flex-shrink-0"
                 title="Agregar Item"
               >
-                <span className="text-xl font-light leading-[1]">+</span>
+                +
               </button>
             </div>
             
@@ -323,35 +323,39 @@ function App() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
               />
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <button
                   onClick={handleAddItem}
-                  className="w-10 h-10 bg-green-600 text-white hover:bg-green-700 rounded-md flex items-center justify-center shadow-sm hover:shadow transition-all duration-200"
+                  className="px-3 py-2.5 bg-green-600 text-white hover:bg-green-700 rounded-md transition-colors text-sm"
                   title="Agregar Item"
                 >
-                  <span className="text-xl font-light leading-[1]">+</span>
+                  +
                 </button>
                 <CategoriaManager
                   categorias={categorias}
                   onCategoriasChange={handleCategoriasChange}
                 />
-                <div className="flex gap-1 bg-gray-100 p-1 rounded-md">
+                <SedeManager
+                  sedes={sedes}
+                  onSedesChange={setSedes}
+                />
+                <div className="flex gap-0.5 bg-gray-100 rounded-md overflow-hidden border border-gray-300">
                   <button
                     onClick={() => setViewMode('cards')}
-                    className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                    className={`px-3 py-2.5 text-sm font-medium transition-colors border-r border-gray-300 ${
                       viewMode === 'cards' 
-                        ? 'bg-white text-gray-900 shadow-sm' 
-                        : 'text-gray-600 hover:text-gray-900'
+                        ? 'bg-green-600 text-white shadow-sm' 
+                        : 'bg-white text-gray-600 hover:text-gray-900'
                     }`}
                   >
                     Tarjetas
                   </button>
                   <button
                     onClick={() => setViewMode('table')}
-                    className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                    className={`px-3 py-2.5 text-sm font-medium transition-colors ${
                       viewMode === 'table' 
-                        ? 'bg-white text-gray-900 shadow-sm' 
-                        : 'text-gray-600 hover:text-gray-900'
+                        ? 'bg-green-600 text-white shadow-sm' 
+                        : 'bg-white text-gray-600 hover:text-gray-900'
                     }`}
                   >
                     Tabla
@@ -366,23 +370,27 @@ function App() {
                 categorias={categorias}
                 onCategoriasChange={handleCategoriasChange}
               />
-              <div className="flex gap-1 bg-gray-100 p-1 rounded-md ml-auto">
+              <SedeManager
+                sedes={sedes}
+                onSedesChange={setSedes}
+              />
+              <div className="flex gap-0.5 bg-gray-100 rounded-md ml-auto overflow-hidden border border-gray-300">
                 <button
                   onClick={() => setViewMode('cards')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                  className={`px-3 py-2.5 text-sm font-medium transition-colors border-r border-gray-300 ${
                     viewMode === 'cards' 
-                      ? 'bg-white text-gray-900 shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-green-600 text-white shadow-sm' 
+                      : 'bg-white text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   Tarjetas
                 </button>
                 <button
                   onClick={() => setViewMode('table')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                  className={`px-3 py-2.5 text-sm font-medium transition-colors ${
                     viewMode === 'table' 
-                      ? 'bg-white text-gray-900 shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-green-600 text-white shadow-sm' 
+                      : 'bg-white text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   Tabla
@@ -412,7 +420,7 @@ function App() {
                     className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
                   >
                     <option value="Todas">Todas las sedes</option>
-                    {SEDES.map(sede => (
+                    {sedes.map(sede => (
                       <option key={sede} value={sede}>{sede}</option>
                     ))}
                   </select>
@@ -447,7 +455,7 @@ function App() {
                         setFilterCategoria('Todas');
                         setFilterSede('Todas');
                       }}
-                      className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                      className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                     >
                       Limpiar
                     </button>
@@ -518,7 +526,7 @@ function App() {
                   }`}
                 >
                   Por Sede
-                </button>
+        </button>
               </div>
 
               {/* Contenido de las pestañas */}
@@ -549,15 +557,15 @@ function App() {
 
               {activeTab === 'sedes' && (
                 <div className="space-y-4">
-                  {SEDES.map(sede => {
+                  {sedes.map(sede => {
                     const itemsSede = items.filter(item => {
                       const ubicacionLower = item.ubicacion.toLowerCase();
-                      if (sede === 'Manuel Rodriguez') {
-                        return ubicacionLower.includes('manuel') || ubicacionLower.includes('rodriguez') || ubicacionLower.includes('060');
-                      } else if (sede === 'Pedro de Valdivia') {
-                        return ubicacionLower.includes('pedro') || ubicacionLower.includes('valdivia');
-                      }
-                      return false;
+                      const sedeLower = sede.toLowerCase();
+                      // Buscar si la ubicación contiene alguna palabra clave de la sede
+                      const palabrasSede = sedeLower.split(' ');
+                      return palabrasSede.some(palabra => 
+                        palabra.length > 2 && ubicacionLower.includes(palabra)
+                      );
                     });
 
                     const statsSede = {
@@ -602,7 +610,7 @@ function App() {
           </div>
         </div>
       )}
-    </div>
+      </div>
   );
 }
 
