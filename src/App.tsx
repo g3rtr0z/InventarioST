@@ -7,10 +7,12 @@ import SedeManager from './components/SedeManager';
 import {
   subscribeToItems,
   subscribeToCategorias,
+  subscribeToSedes,
   addItem,
   updateItem,
   deleteItem,
-  saveCategorias
+  saveCategorias,
+  saveSedes
 } from './services/inventarioService';
 import { isFirebaseReady } from './config/firebase';
 import { exportToExcel } from './utils/exportToExcel';
@@ -43,7 +45,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<'general' | 'sedes'>('general');
   const [showStats, setShowStats] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [sedes, setSedes] = useState<string[]>(['Manuel Rodriguez', 'Pedro de Valdivia']);
+  const [sedes, setSedes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -121,6 +123,36 @@ function App() {
     }
   }, [categorias, isFirebaseReady]);
 
+  // Suscribirse a cambios en tiempo real de sedes
+  useEffect(() => {
+    if (!isFirebaseReady) return;
+
+    let unsubscribeSedes: (() => void) | undefined;
+
+    try {
+      unsubscribeSedes = subscribeToSedes((sedesData: string[]) => {
+        console.log('📦 Sedes recibidas de Firebase:', sedesData);
+        if (sedesData && sedesData.length > 0) {
+          setSedes(sedesData);
+        } else {
+          // Si no hay sedes en Firebase, inicializar con las por defecto
+          const sedesDefault = ['Manuel Rodriguez', 'Pedro de Valdivia'];
+          setSedes(sedesDefault);
+          saveSedes(sedesDefault).catch((err: any) => {
+            console.error('Error al inicializar sedes:', err);
+          });
+        }
+      });
+    } catch (err) {
+      console.error('Error al suscribirse a sedes:', err);
+    }
+
+    return () => {
+      if (unsubscribeSedes) unsubscribeSedes();
+    };
+  }, [isFirebaseReady]);
+
+
   const handleAddItem = () => {
     setEditingItem(null);
     setShowForm(true);
@@ -194,6 +226,16 @@ function App() {
     } catch (error) {
       console.error('Error al guardar categorías:', error);
       alert('Error al guardar las categorías. Por favor, intenta nuevamente.');
+    }
+  };
+
+  const handleSedesChange = async (nuevasSedes: string[]) => {
+    try {
+      setSedes(nuevasSedes);
+      await saveSedes(nuevasSedes);
+    } catch (error) {
+      console.error('Error al guardar sedes:', error);
+      alert('Error al guardar las sedes. Por favor, intenta nuevamente.');
     }
   };
 
@@ -352,7 +394,7 @@ function App() {
                 />
                 <SedeManager
                   sedes={sedes}
-                  onSedesChange={setSedes}
+                  onSedesChange={handleSedesChange}
                 />
                 <div className="flex gap-0.5 bg-gray-100 rounded-md overflow-hidden border border-gray-300">
                   <button
@@ -387,7 +429,7 @@ function App() {
               />
               <SedeManager
                 sedes={sedes}
-                onSedesChange={setSedes}
+                onSedesChange={handleSedesChange}
               />
               <div className="flex gap-0.5 bg-gray-100 rounded-md ml-auto overflow-hidden border border-gray-300">
                 <button

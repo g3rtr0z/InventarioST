@@ -17,6 +17,7 @@ import type { ItemInventario } from '../types/inventario';
 
 const ITEMS_COLLECTION = 'items';
 const CATEGORIAS_COLLECTION = 'categorias';
+const SEDES_COLLECTION = 'sedes';
 
 // ========== ITEMS ==========
 
@@ -320,6 +321,68 @@ export const saveCategorias = async (categorias: string[]): Promise<void> => {
     }
   } catch (error) {
     console.error('Error al guardar categorías:', error);
+    throw error;
+  }
+};
+
+// ========== SEDES ==========
+
+/**
+ * Escuchar cambios en tiempo real de las sedes
+ */
+export const subscribeToSedes = (
+  callback: (sedes: string[]) => void
+): (() => void) => {
+  if (!db) {
+    throw new Error('Firestore no está disponible');
+  }
+
+  try {
+    return onSnapshot(
+      collection(db as Firestore, SEDES_COLLECTION),
+      (snapshot: QuerySnapshot<DocumentData>) => {
+        if (snapshot.empty) {
+          callback([]);
+          return;
+        }
+        const sedesDoc = snapshot.docs[0];
+        const sedes = sedesDoc.data().lista || [];
+        callback(sedes);
+      },
+      (error) => {
+        console.error('Error al escuchar sedes:', error);
+        callback([]);
+      }
+    );
+  } catch (error) {
+    console.error('Error al suscribirse a sedes:', error);
+    callback([]);
+    return () => {};
+  }
+};
+
+/**
+ * Guardar las sedes
+ */
+export const saveSedes = async (sedes: string[]): Promise<void> => {
+  if (!db) {
+    throw new Error('Firestore no está disponible');
+  }
+
+  try {
+    const querySnapshot = await getDocs(collection(db as Firestore, SEDES_COLLECTION));
+    
+    if (querySnapshot.empty) {
+      // Crear documento si no existe
+      await addDoc(collection(db as Firestore, SEDES_COLLECTION), { lista: sedes });
+    } else {
+      // Actualizar documento existente
+      const sedesDoc = querySnapshot.docs[0];
+      const sedesRef = doc(db as Firestore, SEDES_COLLECTION, sedesDoc.id);
+      await updateDoc(sedesRef, { lista: sedes });
+    }
+  } catch (error) {
+    console.error('Error al guardar sedes:', error);
     throw error;
   }
 };
