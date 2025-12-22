@@ -25,7 +25,10 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
     fechaUltimoMantenimiento: '',
     proximoMantenimiento: '',
     piso: '',
-    tipoUso: 'Administrativo'
+    tipoUso: 'Administrativo',
+    procesador: '',
+    ram: '',
+    discoDuro: ''
   });
   const [nombreError, setNombreError] = useState<string>('');
 
@@ -50,7 +53,10 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
         fechaUltimoMantenimiento: rest.fechaUltimoMantenimiento || '',
         proximoMantenimiento: rest.proximoMantenimiento || '',
         piso: rest.piso || '',
-        tipoUso: rest.tipoUso || 'Administrativo'
+        tipoUso: rest.tipoUso || 'Administrativo',
+        procesador: rest.procesador || '',
+        ram: rest.ram || '',
+        discoDuro: rest.discoDuro || ''
       });
     } else {
       setFormData({
@@ -68,7 +74,10 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
         fechaUltimoMantenimiento: '',
         proximoMantenimiento: '',
         piso: '',
-        tipoUso: 'Administrativo'
+        tipoUso: 'Administrativo',
+        procesador: '',
+        ram: '',
+        discoDuro: ''
       });
       setNombreError(''); // Limpiar error al cambiar de item
     }
@@ -233,55 +242,7 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="marca" className="block mb-1 text-sm text-gray-700">
-                Marca *
-              </label>
-              <input
-                type="text"
-                id="marca"
-                name="marca"
-                value={formData.marca}
-                onChange={handleChange}
-                required
-                placeholder="Ej: Dell, HP, Lenovo"
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
-              />
-            </div>
 
-            <div>
-              <label htmlFor="modelo" className="block mb-1 text-sm text-gray-700">
-                Modelo *
-              </label>
-              <input
-                type="text"
-                id="modelo"
-                name="modelo"
-                value={formData.modelo}
-                onChange={handleChange}
-                required
-                placeholder="Ej: OptiPlex 7090"
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="numeroSerie" className="block mb-1 text-sm text-gray-700">
-              Número de Serie *
-            </label>
-            <input
-              type="text"
-              id="numeroSerie"
-              name="numeroSerie"
-              value={formData.numeroSerie}
-              onChange={handleChange}
-              required
-              placeholder="Ej: SN123456789"
-              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
-            />
-          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -303,15 +264,20 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
               <label htmlFor="piso" className="block mb-1 text-sm text-gray-700">
                 Piso
               </label>
-              <input
-                type="text"
+              <select
                 id="piso"
                 name="piso"
                 value={formData.piso}
                 onChange={handleChange}
-                placeholder="Ej: 1, 2, 3, etc."
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
-              />
+                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
+              >
+                <option value="">Seleccionar Piso</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
             </div>
 
             <div>
@@ -330,6 +296,116 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
               />
             </div>
           </div>
+          </div>
+
+          {/* Sección: Especificaciones Técnicas */}
+          <div className="space-y-4">
+            <h3 className="text-base font-semibold text-gray-800 border-b border-gray-200 pb-2">
+              Especificaciones Técnicas
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label htmlFor="marca" className="block mb-1 text-sm text-gray-700">
+                  Marca *
+                </label>
+                <input
+                  type="text"
+                  id="marca"
+                  name="marca"
+                  value={formData.marca}
+                  onChange={handleChange}
+                  required
+                  placeholder="Ej: Dell, HP, Lenovo"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="modelo" className="block mb-1 text-sm text-gray-700">
+                  Modelo *
+                </label>
+                <input
+                  type="text"
+                  id="modelo"
+                  name="modelo"
+                  value={formData.modelo}
+                  onChange={handleChange}
+                  required
+                  placeholder="Ej: OptiPlex 7090"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="numeroSerie" className="block mb-1 text-sm text-gray-700">
+                  Número de Serie *
+                </label>
+                <input
+                  type="text"
+                  id="numeroSerie"
+                  name="numeroSerie"
+                  value={formData.numeroSerie}
+                  onChange={handleChange}
+                  required
+                  placeholder="Ej: SN123456789"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label htmlFor="procesador" className="block mb-1 text-sm text-gray-700">
+                  Procesador
+                </label>
+                <input
+                  type="text"
+                  id="procesador"
+                  name="procesador"
+                  value={formData.procesador}
+                  onChange={handleChange}
+                  placeholder="Ej: Intel Core i5-10400"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="ram" className="block mb-1 text-sm text-gray-700">
+                  RAM
+                </label>
+                <select
+                  id="ram"
+                  name="ram"
+                  value={formData.ram}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
+                >
+                  <option value="">Seleccionar RAM</option>
+                  <option value="8GB">8GB</option>
+                  <option value="16GB">16GB</option>
+                  <option value="32GB">32GB</option>
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="discoDuro" className="block mb-1 text-sm text-gray-700">
+                  Disco Duro
+                </label>
+                <select
+                  id="discoDuro"
+                  name="discoDuro"
+                  value={formData.discoDuro}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
+                >
+                  <option value="">Seleccionar Disco Duro</option>
+                  <option value="256GB">256GB</option>
+                  <option value="500GB">500GB</option>
+                  <option value="1TB">1TB</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           {/* Sección: Mantenimiento */}

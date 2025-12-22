@@ -21,6 +21,9 @@ export interface ItemInventario {
   proximoMantenimiento?: string;
   piso?: string;
   tipoUso: 'Alumnos' | 'Administrativo';
+  procesador?: string;
+  ram?: string;
+  discoDuro?: string;
 }
 
 export type EstadoItem = 'Disponible' | 'En Uso' | 'Mantenimiento' | 'Baja';

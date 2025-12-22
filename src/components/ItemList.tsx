@@ -99,6 +99,26 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                 {item.tipoUso}
               </span>
             </div>
+            {(item.procesador || item.ram || item.discoDuro) && (
+              <div className="pt-2 border-t border-gray-200">
+                <div className="text-xs font-semibold text-gray-600 mb-1">Especificaciones:</div>
+                {item.procesador && (
+                  <div className="text-xs text-gray-700">
+                    <span className="font-medium">Procesador:</span> {item.procesador}
+                  </div>
+                )}
+                {item.ram && (
+                  <div className="text-xs text-gray-700">
+                    <span className="font-medium">RAM:</span> {item.ram}
+                  </div>
+                )}
+                {item.discoDuro && (
+                  <div className="text-xs text-gray-700">
+                    <span className="font-medium">Disco:</span> {item.discoDuro}
+                  </div>
+                )}
+              </div>
+            )}
             <div>
               <span className="text-gray-600">Responsable: </span>
               <span className="text-gray-900">{item.responsable}</span>
