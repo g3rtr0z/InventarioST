@@ -296,7 +296,26 @@ function App() {
         {/* Panel de búsqueda y filtros */}
         <div className="mb-8">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
-            <div className="flex flex-col sm:flex-row gap-3">
+            {/* Móvil: búsqueda y botón + en la misma línea */}
+            <div className="flex gap-2 md:hidden mb-3">
+              <input
+                type="text"
+                placeholder="Buscar..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+              />
+              <button
+                onClick={handleAddItem}
+                className="w-10 h-10 bg-green-600 text-white hover:bg-green-700 rounded-md flex items-center justify-center shadow-sm hover:shadow transition-all duration-200 flex-shrink-0"
+                title="Agregar Item"
+              >
+                <span className="text-xl font-light leading-[1]">+</span>
+              </button>
+            </div>
+            
+            {/* Escritorio: layout completo */}
+            <div className="hidden md:flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
                 placeholder="Buscar por nombre, marca, modelo, serie, ubicación..."
@@ -338,6 +357,36 @@ function App() {
                     Tabla
                   </button>
                 </div>
+              </div>
+            </div>
+            
+            {/* Controles adicionales para móvil */}
+            <div className="flex gap-2 md:hidden">
+              <CategoriaManager
+                categorias={categorias}
+                onCategoriasChange={handleCategoriasChange}
+              />
+              <div className="flex gap-1 bg-gray-100 p-1 rounded-md ml-auto">
+                <button
+                  onClick={() => setViewMode('cards')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                    viewMode === 'cards' 
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Tarjetas
+                </button>
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                    viewMode === 'table' 
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Tabla
+                </button>
               </div>
             </div>
           </div>
