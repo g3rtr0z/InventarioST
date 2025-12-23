@@ -134,7 +134,7 @@ export const addItem = async (item: Omit<ItemInventario, 'id'>): Promise<string>
   }
 
   // Validar que el item tenga todos los campos requeridos
-  if (!item.nombre || !item.categoria || !item.marca || !item.modelo || !item.numeroSerie || !item.estado || !item.ubicacion || !item.responsable || !item.tipoUso) {
+  if (!item.nombre || !item.categoria || !item.marca || !item.modelo || !item.numeroSerie || !item.estado || !item.ubicacion || !item.responsable || !item.tipoUso || !item.sede) {
     console.error('❌ Item incompleto:', item);
     throw new Error('Todos los campos requeridos deben estar completos');
   }

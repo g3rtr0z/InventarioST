@@ -4,12 +4,13 @@ import type { ItemInventario } from '../types/inventario';
 interface ItemFormProps {
   item?: ItemInventario | null;
   categorias: string[];
+  sedes: string[];
   items: ItemInventario[];
   onSave: (item: ItemInventario) => void;
   onCancel: () => void;
 }
 
-export default function ItemForm({ item, categorias, items, onSave, onCancel }: ItemFormProps) {
+export default function ItemForm({ item, categorias, sedes, items, onSave, onCancel }: ItemFormProps) {
   const [formData, setFormData] = useState<Omit<ItemInventario, 'id'>>({
     nombre: '',
     categoria: categorias.length > 0 ? categorias[0] : '',
@@ -26,6 +27,7 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
     proximoMantenimiento: '',
     piso: '',
     edificio: '',
+    sede: sedes.length > 0 ? sedes[0] : '',
     tipoUso: 'Administrativo',
     procesador: '',
     ram: '',
@@ -55,6 +57,7 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
         proximoMantenimiento: rest.proximoMantenimiento || '',
         piso: rest.piso || '',
         edificio: rest.edificio || '',
+        sede: rest.sede || (sedes.length > 0 ? sedes[0] : ''),
         tipoUso: rest.tipoUso || 'Administrativo',
         procesador: rest.procesador || '',
         ram: rest.ram || '',
@@ -77,6 +80,7 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
         proximoMantenimiento: '',
         piso: '',
         edificio: '',
+        sede: sedes.length > 0 ? sedes[0] : '',
         tipoUso: 'Administrativo',
         procesador: '',
         ram: '',
@@ -249,6 +253,27 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
+              <label htmlFor="sede" className="block mb-1 text-sm text-gray-700">
+                Sede *
+              </label>
+              <select
+                id="sede"
+                name="sede"
+                value={formData.sede}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
+              >
+                {sedes.length > 0 ? (
+                  sedes.map(sede => (
+                    <option key={sede} value={sede}>{sede}</option>
+                  ))
+                ) : (
+                  <option value="">Sin sedes disponibles</option>
+                )}
+              </select>
+            </div>
+            <div>
               <label htmlFor="ubicacion" className="block mb-1 text-sm text-gray-700">
                 Ubicación *
               </label>
@@ -263,23 +288,6 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
                 className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
               />
             </div>
-            <div>
-              <label htmlFor="edificio" className="block mb-1 text-sm text-gray-700">
-                Edificio
-              </label>
-              <select
-                id="edificio"
-                name="edificio"
-                value={formData.edificio}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
-              >
-                <option value="">Seleccionar Edificio</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-              </select>
-            </div>
-
             <div>
               <label htmlFor="piso" className="block mb-1 text-sm text-gray-700">
                 Piso
@@ -297,6 +305,23 @@ export default function ItemForm({ item, categorias, items, onSave, onCancel }: 
                 <option value="3">3</option>
                 <option value="4">4</option>
                 <option value="5">5</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="edificio" className="block mb-1 text-sm text-gray-700">
+                Edificio
+              </label>
+              <select
+                id="edificio"
+                name="edificio"
+                value={formData.edificio}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
+              >
+                <option value="">Seleccionar Edificio</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
               </select>
             </div>
 

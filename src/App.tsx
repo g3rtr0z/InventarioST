@@ -43,6 +43,10 @@ function App() {
   const [filterSede, setFilterSede] = useState<string>('Todas');
   const [filterTipoUso, setFilterTipoUso] = useState<string>('Todos');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [sortBy, setSortBy] = useState<'nombre' | 'categoria' | 'estado' | 'ubicacion'>('nombre');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
   const [activeTab, setActiveTab] = useState<'general' | 'sedes'>('general');
   const [showStats, setShowStats] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -250,17 +254,8 @@ function App() {
       return false;
     }
     // Filtro por sede
-    if (filterSede !== 'Todas') {
-      const ubicacionLower = item.ubicacion.toLowerCase();
-      const sedeLower = filterSede.toLowerCase();
-      // Buscar si la ubicación contiene alguna palabra clave de la sede
-      const palabrasSede = sedeLower.split(' ');
-      const coincide = palabrasSede.some(palabra => 
-        palabra.length > 2 && ubicacionLower.includes(palabra)
-      );
-      if (!coincide) {
-        return false;
-      }
+    if (filterSede !== 'Todas' && item.sede !== filterSede) {
+      return false;
     }
     // Filtro por tipo de uso
     if (filterTipoUso !== 'Todos' && item.tipoUso !== filterTipoUso) {
@@ -269,8 +264,37 @@ function App() {
     return true;
   });
 
+  // Ordenar items
+  const sortedItems = [...filteredItems].sort((a, b) => {
+    let aValue: string | number = '';
+    let bValue: string | number = '';
+    
+    switch (sortBy) {
+      case 'nombre':
+        aValue = a.nombre.toLowerCase();
+        bValue = b.nombre.toLowerCase();
+        break;
+      case 'categoria':
+        aValue = a.categoria.toLowerCase();
+        bValue = b.categoria.toLowerCase();
+        break;
+      case 'estado':
+        aValue = a.estado;
+        bValue = b.estado;
+        break;
+      case 'ubicacion':
+        aValue = a.ubicacion.toLowerCase();
+        bValue = b.ubicacion.toLowerCase();
+        break;
+    }
+    
+    if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
+
   // Items filtrados también por búsqueda (para mostrar en la lista)
-  const filteredAndSearchedItems = filteredItems.filter(item =>
+  const filteredAndSearchedItems = sortedItems.filter(item =>
     item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.marca.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -278,6 +302,17 @@ function App() {
     item.numeroSerie.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.ubicacion.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Paginación
+  const totalPages = Math.ceil(filteredAndSearchedItems.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedItems = filteredAndSearchedItems.slice(startIndex, endIndex);
+
+  // Resetear página cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterEstado, filterCategoria, filterSede, filterTipoUso]);
 
   const handleExportExcel = () => {
     // Exportar los items que están siendo mostrados (con filtros y búsqueda aplicados)
@@ -541,8 +576,107 @@ function App() {
 
         {/* Contenido principal */}
         <main>
+          {/* Controles de ordenamiento y paginación */}
+          {filteredAndSearchedItems.length > 0 && (
+            <div className="mb-4 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                {/* Ordenamiento */}
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium text-gray-700">Ordenar por:</label>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as 'nombre' | 'categoria' | 'estado' | 'ubicacion')}
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                  >
+                    <option value="nombre">Nombre</option>
+                    <option value="categoria">Categoría</option>
+                    <option value="estado">Estado</option>
+                    <option value="ubicacion">Ubicación</option>
+                  </select>
+                  <button
+                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    title={sortOrder === 'asc' ? 'Orden ascendente' : 'Orden descendente'}
+                  >
+                    {sortOrder === 'asc' ? '↑' : '↓'}
+                  </button>
+                </div>
+
+                {/* Información de paginación */}
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-gray-600">
+                    Mostrando <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(endIndex, filteredAndSearchedItems.length)}</span> de <span className="font-medium">{filteredAndSearchedItems.length}</span> items
+                  </div>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                  >
+                    <option value="6">6 por página</option>
+                    <option value="12">12 por página</option>
+                    <option value="24">24 por página</option>
+                    <option value="48">48 por página</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Paginación */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Anterior
+                  </button>
+                  
+                  <div className="flex gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`px-3 py-1.5 text-sm border rounded-md transition-colors ${
+                            currentPage === pageNum
+                              ? 'bg-green-600 text-white border-green-600'
+                              : 'border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           <ItemList
-            items={filteredItems}
+            items={paginatedItems}
             onEdit={handleEditItem}
             onDelete={handleDeleteItem}
             searchTerm={searchTerm}
@@ -556,6 +690,7 @@ function App() {
           <ItemForm
             item={editingItem}
             categorias={categorias}
+            sedes={sedes}
             items={items}
             onSave={handleSaveItem}
             onCancel={handleCancelForm}
@@ -632,15 +767,7 @@ function App() {
               {activeTab === 'sedes' && (
                 <div className="space-y-4">
                   {sedes.map(sede => {
-                    const itemsSede = items.filter(item => {
-                      const ubicacionLower = item.ubicacion.toLowerCase();
-                      const sedeLower = sede.toLowerCase();
-                      // Buscar si la ubicación contiene alguna palabra clave de la sede
-                      const palabrasSede = sedeLower.split(' ');
-                      return palabrasSede.some(palabra => 
-                        palabra.length > 2 && ubicacionLower.includes(palabra)
-                      );
-                    });
+                    const itemsSede = items.filter(item => item.sede === sede);
 
                     const statsSede = {
                       total: itemsSede.length,

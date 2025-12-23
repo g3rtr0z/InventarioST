@@ -13,19 +13,20 @@ export const exportToExcel = (items: ItemInventario[], filename: string = 'inven
     'Modelo': item.modelo,
     'Número de Serie': item.numeroSerie,
     'Estado': item.estado,
+    'Sede': item.sede,
     'Ubicación': item.ubicacion,
     'Responsable': item.responsable,
-    'Fecha de Adquisición': item.fechaAdquisicion || '',
-    'Descripción': item.descripcion || '',
-    'Observaciones': item.observaciones || '',
-    'Último Mantenimiento': item.fechaUltimoMantenimiento || '',
-    'Próximo Mantenimiento': item.proximoMantenimiento || '',
     'Edificio': item.edificio || '',
     'Piso': item.piso || '',
     'Tipo de Uso': item.tipoUso,
     'Procesador': item.procesador || '',
     'RAM': item.ram || '',
-    'Disco Duro': item.discoDuro || ''
+    'Disco Duro': item.discoDuro || '',
+    'Fecha de Adquisición': item.fechaAdquisicion || '',
+    'Descripción': item.descripcion || '',
+    'Observaciones': item.observaciones || '',
+    'Último Mantenimiento': item.fechaUltimoMantenimiento || '',
+    'Próximo Mantenimiento': item.proximoMantenimiento || ''
   }));
 
   // Crear un libro de trabajo
@@ -42,19 +43,20 @@ export const exportToExcel = (items: ItemInventario[], filename: string = 'inven
     { wch: 15 }, // Modelo
     { wch: 20 }, // Número de Serie
     { wch: 15 }, // Estado
+    { wch: 20 }, // Sede
     { wch: 15 }, // Ubicación
     { wch: 20 }, // Responsable
-    { wch: 18 }, // Fecha de Adquisición
-    { wch: 30 }, // Descripción
-    { wch: 30 }, // Observaciones
-    { wch: 20 }, // Último Mantenimiento
-    { wch: 20 }, // Próximo Mantenimiento
     { wch: 10 }, // Edificio
     { wch: 10 }, // Piso
     { wch: 15 }, // Tipo de Uso
     { wch: 25 }, // Procesador
     { wch: 15 }, // RAM
-    { wch: 20 }  // Disco Duro
+    { wch: 20 }, // Disco Duro
+    { wch: 18 }, // Fecha de Adquisición
+    { wch: 30 }, // Descripción
+    { wch: 30 }, // Observaciones
+    { wch: 20 }, // Último Mantenimiento
+    { wch: 20 }  // Próximo Mantenimiento
   ];
   ws['!cols'] = colWidths;
   

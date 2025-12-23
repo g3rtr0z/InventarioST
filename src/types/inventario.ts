@@ -21,6 +21,7 @@ export interface ItemInventario {
   proximoMantenimiento?: string;
   piso?: string;
   edificio?: string;
+  sede: string;
   tipoUso: 'Alumnos' | 'Administrativo';
   procesador?: string;
   ram?: string;

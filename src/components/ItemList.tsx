@@ -23,12 +23,12 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
 
   const getEstadoColor = (estado: string) => {
     const estadoMap: Record<string, string> = {
-      'Disponible': 'text-green-600',
-      'En Uso': 'text-blue-600',
-      'Mantenimiento': 'text-yellow-600',
-      'Baja': 'text-red-600'
+      'Disponible': 'bg-green-100 text-green-700',
+      'En Uso': 'bg-blue-100 text-blue-700',
+      'Mantenimiento': 'bg-yellow-100 text-yellow-700',
+      'Baja': 'bg-red-100 text-red-700'
     };
-    return estadoMap[estado] || 'text-gray-600';
+    return estadoMap[estado] || 'bg-gray-100 text-gray-700';
   };
 
   const formatCurrency = (amount?: number) => {
@@ -53,11 +53,16 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
     <div>
       {/* Vista de Tarjetas */}
       {viewMode === 'cards' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {filteredItems.map(item => (
         <div
           key={item.id}
-          className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow"
+          className={`bg-white border-2 rounded-lg p-5 shadow-sm hover:shadow-lg transition-all ${
+            item.estado === 'Disponible' ? 'border-green-200 hover:border-green-300' :
+            item.estado === 'En Uso' ? 'border-blue-200 hover:border-blue-300' :
+            item.estado === 'Mantenimiento' ? 'border-yellow-200 hover:border-yellow-300' :
+            'border-red-200 hover:border-red-300'
+          }`}
         >
           <div className="flex justify-between items-start mb-4 pb-3 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">
@@ -82,19 +87,23 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
               <span className="text-gray-900">{item.numeroSerie}</span>
             </div>
             <div>
+              <span className="text-gray-600">Sede: </span>
+              <span className="text-gray-900 font-medium">{item.sede}</span>
+            </div>
+            <div>
               <span className="text-gray-600">Ubicación: </span>
               <span className="text-gray-900">{item.ubicacion}</span>
             </div>
-            {item.edificio && (
-              <div>
-                <span className="text-gray-600">Edificio: </span>
-                <span className="text-gray-900">{item.edificio}</span>
-              </div>
-            )}
             {item.piso && (
               <div>
                 <span className="text-gray-600">Piso: </span>
                 <span className="text-gray-900">{item.piso}</span>
+              </div>
+            )}
+            {item.edificio && (
+              <div>
+                <span className="text-gray-600">Edificio: </span>
+                <span className="text-gray-900">{item.edificio}</span>
               </div>
             )}
             <div>
@@ -208,6 +217,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                         {item.estado}
                       </span>
                     </td>
+                    <td className="px-5 py-4 text-gray-700 font-medium">{item.sede}</td>
                     <td className="px-5 py-4 text-gray-700">{item.ubicacion}</td>
                     <td className="px-5 py-4 text-gray-700">{item.piso || '-'}</td>
                     <td className="px-5 py-4">
