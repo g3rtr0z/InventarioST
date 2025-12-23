@@ -163,10 +163,10 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
 
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Sección: Información Básica */}
+          {/* Sección: Información General */}
           <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-800 border-b border-gray-200 pb-2">
-              Información Básica
+            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
+              Información General
             </h3>
             
             <div>
@@ -190,162 +190,170 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
               )}
             </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="categoria" className="block mb-1 text-sm text-gray-700">
-                Categoría *
-              </label>
-              <select
-                id="categoria"
-                name="categoria"
-                value={formData.categoria}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
-              >
-                {categorias.length > 0 ? (
-                  categorias.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))
-                ) : (
-                  <option value="">Sin categorías</option>
-                )}
-              </select>
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label htmlFor="categoria" className="block mb-1 text-sm text-gray-700">
+                  Categoría *
+                </label>
+                <select
+                  id="categoria"
+                  name="categoria"
+                  value={formData.categoria}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                >
+                  {categorias.length > 0 ? (
+                    categorias.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))
+                  ) : (
+                    <option value="">Sin categorías</option>
+                  )}
+                </select>
+              </div>
 
-            <div>
-              <label htmlFor="estado" className="block mb-1 text-sm text-gray-700">
-                Estado *
-              </label>
-              <select
-                id="estado"
-                name="estado"
-                value={formData.estado}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
-              >
-                <option value="Disponible">Disponible</option>
-                <option value="En Uso">En Uso</option>
-                <option value="Mantenimiento">Mantenimiento</option>
-                <option value="Baja">Baja</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="tipoUso" className="block mb-1 text-sm text-gray-700">
-                Tipo de Uso *
-              </label>
-              <select
-                id="tipoUso"
-                name="tipoUso"
-                value={formData.tipoUso}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
-              >
-                <option value="Administrativo">Administrativo</option>
-                <option value="Alumnos">Alumnos</option>
-              </select>
+              <div>
+                <label htmlFor="estado" className="block mb-1 text-sm text-gray-700">
+                  Estado *
+                </label>
+                <select
+                  id="estado"
+                  name="estado"
+                  value={formData.estado}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                >
+                  <option value="Disponible">Disponible</option>
+                  <option value="En Uso">En Uso</option>
+                  <option value="Mantenimiento">Mantenimiento</option>
+                  <option value="Baja">Baja</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="tipoUso" className="block mb-1 text-sm text-gray-700">
+                  Tipo de Uso *
+                </label>
+                <select
+                  id="tipoUso"
+                  name="tipoUso"
+                  value={formData.tipoUso}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                >
+                  <option value="Administrativo">Administrativo</option>
+                  <option value="Alumnos">Alumnos</option>
+                </select>
+              </div>
             </div>
           </div>
 
+          {/* Sección: Ubicación y Responsabilidad */}
+          <div className="space-y-4">
+            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
+              Ubicación y Responsabilidad
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="sede" className="block mb-1 text-sm text-gray-700">
+                  Sede *
+                </label>
+                <select
+                  id="sede"
+                  name="sede"
+                  value={formData.sede}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                >
+                  {sedes.length > 0 ? (
+                    sedes.map(sede => (
+                      <option key={sede} value={sede}>{sede}</option>
+                    ))
+                  ) : (
+                    <option value="">Sin sedes disponibles</option>
+                  )}
+                </select>
+              </div>
 
+              <div>
+                <label htmlFor="ubicacion" className="block mb-1 text-sm text-gray-700">
+                  Ubicación *
+                </label>
+                <input
+                  type="text"
+                  id="ubicacion"
+                  name="ubicacion"
+                  value={formData.ubicacion}
+                  onChange={handleChange}
+                  required
+                  placeholder="Ej: Oficina 101"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                />
+              </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="sede" className="block mb-1 text-sm text-gray-700">
-                Sede *
-              </label>
-              <select
-                id="sede"
-                name="sede"
-                value={formData.sede}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
-              >
-                {sedes.length > 0 ? (
-                  sedes.map(sede => (
-                    <option key={sede} value={sede}>{sede}</option>
-                  ))
-                ) : (
-                  <option value="">Sin sedes disponibles</option>
-                )}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="ubicacion" className="block mb-1 text-sm text-gray-700">
-                Ubicación *
-              </label>
-              <input
-                type="text"
-                id="ubicacion"
-                name="ubicacion"
-                value={formData.ubicacion}
-                onChange={handleChange}
-                required
-                placeholder="Ej: Oficina 101"
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="piso" className="block mb-1 text-sm text-gray-700">
-                Piso
-              </label>
-              <select
-                id="piso"
-                name="piso"
-                value={formData.piso}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
-              >
-                <option value="">Seleccionar Piso</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-              </select>
-            </div>
+              <div>
+                <label htmlFor="piso" className="block mb-1 text-sm text-gray-700">
+                  Piso
+                </label>
+                <select
+                  id="piso"
+                  name="piso"
+                  value={formData.piso}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                >
+                  <option value="">Seleccionar Piso</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select>
+              </div>
 
-            <div>
-              <label htmlFor="edificio" className="block mb-1 text-sm text-gray-700">
-                Edificio
-              </label>
-              <select
-                id="edificio"
-                name="edificio"
-                value={formData.edificio}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
-              >
-                <option value="">Seleccionar Edificio</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-              </select>
-            </div>
+              <div>
+                <label htmlFor="edificio" className="block mb-1 text-sm text-gray-700">
+                  Edificio
+                </label>
+                <select
+                  id="edificio"
+                  name="edificio"
+                  value={formData.edificio}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                >
+                  <option value="">Seleccionar Edificio</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                </select>
+              </div>
 
-            <div>
-              <label htmlFor="responsable" className="block mb-1 text-sm text-gray-700">
-                Responsable *
-              </label>
-              <input
-                type="text"
-                id="responsable"
-                name="responsable"
-                value={formData.responsable}
-                onChange={handleChange}
-                required
-                placeholder="Ej: Juan Pérez"
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
-              />
+              <div className="md:col-span-2">
+                <label htmlFor="responsable" className="block mb-1 text-sm text-gray-700">
+                  Responsable *
+                </label>
+                <input
+                  type="text"
+                  id="responsable"
+                  name="responsable"
+                  value={formData.responsable}
+                  onChange={handleChange}
+                  required
+                  placeholder="Ej: Juan Pérez"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                />
+              </div>
             </div>
-          </div>
           </div>
 
           {/* Sección: Especificaciones Técnicas */}
           <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-800 border-b border-gray-200 pb-2">
+            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
               Especificaciones Técnicas
             </h3>
             
@@ -453,9 +461,30 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
             </div>
           </div>
 
+          {/* Sección: Información de Adquisición */}
+          <div className="space-y-4">
+            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
+              Información de Adquisición
+            </h3>
+            
+            <div>
+              <label htmlFor="fechaAdquisicion" className="block mb-1 text-sm text-gray-700">
+                Fecha de Adquisición
+              </label>
+              <input
+                type="date"
+                id="fechaAdquisicion"
+                name="fechaAdquisicion"
+                value={formData.fechaAdquisicion}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+              />
+            </div>
+          </div>
+
           {/* Sección: Mantenimiento */}
           <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-800 border-b border-gray-200 pb-2">
+            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
               Mantenimiento
             </h3>
             
@@ -490,9 +519,9 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
             </div>
           </div>
 
-          {/* Sección: Observaciones */}
+          {/* Sección: Observaciones y Descripción */}
           <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-800 border-b border-gray-200 pb-2">
+            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
               Observaciones y Descripción
             </h3>
             
