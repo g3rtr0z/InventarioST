@@ -481,9 +481,9 @@ function App() {
         </header>
 
 
-        {/* Panel de búsqueda y filtros */}
-        <div className="mb-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+        {/* Barra de búsqueda sticky */}
+        <div className="mb-4 sticky top-0 z-10 bg-gray-50 py-4 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 -mt-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             {/* Móvil: búsqueda y botón + en la misma línea */}
             <div className="flex gap-2 md:hidden mb-3">
               <input
@@ -491,11 +491,11 @@ function App() {
                 placeholder="Buscar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent transition-all"
               />
               <button
                 onClick={handleAddItem}
-                className="px-3 py-2.5 bg-green-600 text-white hover:bg-green-700 rounded-md transition-colors text-sm flex-shrink-0"
+                className="px-3 py-2.5 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm flex-shrink-0"
                 title="Agregar Item"
               >
                 +
@@ -509,12 +509,12 @@ function App() {
                 placeholder="Buscar por nombre, marca, modelo, serie, ubicación..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent transition-all"
               />
               <div className="flex gap-2 items-center">
                 <button
                   onClick={handleAddItem}
-                  className="px-3 py-2.5 bg-green-600 text-white hover:bg-green-700 rounded-md transition-colors text-sm"
+                  className="px-3 py-2.5 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm"
                   title="Agregar Item"
                 >
                   +
@@ -532,7 +532,7 @@ function App() {
                     onClick={() => setViewMode('cards')}
                     className={`px-3 py-2.5 text-sm font-medium transition-colors border-r border-gray-300 ${
                       viewMode === 'cards' 
-                        ? 'bg-green-600 text-white shadow-sm' 
+                        ? 'bg-green-800 text-white shadow-sm' 
                         : 'bg-white text-gray-600 hover:text-gray-900'
                     }`}
                   >
@@ -542,7 +542,7 @@ function App() {
                     onClick={() => setViewMode('table')}
                     className={`px-3 py-2.5 text-sm font-medium transition-colors ${
                       viewMode === 'table' 
-                        ? 'bg-green-600 text-white shadow-sm' 
+                        ? 'bg-green-800 text-white shadow-sm' 
                         : 'bg-white text-gray-600 hover:text-gray-900'
                     }`}
                   >
@@ -567,7 +567,7 @@ function App() {
                   onClick={() => setViewMode('cards')}
                   className={`px-3 py-2.5 text-sm font-medium transition-colors border-r border-gray-300 ${
                     viewMode === 'cards' 
-                      ? 'bg-green-600 text-white shadow-sm' 
+                      ? 'bg-green-800 text-white shadow-sm' 
                       : 'bg-white text-gray-600 hover:text-gray-900'
                   }`}
                 >
@@ -577,7 +577,7 @@ function App() {
                   onClick={() => setViewMode('table')}
                   className={`px-3 py-2.5 text-sm font-medium transition-colors ${
                     viewMode === 'table' 
-                      ? 'bg-green-600 text-white shadow-sm' 
+                      ? 'bg-green-800 text-white shadow-sm' 
                       : 'bg-white text-gray-600 hover:text-gray-900'
                   }`}
                 >
@@ -586,8 +586,10 @@ function App() {
               </div>
             </div>
           </div>
-          
-          {/* Desplegable de Filtros */}
+        </div>
+
+        {/* Desplegable de Filtros */}
+        <div className="mb-8">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -605,7 +607,7 @@ function App() {
                   <select
                     value={filterSede}
                     onChange={(e) => setFilterSede(e.target.value)}
-                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent bg-white"
                   >
                     <option value="Todas">Todas las sedes</option>
                     {sedes.map(sede => (
@@ -616,7 +618,7 @@ function App() {
                   <select
                     value={filterEstado}
                     onChange={(e) => setFilterEstado(e.target.value)}
-                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent bg-white"
                   >
                     <option value="Todos">Todos los estados</option>
                     <option value="Disponible">Disponible</option>
@@ -628,7 +630,7 @@ function App() {
                   <select
                     value={filterCategoria}
                     onChange={(e) => setFilterCategoria(e.target.value)}
-                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent bg-white"
                   >
                     <option value="Todas">Todas las categorías</option>
                     {categorias.map(cat => (
@@ -639,7 +641,7 @@ function App() {
                   <select
                     value={filterTipoUso}
                     onChange={(e) => setFilterTipoUso(e.target.value)}
-                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent bg-white"
                   >
                     <option value="Todos">Todos los tipos</option>
                     <option value="Administrativo">Administrativo</option>
@@ -667,7 +669,7 @@ function App() {
 
         {/* Contenido principal */}
         <main>
-          {/* Controles de ordenamiento y paginación */}
+          {/* Controles de ordenamiento */}
           {filteredAndSearchedItems.length > 0 && (
             <div className="mb-4 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -677,7 +679,7 @@ function App() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as 'nombre' | 'categoria' | 'estado' | 'ubicacion')}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent bg-white"
                   >
                     <option value="nombre">Nombre</option>
                     <option value="categoria">Categoría</option>
@@ -704,7 +706,7 @@ function App() {
                       setItemsPerPage(Number(e.target.value));
                       setCurrentPage(1);
                     }}
-                    className="px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                    className="px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent bg-white"
                   >
                     <option value="6">6 por página</option>
                     <option value="12">12 por página</option>
@@ -714,7 +716,7 @@ function App() {
                 </div>
               </div>
 
-              {/* Paginación */}
+              {/* Paginación arriba */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-gray-200">
                   <button
@@ -744,7 +746,7 @@ function App() {
                           onClick={() => setCurrentPage(pageNum)}
                           className={`px-3 py-1.5 text-sm border rounded-md transition-colors ${
                             currentPage === pageNum
-                              ? 'bg-green-600 text-white border-green-600'
+                              ? 'bg-green-800 text-white border-green-800'
                               : 'border-gray-300 hover:bg-gray-50'
                           }`}
                         >
@@ -773,6 +775,58 @@ function App() {
             searchTerm={searchTerm}
             viewMode={viewMode}
           />
+
+          {/* Paginación al final */}
+          {filteredAndSearchedItems.length > 0 && totalPages > 1 && (
+            <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Anterior
+                </button>
+                
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-1.5 text-sm border rounded-md transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-green-800 text-white border-green-800'
+                            : 'border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
@@ -805,39 +859,15 @@ function App() {
 
             {/* Contenido del modal */}
             <div className="p-6">
-              {/* Pestañas */}
-              <div className="flex gap-1 mb-6 border-b border-gray-200">
-                <button
-                  onClick={() => setActiveTab('general')}
-                  className={`px-4 py-2 text-sm font-medium transition-colors ${
-                    activeTab === 'general'
-                      ? 'text-gray-900 border-b-2 border-green-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Generales
-                </button>
-                <button
-                  onClick={() => setActiveTab('sedes')}
-                  className={`px-4 py-2 text-sm font-medium transition-colors ${
-                    activeTab === 'sedes'
-                      ? 'text-gray-900 border-b-2 border-green-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Por Sede
-        </button>
-              </div>
-
               {/* Contenido de las pestañas */}
               {activeTab === 'general' && (
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                   <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="text-3xl font-bold text-gray-900 mb-1">{estadisticas.total}</div>
                     <div className="text-xs text-gray-600 font-medium">Total</div>
                   </div>
-                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                    <div className="text-3xl font-bold text-green-700 mb-1">{estadisticas.disponible}</div>
+                  <div className="p-4 bg-green-100 rounded-lg border border-green-300">
+                    <div className="text-3xl font-bold text-green-800 mb-1">{estadisticas.disponible}</div>
                     <div className="text-xs text-gray-600 font-medium">Disponibles</div>
                   </div>
                   <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -856,7 +886,7 @@ function App() {
               )}
 
               {activeTab === 'sedes' && (
-                <div className="space-y-4">
+                <div className="space-y-4 mb-6">
                   {sedes.map(sede => {
                     const itemsSede = items.filter(item => item.sede === sede);
 
@@ -877,7 +907,7 @@ function App() {
                         <div className="text-xs text-gray-600 font-medium">Total</div>
                       </div>
                       <div className="text-center sm:text-left">
-                        <div className="text-xl sm:text-2xl font-bold text-green-700 mb-1">{statsSede.disponible}</div>
+                        <div className="text-xl sm:text-2xl font-bold text-green-800 mb-1">{statsSede.disponible}</div>
                         <div className="text-xs text-gray-600 font-medium">Disponibles</div>
                       </div>
                       <div className="text-center sm:text-left">
@@ -898,6 +928,30 @@ function App() {
               })}
             </div>
           )}
+
+              {/* Pestañas */}
+              <div className="flex gap-1 mt-6 border-t border-gray-200 pt-4">
+                <button
+                  onClick={() => setActiveTab('general')}
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    activeTab === 'general'
+                      ? 'text-gray-900 border-t-2 border-green-800 -mt-4 pt-2'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Generales
+                </button>
+                <button
+                  onClick={() => setActiveTab('sedes')}
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    activeTab === 'sedes'
+                      ? 'text-gray-900 border-t-2 border-green-800 -mt-4 pt-2'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Por Sede
+                </button>
+              </div>
             </div>
           </div>
         </div>
