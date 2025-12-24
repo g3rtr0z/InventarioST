@@ -37,7 +37,6 @@ export const getItems = async (): Promise<ItemInventario[]> => {
       ...doc.data()
     })) as ItemInventario[];
   } catch (error) {
-    console.error('Error al obtener items:', error);
     throw error;
   }
 };
@@ -49,7 +48,6 @@ export const subscribeToItems = (
   callback: (items: ItemInventario[]) => void
 ): (() => void) => {
   if (!db) {
-    console.error('❌ Firestore no está disponible para suscribirse a items');
     callback([]);
     return () => {};
   }
@@ -69,14 +67,11 @@ export const subscribeToItems = (
             id: doc.id,
             ...doc.data()
           })) as ItemInventario[];
-          console.log('📦 Items recibidos de Firestore:', items.length);
           callback(items);
         },
         (error: any) => {
-          console.error('❌ Error al escuchar items con orderBy:', error);
           // Si falla por falta de índice, intentar sin orderBy
           if (error?.code === 'failed-precondition') {
-            console.log('⚠️ Intentando sin orderBy debido a falta de índice...');
             return onSnapshot(
               itemsCollection,
               (snapshot: QuerySnapshot<DocumentData>) => {
@@ -86,11 +81,9 @@ export const subscribeToItems = (
                 })) as ItemInventario[];
                 // Ordenar manualmente
                 items.sort((a, b) => a.nombre.localeCompare(b.nombre));
-                console.log('📦 Items recibidos de Firestore (sin orderBy):', items.length);
                 callback(items);
               },
-              (err) => {
-                console.error('❌ Error al escuchar items:', err);
+              () => {
                 callback([]);
               }
             );
@@ -100,7 +93,6 @@ export const subscribeToItems = (
       );
     } catch (orderByError: any) {
       // Si orderBy falla, usar sin ordenar
-      console.warn('⚠️ No se puede usar orderBy, usando colección sin ordenar');
       return onSnapshot(
         itemsCollection,
         (snapshot: QuerySnapshot<DocumentData>) => {
@@ -111,14 +103,12 @@ export const subscribeToItems = (
           items.sort((a, b) => a.nombre.localeCompare(b.nombre));
           callback(items);
         },
-        (error) => {
-          console.error('Error al escuchar items:', error);
+        () => {
           callback([]);
         }
       );
     }
   } catch (error) {
-    console.error('Error al suscribirse a items:', error);
     callback([]);
     return () => {};
   }
@@ -129,13 +119,11 @@ export const subscribeToItems = (
  */
 export const addItem = async (item: Omit<ItemInventario, 'id'>): Promise<string> => {
   if (!db) {
-    console.error('❌ Firestore no está disponible');
     throw new Error('Firestore no está disponible');
   }
 
   // Validar que el item tenga todos los campos requeridos
   if (!item.nombre || !item.categoria || !item.marca || !item.modelo || !item.numeroSerie || !item.estado || !item.ubicacion || !item.responsable || !item.tipoUso || !item.sede) {
-    console.error('❌ Item incompleto:', item);
     throw new Error('Todos los campos requeridos deben estar completos');
   }
 
@@ -155,42 +143,19 @@ export const addItem = async (item: Omit<ItemInventario, 'id'>): Promise<string>
   // Limpiar el objeto para Firestore (eliminar campos undefined)
   const cleanItem = cleanUndefined(item);
 
-  console.log('🔵 Intentando agregar item a Firestore...');
-  console.log('🔵 Datos del item:', JSON.stringify(cleanItem, null, 2));
-  console.log('🔵 Colección:', ITEMS_COLLECTION);
-  console.log('🔵 DB disponible:', !!db);
-
   try {
     const itemsCollection = collection(db as Firestore, ITEMS_COLLECTION);
-    console.log('🔵 Colección obtenida');
-    
     const docRef = await addDoc(itemsCollection, cleanItem);
-    console.log('✅ Item agregado exitosamente a Firestore');
-    console.log('✅ ID del documento:', docRef.id);
-    console.log('✅ Ruta completa:', docRef.path);
-    console.log('✅ Verifica en Firebase Console: Firestore Database > items >', docRef.id);
-    
     return docRef.id;
   } catch (error: any) {
-    console.error('❌ Error al agregar item a Firestore:');
-    console.error('❌ Código de error:', error?.code);
-    console.error('❌ Mensaje:', error?.message);
-    console.error('❌ Error completo:', error);
-    
     // Mostrar error más detallado
     if (error?.code === 'permission-denied') {
-      console.error('❌ PERMISO DENEGADO: Verifica las reglas de Firestore');
-      console.error('❌ Ve a Firebase Console > Firestore Database > Reglas');
-      console.error('❌ Asegúrate de que las reglas permitan write en la colección "items"');
       throw new Error('Permiso denegado. Verifica las reglas de Firestore en Firebase Console. Las reglas deben permitir write en la colección "items".');
     } else if (error?.code === 'unavailable') {
-      console.error('❌ SERVICIO NO DISPONIBLE: Verifica tu conexión a internet');
       throw new Error('Firestore no está disponible. Verifica tu conexión.');
     } else if (error?.code === 'invalid-argument') {
-      console.error('❌ ARGUMENTO INVÁLIDO: Verifica los datos del item');
       throw new Error('Datos inválidos. Verifica que todos los campos estén correctamente completados.');
     } else {
-      console.error('❌ Error desconocido:', error);
       throw error;
     }
   }
@@ -220,7 +185,6 @@ export const updateItem = async (id: string, item: Partial<ItemInventario>): Pro
     const cleanItem = cleanUndefined(item);
     await updateDoc(itemRef, cleanItem);
   } catch (error) {
-    console.error('Error al actualizar item:', error);
     throw error;
   }
 };
@@ -237,7 +201,6 @@ export const deleteItem = async (id: string): Promise<void> => {
     const itemRef = doc(db as Firestore, ITEMS_COLLECTION, id);
     await deleteDoc(itemRef);
   } catch (error) {
-    console.error('Error al eliminar item:', error);
     throw error;
   }
 };
@@ -260,7 +223,6 @@ export const getCategorias = async (): Promise<string[]> => {
     const categoriasDoc = querySnapshot.docs[0];
     return categoriasDoc.data().lista || [];
   } catch (error) {
-    console.error('Error al obtener categorías:', error);
     throw error;
   }
 };
@@ -287,13 +249,11 @@ export const subscribeToCategorias = (
         const categorias = categoriasDoc.data().lista || [];
         callback(categorias);
       },
-      (error) => {
-        console.error('Error al escuchar categorías:', error);
+      () => {
         callback([]);
       }
     );
   } catch (error) {
-    console.error('Error al suscribirse a categorías:', error);
     callback([]);
     return () => {};
   }
@@ -320,7 +280,6 @@ export const saveCategorias = async (categorias: string[]): Promise<void> => {
       await updateDoc(categoriasRef, { lista: categorias });
     }
   } catch (error) {
-    console.error('Error al guardar categorías:', error);
     throw error;
   }
 };
@@ -349,13 +308,11 @@ export const subscribeToSedes = (
         const sedes = sedesDoc.data().lista || [];
         callback(sedes);
       },
-      (error) => {
-        console.error('Error al escuchar sedes:', error);
+      () => {
         callback([]);
       }
     );
   } catch (error) {
-    console.error('Error al suscribirse a sedes:', error);
     callback([]);
     return () => {};
   }
@@ -382,7 +339,6 @@ export const saveSedes = async (sedes: string[]): Promise<void> => {
       await updateDoc(sedesRef, { lista: sedes });
     }
   } catch (error) {
-    console.error('Error al guardar sedes:', error);
     throw error;
   }
 };

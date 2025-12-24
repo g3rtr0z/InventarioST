@@ -1,5 +1,6 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getAuth, type Auth } from 'firebase/auth';
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -29,32 +30,22 @@ export const isFirebaseReady = checkFirebaseConfig();
 
 let app: FirebaseApp | undefined;
 let db: Firestore | undefined;
+let auth: Auth | undefined;
 
 if (isFirebaseReady) {
   try {
-    console.log('🔥 Inicializando Firebase...');
-    console.log('🔥 Project ID:', firebaseConfig.projectId);
     // Inicializar Firebase
     app = initializeApp(firebaseConfig);
     // Inicializar Firestore
     db = getFirestore(app);
-    console.log('✅ Firebase inicializado correctamente');
-    console.log('✅ Firestore conectado');
+    // Inicializar Auth
+    auth = getAuth(app);
   } catch (error) {
-    console.error('❌ Error al inicializar Firebase:', error);
     db = undefined;
     app = undefined;
+    auth = undefined;
   }
-} else {
-  console.warn('⚠️ Firebase no está configurado. Verifica tu archivo .env');
-  console.warn('Configuración actual:');
-  console.warn('- API Key:', firebaseConfig.apiKey ? '✅ Configurado' : '❌ Faltante');
-  console.warn('- Auth Domain:', firebaseConfig.authDomain ? '✅ Configurado' : '❌ Faltante');
-  console.warn('- Project ID:', firebaseConfig.projectId ? '✅ Configurado' : '❌ Faltante');
-  console.warn('- Storage Bucket:', firebaseConfig.storageBucket ? '✅ Configurado' : '❌ Faltante');
-  console.warn('- Messaging Sender ID:', firebaseConfig.messagingSenderId ? '✅ Configurado' : '❌ Faltante');
-  console.warn('- App ID:', firebaseConfig.appId ? '✅ Configurado' : '❌ Faltante');
 }
 
-export { db };
+export { db, auth };
 export default app;

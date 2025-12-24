@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { ItemInventario } from '../types/inventario';
+import { sanitizeText, validateNoXSS, validateNoSQLInjection } from '../utils/security';
 
 interface ItemFormProps {
   item?: ItemInventario | null;
@@ -92,7 +93,31 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    if (type === 'number') {
+    
+    // Sanitizar y validar inputs de texto
+    if (type !== 'number' && typeof value === 'string') {
+      // Validar contra XSS
+      if (!validateNoXSS(value)) {
+        setNombreError('El texto contiene caracteres no permitidos.');
+        return;
+      }
+      
+      // Validar contra inyección SQL
+      if (!validateNoSQLInjection(value)) {
+        setNombreError('El texto contiene patrones sospechosos.');
+        return;
+      }
+      
+      // Sanitizar el valor (pero mantenerlo editable)
+      const sanitizedValue = sanitizeText(value);
+      
+      if (type === 'number') {
+        const numValue = sanitizedValue === '' ? undefined : parseFloat(sanitizedValue);
+        setFormData(prev => ({ ...prev, [name]: numValue }));
+      } else {
+        setFormData(prev => ({ ...prev, [name]: sanitizedValue }));
+      }
+    } else if (type === 'number') {
       const numValue = value === '' ? undefined : parseFloat(value);
       setFormData(prev => ({ ...prev, [name]: numValue }));
     } else {
@@ -122,8 +147,45 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Sanitizar todos los campos de texto antes de enviar
+    const sanitizedData = {
+      ...formData,
+      nombre: sanitizeText(formData.nombre),
+      marca: sanitizeText(formData.marca),
+      modelo: sanitizeText(formData.modelo),
+      numeroSerie: sanitizeText(formData.numeroSerie),
+      ubicacion: sanitizeText(formData.ubicacion),
+      responsable: sanitizeText(formData.responsable),
+      descripcion: sanitizeText(formData.descripcion || ''),
+      observaciones: sanitizeText(formData.observaciones || ''),
+      piso: sanitizeText(formData.piso || ''),
+      edificio: sanitizeText(formData.edificio || ''),
+      procesador: sanitizeText(formData.procesador || ''),
+      ram: sanitizeText(formData.ram || ''),
+      discoDuro: sanitizeText(formData.discoDuro || '')
+    };
+
+    // Validar que no contenga código peligroso
+    const fieldsToValidate = [
+      sanitizedData.nombre,
+      sanitizedData.marca,
+      sanitizedData.modelo,
+      sanitizedData.numeroSerie,
+      sanitizedData.ubicacion,
+      sanitizedData.responsable,
+      sanitizedData.descripcion,
+      sanitizedData.observaciones
+    ];
+
+    for (const field of fieldsToValidate) {
+      if (field && (!validateNoXSS(field) || !validateNoSQLInjection(field))) {
+        setNombreError('Uno o más campos contienen datos no permitidos.');
+        return;
+      }
+    }
+    
     // Validar nombre único antes de enviar
-    const nombreNormalizado = formData.nombre.trim().toLowerCase();
+    const nombreNormalizado = sanitizedData.nombre.trim().toLowerCase();
     const nombreDuplicado = items.find(existingItem => {
       const existingNombreNormalizado = existingItem.nombre.trim().toLowerCase();
       // Si estamos editando, excluir el item actual de la validación
@@ -134,14 +196,15 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     });
 
     if (nombreDuplicado) {
-      setNombreError(`El nombre "${formData.nombre}" ya existe en la base de datos. Por favor, usa un nombre diferente.`);
+      setNombreError(`El nombre "${sanitizedData.nombre}" ya existe en la base de datos. Por favor, usa un nombre diferente.`);
       return;
     }
 
     const itemToSave: ItemInventario = {
-      ...formData,
+      ...sanitizedData,
       id: item?.id || Date.now().toString()
     };
+    // Usar datos sanitizados
     onSave(itemToSave);
   };
 

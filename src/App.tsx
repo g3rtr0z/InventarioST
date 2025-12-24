@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { ItemInventario } from './types/inventario';
 import ItemList from './components/ItemList';
 import ItemForm from './components/ItemForm';
 import CategoriaManager from './components/CategoriaManager';
 import SedeManager from './components/SedeManager';
+import Login from './components/Login';
+import Loader from './components/Loader';
 import {
   subscribeToItems,
   subscribeToCategorias,
@@ -14,8 +16,10 @@ import {
   saveCategorias,
   saveSedes
 } from './services/inventarioService';
-import { isFirebaseReady } from './config/firebase';
+import { isFirebaseReady, auth } from './config/firebase';
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { exportToExcel } from './utils/exportToExcel';
+import { useSecurityHeaders } from './hooks/useSecurityHeaders';
 
 const CATEGORIAS_DEFAULT = [
   'Computadora',
@@ -33,6 +37,11 @@ const CATEGORIAS_DEFAULT = [
 ];
 
 function App() {
+  // Configurar headers de seguridad
+  useSecurityHeaders();
+  
+  const [user, setUser] = useState<User | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [items, setItems] = useState<ItemInventario[]>([]);
   const [categorias, setCategorias] = useState<string[]>(CATEGORIAS_DEFAULT);
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,25 +60,113 @@ function App() {
   const [showStats, setShowStats] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [sedes, setSedes] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadStartTime, setLoadStartTime] = useState<number | null>(null);
+  const [isNewLogin, setIsNewLogin] = useState(false);
+
+  // Verificar estado de autenticación
+  const wasAuthenticatedRef = useRef(false);
+  const isInitialCheckRef = useRef(true);
+  
+  useEffect(() => {
+    if (!auth) {
+      setCheckingAuth(false);
+      return;
+    }
+    
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      const isAuthenticated = !!currentUser;
+      
+      // En la primera verificación (recarga de página), no considerar como nuevo login
+      if (isInitialCheckRef.current) {
+        isInitialCheckRef.current = false;
+        wasAuthenticatedRef.current = isAuthenticated;
+        setUser(currentUser);
+        setCheckingAuth(false);
+        // Si hay usuario en la recarga, no mostrar loader
+        if (isAuthenticated) {
+          setLoading(false);
+        }
+        return;
+      }
+      
+      // Si el usuario estaba desautenticado y ahora está autenticado, es un nuevo login
+      if (!wasAuthenticatedRef.current && isAuthenticated) {
+        setIsNewLogin(true);
+        setLoadStartTime(Date.now());
+        setLoading(true);
+      }
+      
+      // Si el usuario estaba autenticado y ahora está desautenticado, resetear estados
+      if (wasAuthenticatedRef.current && !isAuthenticated) {
+        setIsNewLogin(false);
+        setLoadStartTime(null);
+        setLoading(false);
+      }
+      
+      wasAuthenticatedRef.current = isAuthenticated;
+      setUser(currentUser);
+      setCheckingAuth(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    if (auth) {
+      try {
+        await signOut(auth);
+      } catch (error) {
+        // Error silencioso
+      }
+    }
+  };
 
   // Suscribirse a cambios en tiempo real de items
   useEffect(() => {
+    if (!user) {
+      return;
+    }
+
     if (!isFirebaseReady) {
       setLoading(false);
       setError('Firebase no está configurado. Por favor, configura las variables de entorno en el archivo .env');
       return;
     }
 
+    // Solo mostrar loader si es un nuevo login, no al recargar la página
+    if (!isNewLogin) {
+      setLoading(false);
+    }
+
     let unsubscribeItems: (() => void) | undefined;
     let timeoutId: ReturnType<typeof setTimeout>;
+    let minTimeTimeoutId: ReturnType<typeof setTimeout> | undefined;
 
     try {
       unsubscribeItems = subscribeToItems((itemsData) => {
         setItems(itemsData);
-        setLoading(false);
         setError(null);
+        
+        // Solo aplicar tiempo mínimo si es un nuevo login
+        if (isNewLogin && loadStartTime) {
+          const elapsedTime = Date.now() - loadStartTime;
+          const minDisplayTime = 3000; // 3 segundos
+          
+          if (elapsedTime < minDisplayTime) {
+            const remainingTime = minDisplayTime - elapsedTime;
+            minTimeTimeoutId = setTimeout(() => {
+              setLoading(false);
+              setIsNewLogin(false);
+            }, remainingTime);
+          } else {
+            setLoading(false);
+            setIsNewLogin(false);
+          }
+        } else {
+          setLoading(false);
+        }
       });
 
       // Timeout de seguridad: si después de 10 segundos no hay respuesta, mostrar error
@@ -80,7 +177,6 @@ function App() {
         }
       }, 10000);
     } catch (err) {
-      console.error('Error al suscribirse a items:', err);
       setLoading(false);
       setError('Error al conectar con Firebase. Verifica tu configuración.');
     }
@@ -88,8 +184,9 @@ function App() {
     return () => {
       if (unsubscribeItems) unsubscribeItems();
       clearTimeout(timeoutId);
+      if (minTimeTimeoutId) clearTimeout(minTimeTimeoutId);
     };
-  }, [loading, isFirebaseReady]);
+  }, [user, isFirebaseReady, loadStartTime, isNewLogin]);
 
   // Suscribirse a cambios en tiempo real de categorías
   useEffect(() => {
@@ -105,13 +202,13 @@ function App() {
           setCategorias(categoriasData);
         } else {
           // Si no hay categorías en Firebase, inicializar con las por defecto
-          saveCategorias(CATEGORIAS_DEFAULT).catch(err => {
-            console.error('Error al inicializar categorías:', err);
+          saveCategorias(CATEGORIAS_DEFAULT).catch(() => {
+            // Error silencioso
           });
         }
       });
     } catch (err) {
-      console.error('Error al suscribirse a categorías:', err);
+      // Error silencioso
     }
 
     return () => {
@@ -122,8 +219,8 @@ function App() {
   // Guardar categorías cuando cambien
   useEffect(() => {
     if (isFirebaseReady && categorias.length > 0 && categorias !== CATEGORIAS_DEFAULT) {
-      saveCategorias(categorias).catch(err => {
-        console.error('Error al guardar categorías:', err);
+      saveCategorias(categorias).catch(() => {
+        // Error silencioso
       });
     }
   }, [categorias, isFirebaseReady]);
@@ -136,20 +233,19 @@ function App() {
 
     try {
       unsubscribeSedes = subscribeToSedes((sedesData: string[]) => {
-        console.log('📦 Sedes recibidas de Firebase:', sedesData);
         if (sedesData && sedesData.length > 0) {
           setSedes(sedesData);
         } else {
           // Si no hay sedes en Firebase, inicializar con las por defecto
           const sedesDefault = ['Manuel Rodriguez', 'Pedro de Valdivia'];
           setSedes(sedesDefault);
-          saveSedes(sedesDefault).catch((err: any) => {
-            console.error('Error al inicializar sedes:', err);
+          saveSedes(sedesDefault).catch(() => {
+            // Error silencioso
           });
         }
       });
     } catch (err) {
-      console.error('Error al suscribirse a sedes:', err);
+      // Error silencioso
     }
 
     return () => {
@@ -169,7 +265,6 @@ function App() {
   };
 
   const handleSaveItem = async (item: ItemInventario) => {
-    console.log('🔵 handleSaveItem llamado con:', item);
     try {
       // Validar que el nombre sea único
       const nombreNormalizado = item.nombre.trim().toLowerCase();
@@ -188,23 +283,17 @@ function App() {
 
       if (editingItem) {
         // Actualizar item existente
-        console.log('🔵 Actualizando item existente:', item.id);
         await updateItem(item.id, item);
-        console.log('✅ Item actualizado exitosamente');
       } else {
         // Agregar nuevo item
-        console.log('🔵 Agregando nuevo item');
         const { id, ...itemData } = item;
-        console.log('🔵 Datos a guardar (sin id):', itemData);
-        const newId = await addItem(itemData);
-        console.log('✅ Item agregado exitosamente con ID:', newId);
+        await addItem(itemData);
       }
       setShowForm(false);
       setEditingItem(null);
     } catch (error: any) {
-      console.error('❌ Error en handleSaveItem:', error);
       const errorMessage = error?.message || 'Error desconocido al guardar el item';
-      alert(`Error al guardar el item: ${errorMessage}\n\nRevisa la consola del navegador para más detalles.`);
+      alert(`Error al guardar el item: ${errorMessage}`);
     }
   };
 
@@ -213,7 +302,6 @@ function App() {
       try {
         await deleteItem(id);
       } catch (error) {
-        console.error('Error al eliminar item:', error);
         alert('Error al eliminar el item. Por favor, intenta nuevamente.');
       }
     }
@@ -229,7 +317,6 @@ function App() {
       setCategorias(nuevasCategorias);
       await saveCategorias(nuevasCategorias);
     } catch (error) {
-      console.error('Error al guardar categorías:', error);
       alert('Error al guardar las categorías. Por favor, intenta nuevamente.');
     }
   };
@@ -239,7 +326,6 @@ function App() {
       setSedes(nuevasSedes);
       await saveSedes(nuevasSedes);
     } catch (error) {
-      console.error('Error al guardar sedes:', error);
       alert('Error al guardar las sedes. Por favor, intenta nuevamente.');
     }
   };
@@ -333,19 +419,17 @@ function App() {
     baja: items.filter(i => i.estado === 'Baja').length
   };
 
+  // Mostrar login si no está autenticado
+  if (checkingAuth) {
+    return null;
+  }
+
+  if (!user) {
+    return <Login />;
+  }
+
   if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 mb-2">Cargando inventario...</p>
-          {!isFirebaseReady && (
-            <p className="text-sm text-yellow-600">
-              Firebase no configurado. Usando modo local.
-            </p>
-          )}
-        </div>
-      </div>
-    );
+    return <Loader />;
   }
 
   return (
@@ -374,6 +458,13 @@ function App() {
                 title="Exportar a Excel"
               >
                 Exportar
+              </button>
+              <button
+                onClick={handleLogout}
+                className="px-3 py-1.5 text-sm font-medium text-red-700 bg-white border border-red-300 rounded-md hover:bg-red-50 transition-colors"
+                title="Cerrar sesión"
+              >
+                Cerrar Sesión
               </button>
             </div>
           </div>
