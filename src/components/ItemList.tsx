@@ -1,4 +1,5 @@
 import type { ItemInventario } from '../types/inventario';
+import { printQR } from '../utils/printQR';
 
 interface ItemListProps {
   items: ItemInventario[];
@@ -9,7 +10,6 @@ interface ItemListProps {
 }
 
 export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode }: ItemListProps) {
-
   const filteredItems = items.filter(item =>
     item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -65,9 +65,18 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
           }`}
         >
           <div className="flex justify-between items-start mb-4 pb-3 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {item.nombre}
-            </h3>
+            <div className="flex items-center gap-2 flex-1">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {item.nombre}
+              </h3>
+              <button
+                onClick={() => printQR(item)}
+                className="px-2 py-1 bg-gray-600 text-white text-xs font-medium rounded-md hover:bg-gray-700 transition-colors flex-shrink-0"
+                title="Imprimir código QR"
+              >
+                QR
+              </button>
+            </div>
             <span className={`text-xs font-semibold px-2 py-1 rounded ${getEstadoColor(item.estado)}`}>
               {item.estado}
             </span>
@@ -232,6 +241,13 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                     <td className="px-5 py-4 text-gray-700">{item.responsable}</td>
                     <td className="px-5 py-4">
                       <div className="flex gap-2">
+                        <button
+                          onClick={() => printQR(item)}
+                          className="px-3 py-1.5 bg-gray-600 text-white text-xs font-medium rounded-md hover:bg-gray-700 transition-colors"
+                          title="Imprimir código QR"
+                        >
+                          QR
+                        </button>
                         <button
                           onClick={() => onEdit(item)}
                           className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 transition-colors"

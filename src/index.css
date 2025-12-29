@@ -13,3 +13,88 @@
     font-weight: 600;
   }
 }
+
+/* Estilos para impresión de códigos QR */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  .print-only,
+  .print-only * {
+    visibility: visible;
+  }
+  
+  .print-only {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    page-break-after: always;
+  }
+  
+  .qr-label-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  .qr-code-wrapper {
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .qr-label-name {
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    color: #000;
+    max-width: 250px;
+    word-wrap: break-word;
+  }
+  
+  @page {
+    margin: 0;
+    size: A4;
+  }
+}
+
+/* Estilos para vista previa (no impresión) */
+.qr-preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.qr-preview-wrapper {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.qr-preview-name {
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  color: #111827;
+  max-width: 250px;
+  word-wrap: break-word;
+}
