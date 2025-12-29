@@ -1,10 +1,21 @@
 import type { ItemInventario } from '../types/inventario';
+import { generateQRToken } from '../services/qrTokenService';
 
 /**
  * Imprime un código QR con el nombre del equipo
  * Solo muestra el QR y el nombre, sin información adicional
  */
-export const printQR = (item: ItemInventario) => {
+export const printQR = async (item: ItemInventario) => {
+  // Generar token temporal de 15 minutos
+  let tokenId: string;
+  try {
+    tokenId = await generateQRToken(item.id);
+  } catch (error) {
+    console.error('Error al generar token QR:', error);
+    alert('Error al generar el código QR. Por favor, verifica tu conexión a Firebase e intenta nuevamente.');
+    return;
+  }
+
   // Crear un iframe oculto para la impresión
   const printFrame = document.createElement('iframe');
   printFrame.style.position = 'fixed';
@@ -17,10 +28,8 @@ export const printQR = (item: ItemInventario) => {
   printFrame.style.pointerEvents = 'none';
   document.body.appendChild(printFrame);
 
-  // Generar el valor del QR (puede ser una URL o el ID del item)
-  // Usar HashRouter, así que la ruta será #/item/:id
-  // Codificar el ID para manejar caracteres especiales
-  const qrValue = `${window.location.origin}/#/item/${encodeURIComponent(item.id)}`;
+  // Generar el valor del QR con el token temporal
+  const qrValue = `${window.location.origin}/item/${tokenId}`;
   
   // Crear el contenido HTML para imprimir
   const printContent = `

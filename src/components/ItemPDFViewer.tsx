@@ -4,6 +4,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import type { ItemInventario } from '../types/inventario';
 import { generateItemPDF } from '../utils/generateItemPDF';
+import { validateQRToken } from '../services/qrTokenService';
 import Loader from './Loader';
 
 export default function ItemPDFViewer() {
@@ -14,30 +15,24 @@ export default function ItemPDFViewer() {
 
   useEffect(() => {
     const fetchItem = async () => {
-      if (!id) {
-        setError('ID de item no válido');
-        setLoading(false);
-        return;
-      }
-
-      if (!db) {
-        setError('Firebase no está configurado');
+      if (!id || !db) {
+        setError('Token no válido o Firebase no configurado');
         setLoading(false);
         return;
       }
 
       try {
-        // Decodificar el ID si viene codificado
-        let decodedId: string;
-        try {
-          decodedId = decodeURIComponent(id);
-        } catch {
-          // Si falla la decodificación, usar el ID original
-          decodedId = id;
-        }
+        // Validar el token temporal
+        const itemId = await validateQRToken(id);
         
-        console.log('Buscando item con ID:', decodedId);
-        const itemDoc = await getDoc(doc(db, 'items', decodedId));
+        if (!itemId) {
+          setError('El código QR ha expirado o no es válido. Los códigos QR expiran después de 15 minutos.');
+          setLoading(false);
+          return;
+        }
+
+        // Obtener el item usando el itemId del token
+        const itemDoc = await getDoc(doc(db, 'items', itemId));
         if (itemDoc.exists()) {
           const itemData = { id: itemDoc.id, ...itemDoc.data() } as ItemInventario;
           setItem(itemData);
@@ -46,12 +41,11 @@ export default function ItemPDFViewer() {
             generateItemPDF(itemData);
           }, 500);
         } else {
-          setError(`Item no encontrado. ID: ${decodedId}`);
+          setError('Item no encontrado');
         }
-      } catch (err: any) {
-        const errorMessage = err?.message || 'Error desconocido';
-        setError(`Error al cargar el item: ${errorMessage}. ID intentado: ${id}`);
-        console.error('Error detallado:', err);
+      } catch (err) {
+        setError('Error al cargar el item');
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -70,10 +64,18 @@ export default function ItemPDFViewer() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+          <div className="mb-4">
+            <svg className="mx-auto h-16 w-16 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
           <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
-          <p className="text-gray-700">{error}</p>
+          <p className="text-gray-700 mb-6">{error}</p>
+          <p className="text-sm text-gray-500">
+            Si necesitas acceder al PDF, escanea un código QR nuevo desde el inventario.
+          </p>
         </div>
       </div>
     );
