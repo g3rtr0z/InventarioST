@@ -94,29 +94,23 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     
-    // Sanitizar y validar inputs de texto
+    // Permitir que el usuario escriba normalmente, solo validar patrones peligrosos
     if (type !== 'number' && typeof value === 'string') {
-      // Validar contra XSS
+      // Validar contra XSS (solo bloquear si es realmente peligroso)
       if (!validateNoXSS(value)) {
         setNombreError('El texto contiene caracteres no permitidos.');
         return;
       }
       
-      // Validar contra inyección SQL
+      // Validar contra inyección SQL (solo bloquear si es realmente peligroso)
       if (!validateNoSQLInjection(value)) {
         setNombreError('El texto contiene patrones sospechosos.');
         return;
       }
       
-      // Sanitizar el valor (pero mantenerlo editable)
-      const sanitizedValue = sanitizeText(value);
-      
-      if (type === 'number') {
-        const numValue = sanitizedValue === '' ? undefined : parseFloat(sanitizedValue);
-        setFormData(prev => ({ ...prev, [name]: numValue }));
-      } else {
-        setFormData(prev => ({ ...prev, [name]: sanitizedValue }));
-      }
+      // NO sanitizar mientras escribe, permitir espacios y caracteres normales
+      // Guardar el valor tal cual lo escribe el usuario
+      setFormData(prev => ({ ...prev, [name]: value }));
     } else if (type === 'number') {
       const numValue = value === '' ? undefined : parseFloat(value);
       setFormData(prev => ({ ...prev, [name]: numValue }));
@@ -640,3 +634,5 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     </div>
   );
 }
+
+
