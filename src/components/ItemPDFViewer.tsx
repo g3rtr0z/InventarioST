@@ -14,14 +14,30 @@ export default function ItemPDFViewer() {
 
   useEffect(() => {
     const fetchItem = async () => {
-      if (!id || !db) {
-        setError('ID de item no válido o Firebase no configurado');
+      if (!id) {
+        setError('ID de item no válido');
+        setLoading(false);
+        return;
+      }
+
+      if (!db) {
+        setError('Firebase no está configurado');
         setLoading(false);
         return;
       }
 
       try {
-        const itemDoc = await getDoc(doc(db, 'items', id));
+        // Decodificar el ID si viene codificado
+        let decodedId: string;
+        try {
+          decodedId = decodeURIComponent(id);
+        } catch {
+          // Si falla la decodificación, usar el ID original
+          decodedId = id;
+        }
+        
+        console.log('Buscando item con ID:', decodedId);
+        const itemDoc = await getDoc(doc(db, 'items', decodedId));
         if (itemDoc.exists()) {
           const itemData = { id: itemDoc.id, ...itemDoc.data() } as ItemInventario;
           setItem(itemData);
@@ -30,11 +46,12 @@ export default function ItemPDFViewer() {
             generateItemPDF(itemData);
           }, 500);
         } else {
-          setError('Item no encontrado');
+          setError(`Item no encontrado. ID: ${decodedId}`);
         }
-      } catch (err) {
-        setError('Error al cargar el item');
-        console.error(err);
+      } catch (err: any) {
+        const errorMessage = err?.message || 'Error desconocido';
+        setError(`Error al cargar el item: ${errorMessage}. ID intentado: ${id}`);
+        console.error('Error detallado:', err);
       } finally {
         setLoading(false);
       }

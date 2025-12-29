@@ -18,7 +18,9 @@ export const printQR = (item: ItemInventario) => {
   document.body.appendChild(printFrame);
 
   // Generar el valor del QR (puede ser una URL o el ID del item)
-  const qrValue = `${window.location.origin}/item/${item.id}`;
+  // Usar HashRouter, así que la ruta será #/item/:id
+  // Codificar el ID para manejar caracteres especiales
+  const qrValue = `${window.location.origin}/#/item/${encodeURIComponent(item.id)}`;
   
   // Crear el contenido HTML para imprimir
   const printContent = `
