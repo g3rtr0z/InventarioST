@@ -70,13 +70,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                 {item.nombre}
               </h3>
               <button
-                onClick={async () => {
-                  try {
-                    await printQR(item);
-                  } catch (error) {
-                    console.error('Error al imprimir QR:', error);
-                  }
-                }}
+                onClick={() => printQR(item)}
                 className="px-2 py-1 bg-gray-600 text-white text-xs font-medium rounded-md hover:bg-gray-700 transition-colors flex-shrink-0"
                 title="Imprimir código QR"
               >
@@ -248,13 +242,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                     <td className="px-5 py-4">
                       <div className="flex gap-2">
                         <button
-                          onClick={async () => {
-                            try {
-                              await printQR(item);
-                            } catch (error) {
-                              console.error('Error al imprimir QR:', error);
-                            }
-                          }}
+                          onClick={() => printQR(item)}
                           className="px-3 py-1.5 bg-gray-600 text-white text-xs font-medium rounded-md hover:bg-gray-700 transition-colors"
                           title="Imprimir código QR"
                         >

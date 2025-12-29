@@ -18,9 +18,9 @@ export const generateItemPDF = (item: ItemInventario): void => {
     doc.setFontSize(fontSize);
     doc.setTextColor(color);
     if (isBold) {
-      doc.setFont(undefined, 'bold');
+      doc.setFont('helvetica', 'bold');
     } else {
-      doc.setFont(undefined, 'normal');
+      doc.setFont('helvetica', 'normal');
     }
     
     const lines = doc.splitTextToSize(text, maxWidth);
