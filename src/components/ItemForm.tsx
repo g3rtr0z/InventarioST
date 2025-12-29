@@ -94,7 +94,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     
-    // Sanitizar y validar inputs de texto
+    // Solo validar en tiempo real, NO sanitizar (la sanitización se hace al enviar)
     if (type !== 'number' && typeof value === 'string') {
       // Validar contra XSS
       if (!validateNoXSS(value)) {
@@ -108,15 +108,8 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         return;
       }
       
-      // Sanitizar el valor (pero mantenerlo editable)
-      const sanitizedValue = sanitizeText(value);
-      
-      if (type === 'number') {
-        const numValue = sanitizedValue === '' ? undefined : parseFloat(sanitizedValue);
-        setFormData(prev => ({ ...prev, [name]: numValue }));
-      } else {
-        setFormData(prev => ({ ...prev, [name]: sanitizedValue }));
-      }
+      // Actualizar el valor sin sanitizar (permitir escritura normal)
+      setFormData(prev => ({ ...prev, [name]: value }));
     } else if (type === 'number') {
       const numValue = value === '' ? undefined : parseFloat(value);
       setFormData(prev => ({ ...prev, [name]: numValue }));
@@ -228,7 +221,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Sección: Información General */}
           <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-700 pb-2">
+            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
               Información General
             </h3>
             
@@ -244,7 +237,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                 onChange={handleChange}
                 required
                 placeholder="Ej: PC Oficina 1"
-                className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent rounded-md ${
+                className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent rounded-md ${
                   nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
                 }`}
               />
@@ -264,7 +257,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   value={formData.categoria}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700 bg-white rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
                 >
                   {categorias.length > 0 ? (
                     categorias.map(cat => (
@@ -286,7 +279,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   value={formData.estado}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700 bg-white rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
                 >
                   <option value="Disponible">Disponible</option>
                   <option value="En Uso">En Uso</option>
@@ -305,7 +298,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   value={formData.tipoUso}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700 bg-white rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
                 >
                   <option value="Administrativo">Administrativo</option>
                   <option value="Alumnos">Alumnos</option>
@@ -316,7 +309,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
 
           {/* Sección: Ubicación y Responsabilidad */}
           <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-700 pb-2">
+            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
               Ubicación y Responsabilidad
             </h3>
             
@@ -331,7 +324,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   value={formData.sede}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700 bg-white rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
                 >
                   {sedes.length > 0 ? (
                     sedes.map(sede => (
@@ -355,7 +348,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   onChange={handleChange}
                   required
                   placeholder="Ej: Oficina 101"
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700 rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
                 />
               </div>
 
@@ -368,7 +361,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   name="piso"
                   value={formData.piso}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700 bg-white rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
                 >
                   <option value="">Seleccionar Piso</option>
                   <option value="1">1</option>
@@ -388,7 +381,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   name="edificio"
                   value={formData.edificio}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700 bg-white rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
                 >
                   <option value="">Seleccionar Edificio</option>
                   <option value="A">A</option>
@@ -408,7 +401,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   onChange={handleChange}
                   required
                   placeholder="Ej: Juan Pérez"
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700 rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
                 />
               </div>
             </div>
@@ -416,7 +409,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
 
           {/* Sección: Especificaciones Técnicas */}
           <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-700 pb-2">
+            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
               Especificaciones Técnicas
             </h3>
             
@@ -433,7 +426,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   onChange={handleChange}
                   required
                   placeholder="Ej: Dell, HP, Lenovo"
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
                 />
               </div>
 
@@ -449,7 +442,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   onChange={handleChange}
                   required
                   placeholder="Ej: OptiPlex 7090"
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
                 />
               </div>
 
@@ -465,7 +458,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   onChange={handleChange}
                   required
                   placeholder="Ej: SN123456789"
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
                 />
               </div>
             </div>
@@ -482,7 +475,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   value={formData.procesador}
                   onChange={handleChange}
                   placeholder="Ej: Intel Core i5-10400"
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
                 />
               </div>
               
@@ -495,7 +488,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   name="ram"
                   value={formData.ram}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700 bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
                 >
                   <option value="">Seleccionar RAM</option>
                   <option value="8GB">8GB</option>
@@ -513,7 +506,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   name="discoDuro"
                   value={formData.discoDuro}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700 bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
                 >
                   <option value="">Seleccionar Disco Duro</option>
                   <option value="256GB">256GB</option>
@@ -526,7 +519,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
 
           {/* Sección: Información de Adquisición */}
           <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-700 pb-2">
+            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
               Información de Adquisición
             </h3>
             
@@ -540,14 +533,14 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                 name="fechaAdquisicion"
                 value={formData.fechaAdquisicion}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700 rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
               />
             </div>
           </div>
 
           {/* Sección: Mantenimiento */}
           <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-700 pb-2">
+            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
               Mantenimiento
             </h3>
             
@@ -562,7 +555,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   name="fechaUltimoMantenimiento"
                   value={formData.fechaUltimoMantenimiento}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
                 />
               </div>
 
@@ -576,7 +569,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   name="proximoMantenimiento"
                   value={formData.proximoMantenimiento}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700"
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
                 />
               </div>
             </div>
@@ -584,7 +577,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
 
           {/* Sección: Observaciones y Descripción */}
           <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-700 pb-2">
+            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
               Observaciones y Descripción
             </h3>
             
@@ -599,7 +592,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                 onChange={handleChange}
                 rows={3}
                 placeholder="Información adicional sobre el equipo..."
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700 resize-y"
+                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 resize-y"
               />
             </div>
 
@@ -614,7 +607,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                 onChange={handleChange}
                 rows={3}
                 placeholder="Notas adicionales, problemas conocidos, etc..."
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700 resize-y"
+                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 resize-y"
               />
             </div>
           </div>
@@ -630,7 +623,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors"
+              className="flex-1 px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-md transition-colors"
             >
               {item ? 'Actualizar' : 'Guardar'}
             </button>

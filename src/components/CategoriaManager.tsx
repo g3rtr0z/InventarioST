@@ -66,11 +66,11 @@ export default function CategoriaManager({ categorias, onCategoriasChange }: Cat
                     onChange={(e) => setNuevaCategoria(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Nombre de la categoría"
-                    className="flex-1 px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-700"
+                    className="flex-1 px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
                   />
                   <button
                     onClick={handleAgregar}
-                    className="px-3 py-1.5 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors"
+                    className="px-3 py-1.5 bg-green-600 text-white hover:bg-green-700 rounded-md transition-colors"
                     disabled={!nuevaCategoria.trim()}
                   >
                     +

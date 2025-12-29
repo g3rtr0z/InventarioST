@@ -23,7 +23,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
 
   const getEstadoColor = (estado: string) => {
     const estadoMap: Record<string, string> = {
-      'Disponible': 'bg-green-200 text-green-800',
+      'Disponible': 'bg-green-100 text-green-700',
       'En Uso': 'bg-blue-100 text-blue-700',
       'Mantenimiento': 'bg-yellow-100 text-yellow-700',
       'Baja': 'bg-red-100 text-red-700'
@@ -58,7 +58,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
         <div
           key={item.id}
           className={`bg-white border-2 rounded-lg p-5 shadow-sm hover:shadow-lg transition-all ${
-            item.estado === 'Disponible' ? 'border-green-300 hover:border-green-400' :
+            item.estado === 'Disponible' ? 'border-green-200 hover:border-green-300' :
             item.estado === 'En Uso' ? 'border-blue-200 hover:border-blue-300' :
             item.estado === 'Mantenimiento' ? 'border-yellow-200 hover:border-yellow-300' :
             'border-red-200 hover:border-red-300'
@@ -109,7 +109,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
             <div>
               <span className="text-gray-600">Tipo de Uso: </span>
               <span className={`text-gray-900 font-medium ${
-                item.tipoUso === 'Alumnos' ? 'text-blue-600' : 'text-green-800'
+                item.tipoUso === 'Alumnos' ? 'text-blue-600' : 'text-green-600'
               }`}>
                 {item.tipoUso}
               </span>
@@ -167,7 +167,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
           <div className="flex gap-2 pt-4 border-t border-gray-200">
             <button
               onClick={() => onEdit(item)}
-              className="flex-1 px-3 py-1.5 bg-green-800 text-white text-sm font-medium rounded-md hover:bg-green-900 transition-colors"
+              className="flex-1 px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
             >
               Editar
             </button>
@@ -224,7 +224,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                       <span className={`text-xs font-semibold px-2 py-1 rounded ${
                         item.tipoUso === 'Alumnos' 
                           ? 'bg-blue-100 text-blue-700' 
-                          : 'bg-green-200 text-green-800'
+                          : 'bg-green-100 text-green-700'
                       }`}>
                         {item.tipoUso}
                       </span>
@@ -234,7 +234,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                       <div className="flex gap-2">
                         <button
                           onClick={() => onEdit(item)}
-                          className="px-3 py-1.5 bg-green-800 text-white text-xs font-medium rounded-md hover:bg-green-900 transition-colors"
+                          className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 transition-colors"
                         >
                           Editar
                         </button>
