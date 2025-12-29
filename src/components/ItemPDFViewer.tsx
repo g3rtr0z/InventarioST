@@ -15,39 +15,132 @@ export default function ItemPDFViewer() {
 
   useEffect(() => {
     const fetchItem = async () => {
-      if (!id || !db) {
-        setError('Token no válido o Firebase no configurado');
-        setLoading(false);
-        return;
-      }
-
       try {
+        console.log('ItemPDFViewer: Iniciando carga, token ID:', id);
+        
+        if (!id) {
+          console.error('ItemPDFViewer: No hay ID de token');
+          setError('Token no válido');
+          setLoading(false);
+          return;
+        }
+
+        if (!db) {
+          console.error('ItemPDFViewer: Firebase no está configurado');
+          setError('Firebase no está configurado. Por favor, verifica la configuración.');
+          setLoading(false);
+          return;
+        }
+
+        console.log('ItemPDFViewer: Validando token...');
         // Validar el token temporal
         const itemId = await validateQRToken(id);
+        console.log('ItemPDFViewer: Token validado, itemId:', itemId);
         
         if (!itemId) {
+          console.warn('ItemPDFViewer: Token inválido o expirado');
           setError('El código QR ha expirado o no es válido. Los códigos QR expiran después de 15 minutos.');
           setLoading(false);
           return;
         }
 
+        console.log('ItemPDFViewer: Obteniendo item desde Firestore...');
         // Obtener el item usando el itemId del token
         const itemDoc = await getDoc(doc(db, 'items', itemId));
+        
         if (itemDoc.exists()) {
+          console.log('ItemPDFViewer: Item encontrado');
           const itemData = { id: itemDoc.id, ...itemDoc.data() } as ItemInventario;
           setItem(itemData);
           // Generar y descargar el PDF automáticamente
           setTimeout(() => {
-            generateItemPDF(itemData);
+            try {
+              console.log('ItemPDFViewer: Generando PDF...');
+              generateItemPDF(itemData);
+              console.log('ItemPDFViewer: PDF generado exitosamente');
+            } catch (pdfError) {
+              console.error('ItemPDFViewer: Error al generar PDF:', pdfError);
+              // No cambiar el estado de error aquí, solo loguear
+            }
           }, 500);
         } else {
-          setError('Item no encontrado');
+          console.warn('ItemPDFViewer: Item no encontrado en Firestore');
+          setError('Item no encontrado en el inventario.');
         }
-      } catch (err) {
-        setError('Error al cargar el item');
-        console.error(err);
+      } catch (err: any) {
+        console.error('ItemPDFViewer: Error completo:', err);
+        const errorMessage = err?.message || 'Error desconocido';
+        setError(`Error al cargar el item: ${errorMessage}`);
       } finally {
         setLoading(false);
+        console.log('ItemPDFViewer: Carga completada');
+      }
+    };
+
+    fetchItem();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchItem = async () => {
+      console.log('ItemPDFViewer: Iniciando carga, token ID:', id);
+      
+      if (!id) {
+        console.error('ItemPDFViewer: No hay ID de token');
+        setError('Token no válido');
+        setLoading(false);
+        return;
+      }
+
+      if (!db) {
+        console.error('ItemPDFViewer: Firebase no está configurado');
+        setError('Firebase no está configurado. Por favor, verifica la configuración.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        console.log('ItemPDFViewer: Validando token...');
+        // Validar el token temporal
+        const itemId = await validateQRToken(id);
+        console.log('ItemPDFViewer: Token validado, itemId:', itemId);
+        
+        if (!itemId) {
+          console.warn('ItemPDFViewer: Token inválido o expirado');
+          setError('El código QR ha expirado o no es válido. Los códigos QR expiran después de 15 minutos.');
+          setLoading(false);
+          return;
+        }
+
+        console.log('ItemPDFViewer: Obteniendo item desde Firestore...');
+        // Obtener el item usando el itemId del token
+        const itemDoc = await getDoc(doc(db, 'items', itemId));
+        
+        if (itemDoc.exists()) {
+          console.log('ItemPDFViewer: Item encontrado');
+          const itemData = { id: itemDoc.id, ...itemDoc.data() } as ItemInventario;
+          setItem(itemData);
+          // Generar y descargar el PDF automáticamente
+          setTimeout(() => {
+            try {
+              console.log('ItemPDFViewer: Generando PDF...');
+              generateItemPDF(itemData);
+              console.log('ItemPDFViewer: PDF generado exitosamente');
+            } catch (pdfError) {
+              console.error('ItemPDFViewer: Error al generar PDF:', pdfError);
+              // No cambiar el estado de error aquí, solo loguear
+            }
+          }, 500);
+        } else {
+          console.warn('ItemPDFViewer: Item no encontrado en Firestore');
+          setError('Item no encontrado en el inventario.');
+        }
+      } catch (err: any) {
+        console.error('ItemPDFViewer: Error completo:', err);
+        const errorMessage = err?.message || 'Error desconocido';
+        setError(`Error al cargar el item: ${errorMessage}`);
+      } finally {
+        setLoading(false);
+        console.log('ItemPDFViewer: Carga completada');
       }
     };
 
@@ -57,7 +150,10 @@ export default function ItemPDFViewer() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader />
+        <div className="text-center">
+          <Loader />
+          <p className="mt-4 text-gray-600">Cargando información del item...</p>
+        </div>
       </div>
     );
   }
@@ -92,54 +188,86 @@ export default function ItemPDFViewer() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-green-600 mb-2">
-            Información del Item
-          </h1>
-          <p className="text-gray-600">
-            El PDF se está generando y descargará automáticamente...
-          </p>
+  // Asegurar que siempre se renderice algo
+  try {
+    if (!item) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+            <h1 className="text-2xl font-bold text-gray-700 mb-4">Item no encontrado</h1>
+            <p className="text-gray-600">El item solicitado no existe en el inventario.</p>
+          </div>
         </div>
-        
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">Nombre del Equipo</h2>
-            <p className="text-gray-700">{item.nombre}</p>
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold text-green-600 mb-2">
+              Información del Item
+            </h1>
+            <p className="text-gray-600">
+              El PDF se está generando y descargará automáticamente...
+            </p>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-semibold text-gray-600">Categoría</h3>
-              <p className="text-gray-800">{item.categoria}</p>
+              <h2 className="text-lg font-semibold text-gray-800 mb-2">Nombre del Equipo</h2>
+              <p className="text-gray-700">{item.nombre}</p>
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-600">Estado</h3>
-              <p className="text-gray-800">{item.estado}</p>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-600">Categoría</h3>
+                <p className="text-gray-800">{item.categoria}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-600">Estado</h3>
+                <p className="text-gray-800">{item.estado}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-600">Marca</h3>
+                <p className="text-gray-800">{item.marca}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-600">Modelo</h3>
+                <p className="text-gray-800">{item.modelo}</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-600">Marca</h3>
-              <p className="text-gray-800">{item.marca}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-600">Modelo</h3>
-              <p className="text-gray-800">{item.modelo}</p>
-            </div>
-          </div>
 
-          <div className="pt-4 border-t border-gray-200">
-            <button
-              onClick={() => generateItemPDF(item)}
-              className="w-full px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 transition-colors"
-            >
-              Descargar PDF nuevamente
-            </button>
+            <div className="pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  try {
+                    generateItemPDF(item);
+                  } catch (err) {
+                    console.error('Error al generar PDF:', err);
+                    alert('Error al generar el PDF. Por favor, intenta nuevamente.');
+                  }
+                }}
+                className="w-full px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 transition-colors"
+              >
+                Descargar PDF nuevamente
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  } catch (renderError: any) {
+    console.error('Error al renderizar ItemPDFViewer:', renderError);
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Error de Renderizado</h1>
+          <p className="text-gray-700 mb-2">Ocurrió un error inesperado.</p>
+          <p className="text-sm text-gray-500">Por favor, recarga la página o escanea un código QR nuevo.</p>
+        </div>
+      </div>
+    );
+  }
 }
 
