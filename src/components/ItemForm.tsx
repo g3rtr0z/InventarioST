@@ -94,7 +94,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     
-    // Solo validar en tiempo real, NO sanitizar (la sanitización se hace al enviar)
+    // Sanitizar y validar inputs de texto
     if (type !== 'number' && typeof value === 'string') {
       // Validar contra XSS
       if (!validateNoXSS(value)) {
@@ -108,8 +108,15 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         return;
       }
       
-      // Actualizar el valor sin sanitizar (permitir escritura normal)
-      setFormData(prev => ({ ...prev, [name]: value }));
+      // Sanitizar el valor (pero mantenerlo editable)
+      const sanitizedValue = sanitizeText(value);
+      
+      if (type === 'number') {
+        const numValue = sanitizedValue === '' ? undefined : parseFloat(sanitizedValue);
+        setFormData(prev => ({ ...prev, [name]: numValue }));
+      } else {
+        setFormData(prev => ({ ...prev, [name]: sanitizedValue }));
+      }
     } else if (type === 'number') {
       const numValue = value === '' ? undefined : parseFloat(value);
       setFormData(prev => ({ ...prev, [name]: numValue }));
