@@ -230,18 +230,35 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
               <label htmlFor="nombre" className="block mb-1 text-sm text-gray-700">
                 Nombre del Equipo *
               </label>
-              <input
-                type="text"
-                id="nombre"
-                name="nombre"
-                value={formData.nombre}
-                onChange={handleChange}
-                required
-                placeholder="Ej: PC Oficina 1"
-                className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent rounded-md ${
-                  nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
-                }`}
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  id="nombre"
+                  name="nombre"
+                  value={formData.nombre}
+                  onChange={handleChange}
+                  required
+                  placeholder="Ej: PC Oficina 1"
+                  className={`flex-1 px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent rounded-md ${
+                    nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const prefix = 'ZCO054';
+                    if (formData.nombre.trim() === '') {
+                      setFormData(prev => ({ ...prev, nombre: prefix }));
+                    } else if (!formData.nombre.startsWith(prefix)) {
+                      setFormData(prev => ({ ...prev, nombre: `${prefix} ${prev.nombre}` }));
+                    }
+                  }}
+                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors whitespace-nowrap"
+                  title="Agregar prefijo ZCO054"
+                >
+                  + ZCO054
+                </button>
+              </div>
               {nombreError && (
                 <p className="mt-1 text-sm text-red-600">{nombreError}</p>
               )}
