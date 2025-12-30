@@ -254,9 +254,9 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                     }
                   }}
                   className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors whitespace-nowrap"
-                  title="Agregar prefijo ZCO054"
+                  title="Agregar prefijo ZCO054PCAD"
                 >
-                  + ZCO054
+                  + ZCO054PCAD
                 </button>
               </div>
               {nombreError && (
