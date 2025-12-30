@@ -246,7 +246,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                 <button
                   type="button"
                   onClick={() => {
-                    const prefix = 'ZCO054';
+                    const prefix = 'ZCO054PCAD';
                     if (formData.nombre.trim() === '') {
                       setFormData(prev => ({ ...prev, nombre: prefix }));
                     } else if (!formData.nombre.startsWith(prefix)) {
@@ -510,7 +510,9 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                 >
                   <option value="">Seleccionar RAM</option>
                   <option value="8GB">8GB</option>
+                  <option value="12GB">12GB</option>
                   <option value="16GB">16GB</option>
+                  <option value="20GB">20GB</option>
                   <option value="32GB">32GB</option>
                 </select>
               </div>
