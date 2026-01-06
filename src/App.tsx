@@ -20,6 +20,7 @@ import { isFirebaseReady, auth } from './config/firebase';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { exportToExcel } from './utils/exportToExcel';
 import { useSecurityHeaders } from './hooks/useSecurityHeaders';
+import { useUserRole } from './hooks/useUserRole';
 
 const CATEGORIAS_DEFAULT = [
   'Computadora',
@@ -42,6 +43,7 @@ function App() {
   
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const { isAdmin } = useUserRole(user);
   const [items, setItems] = useState<ItemInventario[]>([]);
   const [categorias, setCategorias] = useState<string[]>(CATEGORIAS_DEFAULT);
   const [searchTerm, setSearchTerm] = useState('');
@@ -522,10 +524,12 @@ function App() {
                 <CategoriaManager
                   categorias={categorias}
                   onCategoriasChange={handleCategoriasChange}
+                  isAdmin={isAdmin}
                 />
                 <SedeManager
                   sedes={sedes}
                   onSedesChange={handleSedesChange}
+                  isAdmin={isAdmin}
                 />
                 <div className="flex gap-0.5 bg-gray-100 rounded-md overflow-hidden border border-gray-300">
                   <button
@@ -557,10 +561,12 @@ function App() {
               <CategoriaManager
                 categorias={categorias}
                 onCategoriasChange={handleCategoriasChange}
+                isAdmin={isAdmin}
               />
               <SedeManager
                 sedes={sedes}
                 onSedesChange={handleSedesChange}
+                isAdmin={isAdmin}
               />
               <div className="flex gap-0.5 bg-gray-100 rounded-md ml-auto overflow-hidden border border-gray-300">
                 <button
@@ -785,6 +791,7 @@ function App() {
             items={items}
             onSave={handleSaveItem}
             onCancel={handleCancelForm}
+            isAdmin={isAdmin}
           />
         )}
 

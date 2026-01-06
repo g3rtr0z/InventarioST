@@ -3,9 +3,10 @@ import { useState } from 'react';
 interface SedeManagerProps {
   sedes: string[];
   onSedesChange: (sedes: string[]) => void;
+  isAdmin?: boolean;
 }
 
-export default function SedeManager({ sedes, onSedesChange }: SedeManagerProps) {
+export default function SedeManager({ sedes, onSedesChange, isAdmin = false }: SedeManagerProps) {
   const [nuevaSede, setNuevaSede] = useState('');
   const [showManager, setShowManager] = useState(false);
 
@@ -28,6 +29,11 @@ export default function SedeManager({ sedes, onSedesChange }: SedeManagerProps) 
       handleAgregar();
     }
   };
+
+  // Si no es administrador, no mostrar el botón
+  if (!isAdmin) {
+    return null;
+  }
 
   return (
     <>

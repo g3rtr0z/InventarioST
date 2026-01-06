@@ -3,9 +3,10 @@ import { useState } from 'react';
 interface CategoriaManagerProps {
   categorias: string[];
   onCategoriasChange: (categorias: string[]) => void;
+  isAdmin?: boolean;
 }
 
-export default function CategoriaManager({ categorias, onCategoriasChange }: CategoriaManagerProps) {
+export default function CategoriaManager({ categorias, onCategoriasChange, isAdmin = false }: CategoriaManagerProps) {
   const [nuevaCategoria, setNuevaCategoria] = useState('');
   const [showManager, setShowManager] = useState(false);
 
@@ -28,6 +29,11 @@ export default function CategoriaManager({ categorias, onCategoriasChange }: Cat
       handleAgregar();
     }
   };
+
+  // Si no es administrador, no mostrar el botón
+  if (!isAdmin) {
+    return null;
+  }
 
   return (
     <>

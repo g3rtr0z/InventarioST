@@ -9,9 +9,10 @@ interface ItemFormProps {
   items: ItemInventario[];
   onSave: (item: ItemInventario) => void;
   onCancel: () => void;
+  isAdmin?: boolean;
 }
 
-export default function ItemForm({ item, categorias, sedes, items, onSave, onCancel }: ItemFormProps) {
+export default function ItemForm({ item, categorias, sedes, items, onSave, onCancel, isAdmin = false }: ItemFormProps) {
   const [formData, setFormData] = useState<Omit<ItemInventario, 'id'>>({
     nombre: '',
     categoria: categorias.length > 0 ? categorias[0] : '',
@@ -230,35 +231,18 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
               <label htmlFor="nombre" className="block mb-1 text-sm text-gray-700">
                 Nombre del Equipo *
               </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  id="nombre"
-                  name="nombre"
-                  value={formData.nombre}
-                  onChange={handleChange}
-                  required
-                  placeholder="Ej: PC Oficina 1"
-                  className={`flex-1 px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent rounded-md ${
-                    nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
-                  }`}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const prefix = 'ZCO054PCAD';
-                    if (formData.nombre.trim() === '') {
-                      setFormData(prev => ({ ...prev, nombre: prefix }));
-                    } else if (!formData.nombre.startsWith(prefix)) {
-                      setFormData(prev => ({ ...prev, nombre: `${prefix} ${prev.nombre}` }));
-                    }
-                  }}
-                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors whitespace-nowrap"
-                  title="Agregar prefijo ZCO054PCAD"
-                >
-                  + ZCO054PCAD
-                </button>
-              </div>
+              <input
+                type="text"
+                id="nombre"
+                name="nombre"
+                value={formData.nombre}
+                onChange={handleChange}
+                required
+                placeholder="Ej: PC Oficina 1"
+                className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent rounded-md ${
+                  nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
+                }`}
+              />
               {nombreError && (
                 <p className="mt-1 text-sm text-red-600">{nombreError}</p>
               )}
@@ -275,7 +259,11 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   value={formData.categoria}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                  disabled={!isAdmin}
+                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md ${
+                    !isAdmin ? 'bg-gray-100 cursor-not-allowed opacity-75' : ''
+                  }`}
+                  title={!isAdmin ? 'Solo usuarios administrativos pueden cambiar la categoría' : ''}
                 >
                   {categorias.length > 0 ? (
                     categorias.map(cat => (
@@ -342,7 +330,11 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   value={formData.sede}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                  disabled={!isAdmin}
+                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md ${
+                    !isAdmin ? 'bg-gray-100 cursor-not-allowed opacity-75' : ''
+                  }`}
+                  title={!isAdmin ? 'Solo usuarios administrativos pueden cambiar la sede' : ''}
                 >
                   {sedes.length > 0 ? (
                     sedes.map(sede => (
@@ -510,9 +502,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                 >
                   <option value="">Seleccionar RAM</option>
                   <option value="8GB">8GB</option>
-                  <option value="12GB">12GB</option>
                   <option value="16GB">16GB</option>
-                  <option value="20GB">20GB</option>
                   <option value="32GB">32GB</option>
                 </select>
               </div>
