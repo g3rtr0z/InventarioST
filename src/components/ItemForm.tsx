@@ -494,6 +494,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   <option value="">Seleccionar RAM</option>
                   <option value="8GB">8GB</option>
                   <option value="16GB">16GB</option>
+                  <option value="20GB">20GB</option>
                   <option value="32GB">32GB</option>
                 </select>
               </div>
