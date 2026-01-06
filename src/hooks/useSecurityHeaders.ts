@@ -53,7 +53,7 @@ export function useSecurityHeaders() {
     // Prevenir clickjacking
     const preventClickjacking = () => {
       if (window.top !== window.self) {
-        window.top!.location = window.self.location;
+        window.top!.location.href = window.self.location.href;
       }
     };
 

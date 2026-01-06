@@ -234,7 +234,10 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                     <td className="px-5 py-4">
                       <div className="flex gap-2">
                         <button
-                          onClick={() => printQR(item)}
+                          onClick={() => {
+                            // TODO: Implementar función de impresión de QR
+                            console.log('Imprimir QR para:', item);
+                          }}
                           className="px-3 py-1.5 bg-gray-600 text-white text-xs font-medium rounded-md hover:bg-gray-700 transition-colors"
                           title="Imprimir código QR"
                         >

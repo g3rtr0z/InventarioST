@@ -5,6 +5,7 @@ import ItemForm from './components/ItemForm';
 import CategoriaManager from './components/CategoriaManager';
 import SedeManager from './components/SedeManager';
 import UserManager from './components/UserManager';
+import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
 import Loader from './components/Loader';
 import {
@@ -44,7 +45,7 @@ function App() {
   
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const { isAdmin } = useUserRole(user);
+  const { isAdmin, loading: loadingRole } = useUserRole(user);
   const [items, setItems] = useState<ItemInventario[]>([]);
   const [categorias, setCategorias] = useState<string[]>(CATEGORIAS_DEFAULT);
   const [searchTerm, setSearchTerm] = useState('');
@@ -431,8 +432,64 @@ function App() {
     return <Login />;
   }
 
-  if (loading) {
+  if (loading || loadingRole) {
     return <Loader />;
+  }
+
+  // Si es administrador, mostrar el panel de administración como vista principal
+  if (isAdmin) {
+    const filteredItems = items.filter(item => {
+      const matchesEstado = filterEstado === 'Todos' || item.estado === filterEstado;
+      const matchesCategoria = filterCategoria === 'Todas' || item.categoria === filterCategoria;
+      const matchesSede = filterSede === 'Todas' || item.sede === filterSede;
+      const matchesTipoUso = filterTipoUso === 'Todos' || item.tipoUso === filterTipoUso;
+      return matchesEstado && matchesCategoria && matchesSede && matchesTipoUso;
+    });
+
+    const filteredAndSearchedItems = filteredItems.filter(item =>
+      item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.marca.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.numeroSerie.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.ubicacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.proveedor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.numeroFactura?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return (
+      <AdminPanel
+        isAdmin={isAdmin}
+        currentUserEmail={user?.email || ''}
+        categorias={categorias}
+        sedes={sedes}
+        items={items}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        filterEstado={filterEstado}
+        setFilterEstado={setFilterEstado}
+        filterCategoria={filterCategoria}
+        setFilterCategoria={setFilterCategoria}
+        filterSede={filterSede}
+        setFilterSede={setFilterSede}
+        filterTipoUso={filterTipoUso}
+        setFilterTipoUso={setFilterTipoUso}
+        onCategoriasChange={handleCategoriasChange}
+        onSedesChange={handleSedesChange}
+        onAddItem={handleAddItem}
+        onEditItem={handleEditItem}
+        onDeleteItem={handleDeleteItem}
+        onSaveItem={handleSaveItem}
+        onCancelForm={handleCancelForm}
+        showForm={showForm}
+        editingItem={editingItem}
+        filteredAndSearchedItems={filteredAndSearchedItems}
+        onExportExcel={handleExportExcel}
+        onLogout={handleLogout}
+      />
+    );
   }
 
   return (
