@@ -22,8 +22,8 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
 
   const getEstadoColor = (estado: string) => {
     const estadoMap: Record<string, string> = {
-      'Disponible': 'bg-green-100 text-green-700',
-      'En Uso': 'bg-blue-100 text-blue-700',
+      'Disponible': 'bg-green-100 text-green-800',
+      'En Uso': 'bg-green-100 text-green-800',
       'Mantenimiento': 'bg-yellow-100 text-yellow-700',
       'Baja': 'bg-red-100 text-red-700'
     };
@@ -58,7 +58,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
           key={item.id}
           className={`bg-white border-2 rounded-lg p-5 shadow-sm hover:shadow-lg transition-all flex flex-col ${
             item.estado === 'Disponible' ? 'border-green-200 hover:border-green-300' :
-            item.estado === 'En Uso' ? 'border-blue-200 hover:border-blue-300' :
+            item.estado === 'En Uso' ? 'border-green-200 hover:border-green-300' :
             item.estado === 'Mantenimiento' ? 'border-yellow-200 hover:border-yellow-300' :
             'border-red-200 hover:border-red-300'
           }`}
@@ -168,7 +168,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
           <div className="flex gap-2 pt-4 border-t border-gray-200 mt-auto">
             <button
               onClick={() => onEdit(item)}
-              className="flex-1 px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+              className="flex-1 px-3 py-1.5 bg-green-800 text-white text-sm font-medium rounded-md hover:bg-green-900 transition-colors"
             >
               Editar
             </button>
@@ -245,7 +245,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                         </button>
                         <button
                           onClick={() => onEdit(item)}
-                          className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-md hover:bg-green-700 transition-colors"
+                          className="px-3 py-1.5 bg-green-800 text-white text-xs font-medium rounded-md hover:bg-green-900 transition-colors"
                         >
                           Editar
                         </button>

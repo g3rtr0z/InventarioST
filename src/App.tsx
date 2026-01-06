@@ -498,11 +498,18 @@ function App() {
         {/* Header */}
         <header className="mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-      <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-1">
-                Inventario
-              </h1>
-              <p className="text-sm text-gray-500">Departamento de Informática</p>
+      <div className="flex items-center gap-3">
+              <img 
+                src="/assets/logopag-lL0w0gLE.png" 
+                alt="Logo Institucional" 
+                className="w-30 h-20 object-contain"
+              />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-1">
+                  Inventario
+                </h1>
+                <p className="text-sm text-gray-500">Departamento de Informática</p>
+              </div>
             </div>
             <div className="flex gap-2">
               <button
@@ -551,11 +558,11 @@ function App() {
                 placeholder="Buscar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent transition-all"
               />
               <button
                 onClick={handleAddItem}
-                className="px-3 py-2.5 bg-green-600 text-white hover:bg-green-700 rounded-md transition-colors text-sm flex-shrink-0"
+                className="px-3 py-2.5 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm flex-shrink-0"
                 title="Agregar Item"
               >
                 +
@@ -569,12 +576,12 @@ function App() {
                 placeholder="Buscar por nombre, marca, modelo, serie, ubicación..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent transition-all"
               />
               <div className="flex gap-2 items-center">
                 <button
                   onClick={handleAddItem}
-                  className="px-3 py-2.5 bg-green-600 text-white hover:bg-green-700 rounded-md transition-colors text-sm"
+                  className="px-3 py-2.5 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm"
                   title="Agregar Item"
                 >
                   +
@@ -598,7 +605,7 @@ function App() {
                     onClick={() => setViewMode('cards')}
                     className={`px-3 py-2.5 text-sm font-medium transition-colors border-r border-gray-300 ${
                       viewMode === 'cards' 
-                        ? 'bg-green-600 text-white shadow-sm' 
+                        ? 'bg-green-800 text-white shadow-sm' 
                         : 'bg-white text-gray-600 hover:text-gray-900'
                     }`}
                   >
@@ -608,7 +615,7 @@ function App() {
                     onClick={() => setViewMode('table')}
                     className={`px-3 py-2.5 text-sm font-medium transition-colors ${
                       viewMode === 'table' 
-                        ? 'bg-green-600 text-white shadow-sm' 
+                        ? 'bg-green-800 text-white shadow-sm' 
                         : 'bg-white text-gray-600 hover:text-gray-900'
                     }`}
                   >
@@ -677,7 +684,7 @@ function App() {
                   <select
                     value={filterSede}
                     onChange={(e) => setFilterSede(e.target.value)}
-                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent bg-white"
                   >
                     <option value="Todas">Todas las sedes</option>
                     {sedes.map(sede => (
@@ -688,7 +695,7 @@ function App() {
                   <select
                     value={filterEstado}
                     onChange={(e) => setFilterEstado(e.target.value)}
-                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent bg-white"
                   >
                     <option value="Todos">Todos los estados</option>
                     <option value="Disponible">Disponible</option>
@@ -700,7 +707,7 @@ function App() {
                   <select
                     value={filterCategoria}
                     onChange={(e) => setFilterCategoria(e.target.value)}
-                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent bg-white"
                   >
                     <option value="Todas">Todas las categorías</option>
                     {categorias.map(cat => (
@@ -711,7 +718,7 @@ function App() {
                   <select
                     value={filterTipoUso}
                     onChange={(e) => setFilterTipoUso(e.target.value)}
-                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent bg-white"
                   >
                     <option value="Todos">Todos los tipos</option>
                     <option value="Administrativo">Administrativo</option>
@@ -816,7 +823,7 @@ function App() {
                           onClick={() => setCurrentPage(pageNum)}
                           className={`px-3 py-1.5 text-sm border rounded-md transition-colors ${
                             currentPage === pageNum
-                              ? 'bg-green-600 text-white border-green-600'
+                              ? 'bg-green-800 text-white border-green-800'
                               : 'border-gray-300 hover:bg-gray-50'
                           }`}
                         >
@@ -888,8 +895,8 @@ function App() {
                     <div className="text-3xl font-bold text-green-700 mb-1">{estadisticas.disponible}</div>
                     <div className="text-xs text-gray-600 font-medium">Disponibles</div>
                   </div>
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="text-3xl font-bold text-blue-700 mb-1">{estadisticas.enUso}</div>
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="text-3xl font-bold text-green-800 mb-1">{estadisticas.enUso}</div>
                     <div className="text-xs text-gray-600 font-medium">En Uso</div>
                   </div>
                   <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
@@ -929,7 +936,7 @@ function App() {
                         <div className="text-xs text-gray-600 font-medium">Disponibles</div>
                       </div>
                       <div className="text-center sm:text-left">
-                        <div className="text-xl sm:text-2xl font-bold text-blue-700 mb-1">{statsSede.enUso}</div>
+                        <div className="text-xl sm:text-2xl font-bold text-green-800 mb-1">{statsSede.enUso}</div>
                         <div className="text-xs text-gray-600 font-medium">En Uso</div>
                       </div>
                       <div className="text-center sm:text-left">
@@ -953,7 +960,7 @@ function App() {
                   onClick={() => setActiveTab('general')}
                   className={`px-4 py-2 text-sm font-medium transition-colors ${
                     activeTab === 'general'
-                      ? 'text-gray-900 border-t-2 border-green-600 -mt-4 pt-2'
+                      ? 'text-gray-900 border-t-2 border-green-800 -mt-4 pt-2'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
@@ -963,7 +970,7 @@ function App() {
                   onClick={() => setActiveTab('sedes')}
                   className={`px-4 py-2 text-sm font-medium transition-colors ${
                     activeTab === 'sedes'
-                      ? 'text-gray-900 border-t-2 border-green-600 -mt-4 pt-2'
+                      ? 'text-gray-900 border-t-2 border-green-800 -mt-4 pt-2'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
