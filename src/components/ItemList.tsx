@@ -56,7 +56,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
       {filteredItems.map(item => (
         <div
           key={item.id}
-          className={`bg-white border-2 rounded-lg p-5 shadow-sm hover:shadow-lg transition-all ${
+          className={`bg-white border-2 rounded-lg p-5 shadow-sm hover:shadow-lg transition-all flex flex-col ${
             item.estado === 'Disponible' ? 'border-green-200 hover:border-green-300' :
             item.estado === 'En Uso' ? 'border-blue-200 hover:border-blue-300' :
             item.estado === 'Mantenimiento' ? 'border-yellow-200 hover:border-yellow-300' :
@@ -74,7 +74,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
             </span>
           </div>
 
-          <div className="space-y-2 text-sm mb-3">
+          <div className="space-y-2 text-sm mb-3 flex-grow">
             <div>
               <span className="text-gray-600">Categoría: </span>
               <span className="text-gray-900">{item.categoria}</span>
@@ -165,7 +165,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
             )}
           </div>
 
-          <div className="flex gap-2 pt-4 border-t border-gray-200">
+          <div className="flex gap-2 pt-4 border-t border-gray-200 mt-auto">
             <button
               onClick={() => onEdit(item)}
               className="flex-1 px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
