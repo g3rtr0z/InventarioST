@@ -19,7 +19,22 @@ El sistema ahora incluye un control de roles que separa las funcionalidades entr
 
 ## 🔧 Cómo Asignar Rol de Administrador
 
-### Opción 1: Desde Firebase Console (Recomendado)
+### Opción 1: Desde la Interfaz de Usuarios (Recomendado) ⭐
+
+**Esta es la forma más fácil y recomendada:**
+
+1. Inicia sesión como administrador
+2. Haz clic en el botón **"👥 Usuarios"** en la barra de herramientas
+3. En la lista de usuarios, busca el usuario al que quieres cambiar el rol
+4. En la columna de acciones, selecciona el rol deseado del menú desplegable:
+   - **Usuario**: Rol regular (sin permisos administrativos)
+   - **Administrador**: Rol con permisos completos
+5. Confirma el cambio cuando se te solicite
+6. El cambio se aplicará inmediatamente
+
+**Nota**: No puedes cambiar tu propio rol por seguridad.
+
+### Opción 2: Desde Firebase Console
 
 1. Ve a [Firebase Console](https://console.firebase.google.com/)
 2. Selecciona tu proyecto
@@ -37,7 +52,7 @@ Colección: userRoles
       └── role: "administrador"
 ```
 
-### Opción 2: Desde la Consola del Navegador (Desarrollo)
+### Opción 3: Desde la Consola del Navegador (Desarrollo)
 
 Si estás en modo desarrollo, puedes ejecutar este código en la consola del navegador:
 
@@ -49,7 +64,7 @@ import { setUserRole } from './services/userRoleService';
 await setUserRole('usuario@ejemplo.com', 'administrador');
 ```
 
-### Opción 3: Crear un Script Temporal
+### Opción 4: Crear un Script Temporal
 
 Puedes crear un archivo temporal `assignAdmin.ts` en la raíz del proyecto:
 
@@ -76,7 +91,9 @@ npx ts-node assignAdmin.ts
 
 ## 📝 Notas Importantes
 
-1. **Por defecto**: Todos los usuarios nuevos tienen el rol `usuario` automáticamente.
+1. **Registro automático**: Cuando un usuario inicia sesión por primera vez, se registra automáticamente en el sistema con rol `usuario`.
+2. **Por defecto**: Todos los usuarios nuevos tienen el rol `usuario` automáticamente.
+3. **Gestión desde interfaz**: Los administradores pueden gestionar usuarios directamente desde la interfaz sin necesidad de acceder a Firebase Console.
 
 2. **Roles disponibles**:
    - `usuario`: Usuario regular (sin permisos administrativos)

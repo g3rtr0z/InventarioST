@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { User } from 'firebase/auth';
-import { getUserRole, isUserAdmin, type UserRole } from '../services/userRoleService';
+import { getUserRole, isUserAdmin, registerUser, type UserRole } from '../services/userRoleService';
 
 export function useUserRole(user: User | null) {
   const [userRole, setUserRole] = useState<UserRole>('usuario');
@@ -18,6 +18,10 @@ export function useUserRole(user: User | null) {
     const checkRole = async () => {
       try {
         setLoading(true);
+        // Registrar/actualizar usuario en Firestore
+        await registerUser(user.email!, user.displayName || undefined, new Date().toISOString());
+        
+        // Obtener rol del usuario
         const role = await getUserRole(user.email!);
         const admin = await isUserAdmin(user.email);
         setUserRole(role);

@@ -4,6 +4,7 @@ import ItemList from './components/ItemList';
 import ItemForm from './components/ItemForm';
 import CategoriaManager from './components/CategoriaManager';
 import SedeManager from './components/SedeManager';
+import UserManager from './components/UserManager';
 import Login from './components/Login';
 import Loader from './components/Loader';
 import {
@@ -531,6 +532,10 @@ function App() {
                   onSedesChange={handleSedesChange}
                   isAdmin={isAdmin}
                 />
+                <UserManager
+                  isAdmin={isAdmin}
+                  currentUserEmail={user?.email || ''}
+                />
                 <div className="flex gap-0.5 bg-gray-100 rounded-md overflow-hidden border border-gray-300">
                   <button
                     onClick={() => setViewMode('cards')}
@@ -567,6 +572,10 @@ function App() {
                 sedes={sedes}
                 onSedesChange={handleSedesChange}
                 isAdmin={isAdmin}
+              />
+              <UserManager
+                isAdmin={isAdmin}
+                currentUserEmail={user?.email || ''}
               />
               <div className="flex gap-0.5 bg-gray-100 rounded-md ml-auto overflow-hidden border border-gray-300">
                 <button
@@ -791,7 +800,6 @@ function App() {
             items={items}
             onSave={handleSaveItem}
             onCancel={handleCancelForm}
-            isAdmin={isAdmin}
           />
         )}
 

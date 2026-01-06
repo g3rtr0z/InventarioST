@@ -9,10 +9,9 @@ interface ItemFormProps {
   items: ItemInventario[];
   onSave: (item: ItemInventario) => void;
   onCancel: () => void;
-  isAdmin?: boolean;
 }
 
-export default function ItemForm({ item, categorias, sedes, items, onSave, onCancel, isAdmin = false }: ItemFormProps) {
+export default function ItemForm({ item, categorias, sedes, items, onSave, onCancel }: ItemFormProps) {
   const [formData, setFormData] = useState<Omit<ItemInventario, 'id'>>({
     nombre: '',
     categoria: categorias.length > 0 ? categorias[0] : '',
@@ -259,11 +258,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   value={formData.categoria}
                   onChange={handleChange}
                   required
-                  disabled={!isAdmin}
-                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md ${
-                    !isAdmin ? 'bg-gray-100 cursor-not-allowed opacity-75' : ''
-                  }`}
-                  title={!isAdmin ? 'Solo usuarios administrativos pueden cambiar la categoría' : ''}
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
                 >
                   {categorias.length > 0 ? (
                     categorias.map(cat => (
@@ -330,11 +325,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                   value={formData.sede}
                   onChange={handleChange}
                   required
-                  disabled={!isAdmin}
-                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md ${
-                    !isAdmin ? 'bg-gray-100 cursor-not-allowed opacity-75' : ''
-                  }`}
-                  title={!isAdmin ? 'Solo usuarios administrativos pueden cambiar la sede' : ''}
+                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
                 >
                   {sedes.length > 0 ? (
                     sedes.map(sede => (

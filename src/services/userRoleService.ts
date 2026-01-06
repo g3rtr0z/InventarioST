@@ -2,13 +2,27 @@ import {
   doc, 
   getDoc, 
   setDoc,
+  getDocs,
+  collection,
+  query,
+  orderBy,
   type Firestore
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 const ROLES_COLLECTION = 'userRoles';
+const USERS_COLLECTION = 'users';
 
 export type UserRole = 'administrador' | 'usuario';
+
+export interface UserInfo {
+  email: string;
+  displayName?: string;
+  role: UserRole;
+  createdAt: string;
+  lastLogin?: string;
+  isActive: boolean;
+}
 
 /**
  * Obtener el rol de un usuario por su email
@@ -65,5 +79,131 @@ export const isUserAdmin = async (userEmail: string | null | undefined): Promise
   
   const role = await getUserRole(userEmail);
   return role === 'administrador';
+};
+
+/**
+ * Registrar o actualizar información de usuario en Firestore
+ * Se llama automáticamente cuando un usuario inicia sesión
+ */
+export const registerUser = async (
+  email: string, 
+  displayName?: string,
+  lastLogin?: string
+): Promise<void> => {
+  if (!db) {
+    return;
+  }
+
+  try {
+    const userRef = doc(db as Firestore, USERS_COLLECTION, email);
+    const userDoc = await getDoc(userRef);
+    
+    const role = await getUserRole(email);
+    const now = new Date().toISOString();
+    
+    if (userDoc.exists()) {
+      // Actualizar usuario existente
+      await setDoc(userRef, {
+        email,
+        displayName: displayName || userDoc.data().displayName || '',
+        role,
+        createdAt: userDoc.data().createdAt || now,
+        lastLogin: lastLogin || now,
+        isActive: true
+      }, { merge: true });
+    } else {
+      // Crear nuevo usuario
+      await setDoc(userRef, {
+        email,
+        displayName: displayName || '',
+        role,
+        createdAt: now,
+        lastLogin: lastLogin || now,
+        isActive: true
+      });
+    }
+  } catch (error) {
+    console.error('Error al registrar usuario:', error);
+  }
+};
+
+/**
+ * Obtener todos los usuarios registrados
+ */
+export const getAllUsers = async (): Promise<UserInfo[]> => {
+  if (!db) {
+    return [];
+  }
+
+  try {
+    const q = query(
+      collection(db as Firestore, USERS_COLLECTION),
+      orderBy('createdAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(doc => ({
+      ...doc.data()
+    })) as UserInfo[];
+  } catch (error) {
+    console.error('Error al obtener usuarios:', error);
+    return [];
+  }
+};
+
+/**
+ * Cambiar el rol de un usuario
+ */
+export const changeUserRole = async (
+  userEmail: string, 
+  newRole: UserRole
+): Promise<void> => {
+  if (!db) {
+    throw new Error('Firestore no está disponible');
+  }
+
+  try {
+    // Actualizar rol en la colección de roles
+    await setUserRole(userEmail, newRole);
+    
+    // Actualizar rol en la información del usuario
+    const userRef = doc(db as Firestore, USERS_COLLECTION, userEmail);
+    const userDoc = await getDoc(userRef);
+    
+    if (userDoc.exists()) {
+      await setDoc(userRef, { role: newRole }, { merge: true });
+    } else {
+      // Si no existe en users, crearlo
+      await setDoc(userRef, {
+        email: userEmail,
+        role: newRole,
+        createdAt: new Date().toISOString(),
+        isActive: true
+      });
+    }
+  } catch (error) {
+    console.error('Error al cambiar rol de usuario:', error);
+    throw error;
+  }
+};
+
+/**
+ * Desactivar o activar un usuario
+ */
+export const toggleUserStatus = async (
+  userEmail: string,
+  isActive: boolean
+): Promise<void> => {
+  if (!db) {
+    throw new Error('Firestore no está disponible');
+  }
+
+  try {
+    const userRef = doc(db as Firestore, USERS_COLLECTION, userEmail);
+    await setDoc(userRef, { isActive }, { merge: true });
+  } catch (error) {
+    console.error('Error al cambiar estado de usuario:', error);
+    throw error;
+  }
 };
 
