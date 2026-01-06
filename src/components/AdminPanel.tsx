@@ -98,6 +98,12 @@ export default function AdminPanel({
   });
   const sidebarTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [sortBy, setSortBy] = useState<'nombre' | 'categoria' | 'estado' | 'ubicacion'>('nombre');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  
   // Estados para gestión de usuarios
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -143,6 +149,46 @@ export default function AdminPanel({
       }
     };
   }, []);
+
+  // Resetear página cuando cambian los filtros o búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterEstado, filterCategoria, filterSede, filterTipoUso, searchTerm]);
+
+  // Ordenar items
+  const sortedItems = [...filteredAndSearchedItems].sort((a, b) => {
+    let aValue: string | number = '';
+    let bValue: string | number = '';
+    
+    switch (sortBy) {
+      case 'nombre':
+        aValue = a.nombre.toLowerCase();
+        bValue = b.nombre.toLowerCase();
+        break;
+      case 'categoria':
+        aValue = a.categoria.toLowerCase();
+        bValue = b.categoria.toLowerCase();
+        break;
+      case 'estado':
+        aValue = a.estado;
+        bValue = b.estado;
+        break;
+      case 'ubicacion':
+        aValue = a.ubicacion.toLowerCase();
+        bValue = b.ubicacion.toLowerCase();
+        break;
+    }
+    
+    if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  // Paginación
+  const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedItems = sortedItems.slice(startIndex, endIndex);
 
   // Cargar usuarios cuando se accede a la sección
   useEffect(() => {
@@ -637,12 +683,112 @@ export default function AdminPanel({
                   </div>
                 </div>
 
+                {/* Controles de ordenamiento y paginación */}
+                {sortedItems.length > 0 && (
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      {/* Ordenamiento */}
+                      <div className="flex items-center gap-3">
+                        <label className="text-sm font-medium text-gray-700">Ordenar por:</label>
+                        <select
+                          value={sortBy}
+                          onChange={(e) => {
+                            setSortBy(e.target.value as 'nombre' | 'categoria' | 'estado' | 'ubicacion');
+                            setCurrentPage(1);
+                          }}
+                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+                        >
+                          <option value="nombre">Nombre</option>
+                          <option value="categoria">Categoría</option>
+                          <option value="estado">Estado</option>
+                          <option value="ubicacion">Ubicación</option>
+                        </select>
+                        <button
+                          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                          title={sortOrder === 'asc' ? 'Orden ascendente' : 'Orden descendente'}
+                        >
+                          {sortOrder === 'asc' ? '↑' : '↓'}
+                        </button>
+                      </div>
+
+                      {/* Información de paginación */}
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm text-gray-600">
+                          Mostrando <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(endIndex, sortedItems.length)}</span> de <span className="font-medium">{sortedItems.length}</span> items
+                        </div>
+                        <select
+                          value={itemsPerPage}
+                          onChange={(e) => {
+                            setItemsPerPage(Number(e.target.value));
+                            setCurrentPage(1);
+                          }}
+                          className="px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+                        >
+                          <option value="6">6 por página</option>
+                          <option value="12">12 por página</option>
+                          <option value="24">24 por página</option>
+                          <option value="48">48 por página</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Paginación */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-gray-200">
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                          disabled={currentPage === 1}
+                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Anterior
+                        </button>
+                        
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`px-3 py-1.5 text-sm border rounded-md transition-colors ${
+                                currentPage === pageNum
+                                  ? 'bg-green-600 text-white border-green-600'
+                                  : 'border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                        
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                          disabled={currentPage === totalPages}
+                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Siguiente
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Lista de items */}
                 <ItemList
-                  items={filteredAndSearchedItems}
+                  items={paginatedItems}
                   onEdit={onEditItem}
                   onDelete={onDeleteItem}
-                  searchTerm={searchTerm}
+                  searchTerm=""
                   viewMode={viewMode}
                 />
               </div>
