@@ -124,21 +124,27 @@ export default function AdminPanel({
   };
 
   const handleSidebarMouseEnter = () => {
-    // Cancelar cualquier timeout pendiente
-    if (sidebarTimeoutRef.current) {
-      clearTimeout(sidebarTimeoutRef.current);
-      sidebarTimeoutRef.current = null;
+    // Solo expandir con hover en desktop (md y superior)
+    if (window.innerWidth >= 768) {
+      // Cancelar cualquier timeout pendiente
+      if (sidebarTimeoutRef.current) {
+        clearTimeout(sidebarTimeoutRef.current);
+        sidebarTimeoutRef.current = null;
+      }
+      // Expandir el sidebar
+      setSidebarOpen(true);
     }
-    // Expandir el sidebar
-    setSidebarOpen(true);
   };
 
   const handleSidebarMouseLeave = () => {
-    // Esperar un poco antes de contraer (500ms para más suavidad)
-    sidebarTimeoutRef.current = setTimeout(() => {
-      setSidebarOpen(false);
-      sidebarTimeoutRef.current = null;
-    }, 100);
+    // Solo contraer con hover en desktop (md y superior)
+    if (window.innerWidth >= 768) {
+      // Esperar un poco antes de contraer (500ms para más suavidad)
+      sidebarTimeoutRef.current = setTimeout(() => {
+        setSidebarOpen(false);
+        sidebarTimeoutRef.current = null;
+      }, 100);
+    }
   };
 
   // Limpiar timeout al desmontar
@@ -149,6 +155,19 @@ export default function AdminPanel({
       }
     };
   }, []);
+
+  // Prevenir scroll del body cuando el sidebar está abierto en móvil
+  useEffect(() => {
+    if (sidebarOpen && typeof window !== 'undefined' && window.innerWidth < 768) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [sidebarOpen]);
 
   // Resetear página cuando cambian los filtros o búsqueda
   useEffect(() => {
@@ -302,52 +321,79 @@ export default function AdminPanel({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex flex-col h-screen">
+    <div className="min-h-screen bg-gray-50 w-full overflow-x-hidden">
+      <div className="flex flex-col h-screen w-full">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-800 to-green-900 px-6 py-4 flex justify-between items-center shadow-md">
-          <div className="flex items-center gap-4">
+        <div className="bg-gradient-to-r from-green-800 to-green-900 px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center shadow-md w-full">
+          <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-white hover:bg-green-700 p-2 rounded-md transition-colors"
+              className="md:hidden text-white hover:bg-green-700 p-2 rounded-md transition-colors flex-shrink-0"
               title="Toggle Sidebar"
             >
-              <FaBars className="text-xl" />
+              <FaBars className="text-lg sm:text-xl" />
             </button>
-            <div>
-              <h2 className="text-2xl font-bold text-white">Panel de Administración</h2>
-              <p className="text-green-100 text-sm mt-1">Gestión completa del sistema</p>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg sm:text-2xl font-bold text-white truncate">Panel de Administración</h2>
+              <p className="text-green-100 text-xs sm:text-sm mt-0.5 sm:mt-1 hidden sm:block">Gestión completa del sistema</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1 sm:gap-2 flex-shrink-0">
             <button
               onClick={onExportExcel}
-              className="px-3 py-1.5 text-sm font-medium text-white bg-green-700 border border-green-600 rounded-md hover:bg-green-600 transition-colors flex items-center gap-2"
-              title="Exportar a Excel"
+              className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-green-700 border border-green-600 rounded-md hover:bg-green-600 transition-colors flex items-center gap-1 sm:gap-2"
             >
-              <FaFileExport /> Exportar
+              <FaFileExport className="text-sm sm:text-base" /> 
+              <span className="hidden sm:inline">Exportar</span>
             </button>
             <button
               onClick={onLogout}
-              className="px-3 py-1.5 text-sm font-medium text-white bg-red-500 border border-red-400 rounded-md hover:bg-red-400 transition-colors flex items-center gap-2"
-              title="Cerrar sesión"
+              className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-red-500 border border-red-400 rounded-md hover:bg-red-400 transition-colors flex items-center gap-1 sm:gap-2"
             >
-              <FaSignOutAlt /> Cerrar Sesión
+              <FaSignOutAlt className="text-sm sm:text-base" /> 
+              <span className="hidden sm:inline">Cerrar</span>
             </button>
           </div>
         </div>
 
-        <div className="flex flex-1 overflow-hidden">
-          {/* Sidebar de navegación */}
+        <div className="flex flex-1 overflow-hidden relative w-full">
+          {/* Overlay para móvil */}
+          {sidebarOpen && (
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
+          
+          {/* Sidebar de navegación - En móvil siempre fixed, en desktop normal */}
           <div 
-            className={`${sidebarOpen ? 'w-64' : 'w-16'} bg-gray-50 border-r border-gray-200 flex flex-col transition-all duration-200 ease-in-out overflow-hidden relative`}
+            className={`${
+              sidebarOpen 
+                ? 'w-64 md:relative z-50 md:z-auto' 
+                : 'md:w-16'
+            } bg-gray-50 border-r border-gray-200 flex flex-col transition-all duration-200 ease-in-out overflow-hidden h-full`}
+            style={typeof window !== 'undefined' && window.innerWidth < 768 ? {
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              bottom: 0,
+              height: '100vh',
+              width: '256px',
+              transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+              transition: 'transform 200ms ease-in-out'
+            } : {}}
             onMouseEnter={handleSidebarMouseEnter}
             onMouseLeave={handleSidebarMouseLeave}
           >
             <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
               {/* Sección Principal */}
               <button
-                onClick={() => setActiveSection('inventario')}
+                onClick={() => {
+                  setActiveSection('inventario');
+                  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                    setTimeout(() => setSidebarOpen(false), 100);
+                  }
+                }}
                 onMouseEnter={() => setHoveredItem('inventario')}
                 onMouseLeave={() => setHoveredItem(null)}
                 className={`w-full ${sidebarOpen ? 'px-4 py-3 text-left' : 'px-2 py-3 justify-center'} rounded-lg transition-colors relative group ${
@@ -371,7 +417,12 @@ export default function AdminPanel({
               </button>
               
               <button
-                onClick={() => setActiveSection('dashboard')}
+                onClick={() => {
+                  setActiveSection('dashboard');
+                  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                    setTimeout(() => setSidebarOpen(false), 100);
+                  }
+                }}
                 onMouseEnter={() => setHoveredItem('dashboard')}
                 onMouseLeave={() => setHoveredItem(null)}
                 className={`w-full ${sidebarOpen ? 'px-4 py-3 text-left' : 'px-2 py-3 justify-center'} rounded-lg transition-colors relative group ${
@@ -435,7 +486,12 @@ export default function AdminPanel({
                 {openDropdowns.gestion && sidebarOpen && (
                   <div className="ml-4 mt-1 space-y-1">
                     <button
-                      onClick={() => setActiveSection('usuarios')}
+                      onClick={() => {
+                        setActiveSection('usuarios');
+                        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                          setTimeout(() => setSidebarOpen(false), 100);
+                        }
+                      }}
                       className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
                         activeSection === 'usuarios'
                           ? 'bg-green-700 text-white shadow-md'
@@ -449,7 +505,12 @@ export default function AdminPanel({
                     </button>
                     
                     <button
-                      onClick={() => setActiveSection('categorias')}
+                      onClick={() => {
+                        setActiveSection('categorias');
+                        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                          setTimeout(() => setSidebarOpen(false), 100);
+                        }
+                      }}
                       className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
                         activeSection === 'categorias'
                           ? 'bg-green-700 text-white shadow-md'
@@ -463,7 +524,12 @@ export default function AdminPanel({
                     </button>
                     
                     <button
-                      onClick={() => setActiveSection('sedes')}
+                      onClick={() => {
+                        setActiveSection('sedes');
+                        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                          setTimeout(() => setSidebarOpen(false), 100);
+                        }
+                      }}
                       className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
                         activeSection === 'sedes'
                           ? 'bg-green-700 text-white shadow-md'
@@ -520,7 +586,12 @@ export default function AdminPanel({
                 {openDropdowns.configuracion && sidebarOpen && (
                   <div className="ml-4 mt-1 space-y-1">
                     <button
-                      onClick={() => setActiveSection('reportes')}
+                      onClick={() => {
+                        setActiveSection('reportes');
+                        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                          setTimeout(() => setSidebarOpen(false), 100);
+                        }
+                      }}
                       className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
                         activeSection === 'reportes'
                           ? 'bg-green-700 text-white shadow-md'
@@ -558,7 +629,7 @@ export default function AdminPanel({
           </div>
 
           {/* Contenido principal */}
-          <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-gray-50 w-full">
             {activeSection === 'inventario' && (
               <div className="space-y-6">
                 {/* Barra de búsqueda y controles */}
@@ -608,10 +679,10 @@ export default function AdminPanel({
                   </div>
 
                   {/* Filtros */}
-                  <div className="border-t border-gray-200 pt-4">
+                  <div className="border-t border-gray-200 pt-3 sm:pt-4">
                     <button
                       onClick={() => setShowFilters(!showFilters)}
-                      className="w-full text-left text-sm font-medium text-gray-700 hover:text-gray-900 flex justify-between items-center"
+                      className="w-full text-left text-sm font-medium text-gray-700 hover:text-gray-900 flex justify-between items-center py-2"
                     >
                       <span>Filtros de búsqueda</span>
                       <span className={`transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`}>
@@ -620,7 +691,7 @@ export default function AdminPanel({
                     </button>
                     
                     {showFilters && (
-                      <div className="mt-4 flex flex-wrap gap-3">
+                      <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3">
                         <select
                           value={filterSede}
                           onChange={(e) => setFilterSede(e.target.value)}
@@ -801,25 +872,25 @@ export default function AdminPanel({
                   
                   {/* Tarjetas de estadísticas */}
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <div className="text-3xl font-bold text-gray-900 mb-1">{estadisticas.total}</div>
-                      <div className="text-sm text-gray-600 font-medium">Total Items</div>
+                    <div className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200">
+                      <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{estadisticas.total}</div>
+                      <div className="text-xs sm:text-sm text-gray-600 font-medium">Total Items</div>
                     </div>
-                    <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                      <div className="text-3xl font-bold text-green-700 mb-1">{estadisticas.disponible}</div>
-                      <div className="text-sm text-gray-600 font-medium">Disponibles</div>
+                    <div className="bg-green-50 rounded-lg p-3 sm:p-4 border border-green-200">
+                      <div className="text-2xl sm:text-3xl font-bold text-green-700 mb-1">{estadisticas.disponible}</div>
+                      <div className="text-xs sm:text-sm text-gray-600 font-medium">Disponibles</div>
                     </div>
-                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                      <div className="text-3xl font-bold text-blue-700 mb-1">{estadisticas.enUso}</div>
-                      <div className="text-sm text-gray-600 font-medium">En Uso</div>
+                    <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-200">
+                      <div className="text-2xl sm:text-3xl font-bold text-blue-700 mb-1">{estadisticas.enUso}</div>
+                      <div className="text-xs sm:text-sm text-gray-600 font-medium">En Uso</div>
                     </div>
-                    <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-                      <div className="text-3xl font-bold text-yellow-700 mb-1">{estadisticas.mantenimiento}</div>
-                      <div className="text-sm text-gray-600 font-medium">Mantenimiento</div>
+                    <div className="bg-yellow-50 rounded-lg p-3 sm:p-4 border border-yellow-200">
+                      <div className="text-2xl sm:text-3xl font-bold text-yellow-700 mb-1">{estadisticas.mantenimiento}</div>
+                      <div className="text-xs sm:text-sm text-gray-600 font-medium">Mantenimiento</div>
                     </div>
-                    <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-                      <div className="text-3xl font-bold text-red-700 mb-1">{estadisticas.baja}</div>
-                      <div className="text-sm text-gray-600 font-medium">Baja</div>
+                    <div className="bg-red-50 rounded-lg p-3 sm:p-4 border border-red-200">
+                      <div className="text-2xl sm:text-3xl font-bold text-red-700 mb-1">{estadisticas.baja}</div>
+                      <div className="text-xs sm:text-sm text-gray-600 font-medium">Baja</div>
                     </div>
                   </div>
 
