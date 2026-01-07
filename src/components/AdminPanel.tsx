@@ -4,8 +4,6 @@ import ItemList from './ItemList';
 import ItemForm from './ItemForm';
 import type { ItemInventario } from '../types/inventario';
 import { getAllUsers, changeUserRole, toggleUserStatus, createUser, deleteUserAccount, type UserInfo, type UserRole } from '../services/userRoleService';
-import { signOut } from 'firebase/auth';
-import { auth } from '../config/firebase';
 import { 
   getConfig, 
   updateEstados, 
@@ -708,7 +706,7 @@ export default function AdminPanel({
     setLoadingUsers(true);
 
     try {
-      const shouldSignOut = await createUser(
+      await createUser(
         nuevoUsuario.email.trim(),
         nuevoUsuario.password,
         nuevoUsuario.displayName.trim(),
@@ -725,12 +723,9 @@ export default function AdminPanel({
       setMostrarFormularioUsuario(false);
       
       // Mostrar mensaje de confirmación
+      // Nota: createUser ya cerró la sesión del usuario recién creado,
+      // por lo que el administrador será redirigido al login
       alert('Usuario creado correctamente');
-      
-      // Si se debe cerrar la sesión (porque se inició sesión con el usuario recién creado)
-      if (shouldSignOut && auth) {
-        await signOut(auth);
-      }
     } catch (err: any) {
       const errorMessage = err.message || 'Error al crear el usuario';
       setErrorUsers(errorMessage);

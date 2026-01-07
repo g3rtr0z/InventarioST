@@ -212,20 +212,17 @@ export const toggleUserStatus = async (
 /**
  * Crear un nuevo usuario
  * Nota: createUserWithEmailAndPassword inicia sesión automáticamente con el usuario recién creado.
- * Retorna true si se debe cerrar la sesión (porque se inició sesión con el usuario recién creado).
+ * Por eso cerramos la sesión inmediatamente después de crear el usuario para mantener la sesión del administrador.
  */
 export const createUser = async (
   email: string,
   password: string,
   displayName: string,
   role: UserRole
-): Promise<boolean> => {
+): Promise<void> => {
   if (!auth || !db) {
     throw new Error('Firebase no está disponible');
   }
-
-  // Guardar el email del administrador actual antes de crear el usuario
-  const adminEmail = auth.currentUser?.email;
 
   try {
     // Crear usuario en Firebase Authentication
@@ -247,12 +244,9 @@ export const createUser = async (
     const roleRef = doc(db as Firestore, ROLES_COLLECTION, email);
     await setDoc(roleRef, { role });
 
-    // Verificar si el usuario actual es diferente al administrador
-    // Si es así, significa que se inició sesión con el usuario recién creado
-    const currentUserEmail = auth.currentUser?.email;
-    const shouldSignOut = currentUserEmail === email && currentUserEmail !== adminEmail;
-    
-    return shouldSignOut;
+    // Cerrar sesión inmediatamente del usuario recién creado
+    // Esto es necesario porque createUserWithEmailAndPassword inicia sesión automáticamente
+    await signOut(auth);
   } catch (error: any) {
     console.error('Error al crear usuario:', error);
     
