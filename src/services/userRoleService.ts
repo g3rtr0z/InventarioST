@@ -259,6 +259,34 @@ export const createUser = async (
 };
 
 /**
+ * Verificar si un usuario está activo
+ */
+export const isUserActive = async (userEmail: string): Promise<boolean> => {
+  if (!db) {
+    // Si Firestore no está disponible, asumir que el usuario está activo
+    return true;
+  }
+
+  try {
+    const userRef = doc(db as Firestore, USERS_COLLECTION, userEmail);
+    const userDoc = await getDoc(userRef);
+    
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      // Si isActive no está definido, asumir que está activo (compatibilidad hacia atrás)
+      return data.isActive !== false;
+    }
+    
+    // Si el usuario no existe en Firestore, asumir que está activo
+    return true;
+  } catch (error) {
+    console.error('Error al verificar estado de usuario:', error);
+    // En caso de error, asumir que está activo para no bloquear el acceso
+    return true;
+  }
+};
+
+/**
  * Eliminar un usuario permanentemente
  */
 export const deleteUserAccount = async (userEmail: string): Promise<void> => {
