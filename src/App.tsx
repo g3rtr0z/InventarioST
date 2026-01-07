@@ -55,7 +55,7 @@ function App() {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [sedes, setSedes] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
   const [loadStartTime, setLoadStartTime] = useState<number | null>(null);
   const [isNewLogin, setIsNewLogin] = useState(false);
 
