@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { ItemInventario } from '../types/inventario';
 import { sanitizeText, validateNoXSS, validateNoSQLInjection } from '../utils/security';
+import { getConfig, subscribeToConfig, type CampoFormulario, type SeccionFormulario } from '../services/configService';
 
 interface ItemFormProps {
   item?: ItemInventario | null;
@@ -12,7 +13,7 @@ interface ItemFormProps {
 }
 
 export default function ItemForm({ item, categorias, sedes, items, onSave, onCancel }: ItemFormProps) {
-  const [formData, setFormData] = useState<Omit<ItemInventario, 'id'>>({
+  const [formData, setFormData] = useState<Omit<ItemInventario, 'id'> & { [key: string]: any }>({
     nombre: '',
     categoria: categorias.length > 0 ? categorias[0] : '',
     marca: '',
@@ -35,6 +36,201 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     discoDuro: ''
   });
   const [nombreError, setNombreError] = useState<string>('');
+  const [configFormulario, setConfigFormulario] = useState<CampoFormulario[]>([]);
+  const [seccionesFormulario, setSeccionesFormulario] = useState<SeccionFormulario[]>([]);
+
+  // Cargar configuración del formulario
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const config = await getConfig();
+        setConfigFormulario(config.formulario || []);
+        setSeccionesFormulario(config.seccionesFormulario || []);
+        
+        // Inicializar campos personalizados en formData
+        const camposPersonalizados = config.formulario || [];
+        setFormData(prev => {
+          const nuevoFormData = { ...prev };
+          camposPersonalizados.forEach((campo: CampoFormulario) => {
+            if (!(campo.nombre in nuevoFormData)) {
+              nuevoFormData[campo.nombre] = '';
+            }
+          });
+          return nuevoFormData;
+        });
+      } catch (err) {
+        console.error('Error al cargar configuración del formulario:', err);
+      }
+    };
+
+    loadConfig();
+
+    // Suscribirse a cambios en la configuración
+    const unsubscribe = subscribeToConfig((config) => {
+      setConfigFormulario(config.formulario || []);
+      setSeccionesFormulario(config.seccionesFormulario || []);
+      
+      // Inicializar campos personalizados en formData si no existen
+      const camposPersonalizados = config.formulario || [];
+      setFormData(prev => {
+        const nuevoFormData = { ...prev };
+        camposPersonalizados.forEach((campo: CampoFormulario) => {
+          if (!(campo.nombre in nuevoFormData)) {
+            nuevoFormData[campo.nombre] = '';
+          }
+        });
+        return nuevoFormData;
+      });
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Función helper para obtener configuración de un campo
+  const getCampoConfig = (nombreCampo: string): CampoFormulario | undefined => {
+    return configFormulario.find((c: CampoFormulario) => c.nombre === nombreCampo);
+  };
+
+
+  // Función helper para verificar si un campo es obligatorio
+  const isCampoObligatorio = (nombreCampo: string): boolean => {
+    const config = getCampoConfig(nombreCampo);
+    return config ? config.obligatorio : false; // Por defecto opcional si no hay config
+  };
+
+  // Función helper para obtener la etiqueta de un campo
+  const getCampoLabel = (nombreCampo: string, labelDefault: string): string => {
+    const config = getCampoConfig(nombreCampo);
+    return config?.etiqueta || labelDefault;
+  };
+
+  // Función helper para obtener campos ordenados de una sección
+  const getCamposOrdenados = (seccion: string): CampoFormulario[] => {
+    return configFormulario
+      .filter((c: CampoFormulario) => c.seccion === seccion && c.visible)
+      .sort((a: CampoFormulario, b: CampoFormulario) => a.orden - b.orden);
+  };
+
+  // Lista de campos conocidos que tienen renderizado especial
+  const camposConocidos = [
+    'nombre', 'categoria', 'estado', 'tipoUso',
+    'sede', 'ubicacion', 'piso', 'edificio', 'responsable',
+    'marca', 'modelo', 'numeroSerie', 'procesador', 'ram', 'discoDuro',
+    'fechaAdquisicion',
+    'fechaUltimoMantenimiento', 'proximoMantenimiento',
+    'descripcion', 'observaciones'
+  ];
+
+  // Función para renderizar un campo genérico basándose en su tipo
+  const renderCampoGenerico = (campoConfig: CampoFormulario) => {
+    const campoNombre = campoConfig.nombre;
+    // Si es un campo conocido, no lo renderizamos aquí (ya tiene renderizado especial)
+    if (camposConocidos.includes(campoNombre)) {
+      return null;
+    }
+
+    const campoValor = formData[campoNombre] || '';
+    const campoLabel = campoConfig.etiqueta || campoNombre;
+    const esObligatorio = campoConfig.obligatorio || false;
+    const tipoCampo = campoConfig.tipo || 'text';
+
+    const baseClasses = "w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent rounded-md";
+    
+    switch (tipoCampo) {
+      case 'number':
+        return (
+          <div key={campoNombre}>
+            <label htmlFor={campoNombre} className="block mb-1 text-sm text-gray-700">
+              {campoLabel} {esObligatorio && '*'}
+            </label>
+            <input
+              type="number"
+              id={campoNombre}
+              name={campoNombre}
+              value={campoValor}
+              onChange={handleChange}
+              required={esObligatorio}
+              className={baseClasses}
+            />
+          </div>
+        );
+      
+      case 'date':
+        return (
+          <div key={campoNombre}>
+            <label htmlFor={campoNombre} className="block mb-1 text-sm text-gray-700">
+              {campoLabel} {esObligatorio && '*'}
+            </label>
+            <input
+              type="date"
+              id={campoNombre}
+              name={campoNombre}
+              value={campoValor}
+              onChange={handleChange}
+              required={esObligatorio}
+              className={baseClasses}
+            />
+          </div>
+        );
+      
+      case 'textarea':
+        return (
+          <div key={campoNombre} className="md:col-span-2">
+            <label htmlFor={campoNombre} className="block mb-1 text-sm text-gray-700">
+              {campoLabel} {esObligatorio && '*'}
+            </label>
+            <textarea
+              id={campoNombre}
+              name={campoNombre}
+              value={campoValor}
+              onChange={handleChange}
+              required={esObligatorio}
+              rows={3}
+              className={`${baseClasses} resize-y`}
+            />
+          </div>
+        );
+      
+      case 'select':
+        // Para select, necesitaríamos opciones. Por ahora lo dejamos como text
+        return (
+          <div key={campoNombre}>
+            <label htmlFor={campoNombre} className="block mb-1 text-sm text-gray-700">
+              {campoLabel} {esObligatorio && '*'}
+            </label>
+            <input
+              type="text"
+              id={campoNombre}
+              name={campoNombre}
+              value={campoValor}
+              onChange={handleChange}
+              required={esObligatorio}
+              placeholder={`Ingrese ${campoLabel.toLowerCase()}`}
+              className={baseClasses}
+            />
+          </div>
+        );
+      
+      default: // text
+        return (
+          <div key={campoNombre}>
+            <label htmlFor={campoNombre} className="block mb-1 text-sm text-gray-700">
+              {campoLabel} {esObligatorio && '*'}
+            </label>
+            <input
+              type="text"
+              id={campoNombre}
+              name={campoNombre}
+              value={campoValor}
+              onChange={handleChange}
+              required={esObligatorio}
+              placeholder={`Ingrese ${campoLabel.toLowerCase()}`}
+              className={baseClasses}
+            />
+          </div>
+        );
+    }
+  };
 
   useEffect(() => {
     if (item) {
@@ -42,7 +238,8 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       const categoriaValida = categorias.includes(rest.categoria) 
         ? rest.categoria 
         : (categorias.length > 0 ? categorias[0] : '');
-      setFormData({ 
+      // Incluir todos los campos del item, incluyendo campos personalizados
+      const nuevoFormData: any = { 
         nombre: rest.nombre,
         categoria: categoriaValida,
         marca: rest.marca,
@@ -63,7 +260,16 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         procesador: rest.procesador || '',
         ram: rest.ram || '',
         discoDuro: rest.discoDuro || ''
+      };
+      
+      // Agregar campos personalizados del item si existen
+      Object.keys(rest).forEach(key => {
+        if (!(key in nuevoFormData)) {
+          nuevoFormData[key] = (rest as any)[key] || '';
+        }
       });
+      
+      setFormData(nuevoFormData);
     } else {
       setFormData({
         nombre: '',
@@ -220,399 +426,537 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
 
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Sección: Información General */}
-          <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
-              Información General
-            </h3>
-            
-            <div>
-              <label htmlFor="nombre" className="block mb-1 text-sm text-gray-700">
-                Nombre del Equipo *
-              </label>
-              <input
-                type="text"
-                id="nombre"
-                name="nombre"
-                value={formData.nombre}
-                onChange={handleChange}
-                required
-                placeholder="Ej: PC Oficina 1"
-                className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent rounded-md ${
-                  nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
-                }`}
-              />
-              {nombreError && (
-                <p className="mt-1 text-sm text-red-600">{nombreError}</p>
-              )}
-            </div>
+          {/* Renderizar secciones dinámicamente */}
+          {seccionesFormulario
+            .filter((s: SeccionFormulario) => s.visible)
+            .sort((a: SeccionFormulario, b: SeccionFormulario) => a.orden - b.orden)
+            .map((seccion: SeccionFormulario) => {
+              const camposSeccion = getCamposOrdenados(seccion.nombre);
+              if (camposSeccion.length === 0) return null;
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label htmlFor="categoria" className="block mb-1 text-sm text-gray-700">
-                  Categoría *
-                </label>
-                <select
-                  id="categoria"
-                  name="categoria"
-                  value={formData.categoria}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
-                >
-                  {categorias.length > 0 ? (
-                    categorias.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))
-                  ) : (
-                    <option value="">Sin categorías</option>
-                  )}
-                </select>
-              </div>
+              // Renderizado especial para "Información General"
+              if (seccion.nombre === 'Información General') {
+                // Separar campos que van en grid vs campos que van solos
+                const camposGrid = ['categoria', 'estado', 'tipoUso'];
+                const camposEnGrid = camposSeccion.filter((c: CampoFormulario) => camposGrid.includes(c.nombre));
+                const camposSolo = camposSeccion.filter((c: CampoFormulario) => !camposGrid.includes(c.nombre));
+                
+                // Determinar si hay campos antes del grid
+                const primerCampoGrid = camposEnGrid.length > 0 ? camposEnGrid[0] : null;
+                const camposAntesDelGrid = primerCampoGrid 
+                  ? camposSolo.filter((c: CampoFormulario) => c.orden < primerCampoGrid.orden)
+                  : camposSolo;
+                const camposDespuesDelGrid = primerCampoGrid
+                  ? camposSolo.filter((c: CampoFormulario) => c.orden > primerCampoGrid.orden)
+                  : [];
 
-              <div>
-                <label htmlFor="estado" className="block mb-1 text-sm text-gray-700">
-                  Estado *
-                </label>
-                <select
-                  id="estado"
-                  name="estado"
-                  value={formData.estado}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
-                >
-                  <option value="Disponible">Disponible</option>
-                  <option value="En Uso">En Uso</option>
-                  <option value="Mantenimiento">Mantenimiento</option>
-                  <option value="Baja">Baja</option>
-                </select>
-              </div>
+                return (
+                  <div key={seccion.nombre} className="space-y-4">
+                    <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
+                      {seccion.etiqueta || seccion.nombre}
+                    </h3>
+                    
+                    {/* Campos antes del grid */}
+                    {camposAntesDelGrid.map((campoConfig: CampoFormulario) => {
+                      if (campoConfig.nombre === 'nombre') {
+                        return (
+                          <div key={campoConfig.nombre}>
+                            <label htmlFor="nombre" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('nombre', 'Nombre del Equipo')} {isCampoObligatorio('nombre') && '*'}
+                            </label>
+                            <input
+                              type="text"
+                              id="nombre"
+                              name="nombre"
+                              value={formData.nombre}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('nombre')}
+                              placeholder="Ej: PC Oficina 1"
+                              className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent rounded-md ${
+                                nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
+                              }`}
+                            />
+                            {nombreError && (
+                              <p className="mt-1 text-sm text-red-600">{nombreError}</p>
+                            )}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })}
 
-              <div>
-                <label htmlFor="tipoUso" className="block mb-1 text-sm text-gray-700">
-                  Tipo de Uso *
-                </label>
-                <select
-                  id="tipoUso"
-                  name="tipoUso"
-                  value={formData.tipoUso}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
-                >
-                  <option value="Administrativo">Administrativo</option>
-                  <option value="Alumnos">Alumnos</option>
-                </select>
-              </div>
-            </div>
-          </div>
+                    {/* Grid con categoria, estado y tipoUso */}
+                    {camposEnGrid.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {camposEnGrid.map((campoConfig: CampoFormulario) => {
+                          if (campoConfig.nombre === 'categoria') {
+                            return (
+                              <div key={campoConfig.nombre}>
+                                <label htmlFor="categoria" className="block mb-1 text-sm text-gray-700">
+                                  {getCampoLabel('categoria', 'Categoría')} {isCampoObligatorio('categoria') && '*'}
+                                </label>
+                                <select
+                                  id="categoria"
+                                  name="categoria"
+                                  value={formData.categoria}
+                                  onChange={handleChange}
+                                  required={isCampoObligatorio('categoria')}
+                                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                                >
+                                  {categorias.length > 0 ? (
+                                    categorias.map(cat => (
+                                      <option key={cat} value={cat}>{cat}</option>
+                                    ))
+                                  ) : (
+                                    <option value="">Sin categorías</option>
+                                  )}
+                                </select>
+                              </div>
+                            );
+                          }
 
-          {/* Sección: Ubicación y Responsabilidad */}
-          <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
-              Ubicación y Responsabilidad
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="sede" className="block mb-1 text-sm text-gray-700">
-                  Sede *
-                </label>
-                <select
-                  id="sede"
-                  name="sede"
-                  value={formData.sede}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
-                >
-                  {sedes.length > 0 ? (
-                    sedes.map(sede => (
-                      <option key={sede} value={sede}>{sede}</option>
-                    ))
-                  ) : (
-                    <option value="">Sin sedes disponibles</option>
-                  )}
-                </select>
-              </div>
+                          if (campoConfig.nombre === 'estado') {
+                            return (
+                              <div key={campoConfig.nombre}>
+                                <label htmlFor="estado" className="block mb-1 text-sm text-gray-700">
+                                  {getCampoLabel('estado', 'Estado')} {isCampoObligatorio('estado') && '*'}
+                                </label>
+                                <select
+                                  id="estado"
+                                  name="estado"
+                                  value={formData.estado}
+                                  onChange={handleChange}
+                                  required={isCampoObligatorio('estado')}
+                                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                                >
+                                  <option value="Disponible">Disponible</option>
+                                  <option value="En Uso">En Uso</option>
+                                  <option value="Mantenimiento">Mantenimiento</option>
+                                  <option value="Baja">Baja</option>
+                                </select>
+                              </div>
+                            );
+                          }
 
-              <div>
-                <label htmlFor="ubicacion" className="block mb-1 text-sm text-gray-700">
-                  Ubicación *
-                </label>
-                <input
-                  type="text"
-                  id="ubicacion"
-                  name="ubicacion"
-                  value={formData.ubicacion}
-                  onChange={handleChange}
-                  required
-                  placeholder="Ej: Oficina 101"
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
-                />
-              </div>
+                          if (campoConfig.nombre === 'tipoUso') {
+                            return (
+                              <div key={campoConfig.nombre}>
+                                <label htmlFor="tipoUso" className="block mb-1 text-sm text-gray-700">
+                                  {getCampoLabel('tipoUso', 'Tipo de Uso')} {isCampoObligatorio('tipoUso') && '*'}
+                                </label>
+                                <select
+                                  id="tipoUso"
+                                  name="tipoUso"
+                                  value={formData.tipoUso}
+                                  onChange={handleChange}
+                                  required={isCampoObligatorio('tipoUso')}
+                                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                                >
+                                  <option value="Administrativo">Administrativo</option>
+                                  <option value="Alumnos">Alumnos</option>
+                                </select>
+                              </div>
+                            );
+                          }
 
-              <div>
-                <label htmlFor="piso" className="block mb-1 text-sm text-gray-700">
-                  Piso
-                </label>
-                <select
-                  id="piso"
-                  name="piso"
-                  value={formData.piso}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
-                >
-                  <option value="">Seleccionar Piso</option>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                </select>
-              </div>
+                          return null;
+                        })}
+                      </div>
+                    )}
 
-              <div>
-                <label htmlFor="edificio" className="block mb-1 text-sm text-gray-700">
-                  Edificio
-                </label>
-                <select
-                  id="edificio"
-                  name="edificio"
-                  value={formData.edificio}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
-                >
-                  <option value="">Seleccionar Edificio</option>
-                  <option value="A">A</option>
-                  <option value="B">B</option>
-                </select>
-              </div>
+                    {/* Campos después del grid */}
+                    {camposDespuesDelGrid.map((campoConfig: CampoFormulario) => {
+                      if (campoConfig.nombre === 'nombre') {
+                        return (
+                          <div key={campoConfig.nombre}>
+                            <label htmlFor="nombre" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('nombre', 'Nombre del Equipo')} {isCampoObligatorio('nombre') && '*'}
+                            </label>
+                            <input
+                              type="text"
+                              id="nombre"
+                              name="nombre"
+                              value={formData.nombre}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('nombre')}
+                              placeholder="Ej: PC Oficina 1"
+                              className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent rounded-md ${
+                                nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
+                              }`}
+                            />
+                            {nombreError && (
+                              <p className="mt-1 text-sm text-red-600">{nombreError}</p>
+                            )}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })}
 
-              <div className="md:col-span-2">
-                <label htmlFor="responsable" className="block mb-1 text-sm text-gray-700">
-                  Responsable *
-                </label>
-                <input
-                  type="text"
-                  id="responsable"
-                  name="responsable"
-                  value={formData.responsable}
-                  onChange={handleChange}
-                  required
-                  placeholder="Ej: Juan Pérez"
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
-                />
-              </div>
-            </div>
-          </div>
+                    {/* Renderizar campos personalizados de esta sección */}
+                    {camposSeccion
+                      .filter((c: CampoFormulario) => !camposConocidos.includes(c.nombre))
+                      .map((campoConfig: CampoFormulario) => renderCampoGenerico(campoConfig))
+                      .filter(Boolean)}
+                  </div>
+                );
+              }
 
-          {/* Sección: Especificaciones Técnicas */}
-          <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
-              Especificaciones Técnicas
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label htmlFor="marca" className="block mb-1 text-sm text-gray-700">
-                  Marca *
-                </label>
-                <input
-                  type="text"
-                  id="marca"
-                  name="marca"
-                  value={formData.marca}
-                  onChange={handleChange}
-                  required
-                  placeholder="Ej: Dell, HP, Lenovo"
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
-                />
-              </div>
+              // Renderizado genérico para otras secciones
+              return (
+                <div key={seccion.nombre} className="space-y-4">
+                  <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
+                    {seccion.etiqueta || seccion.nombre}
+                  </h3>
+                  
+                  {/* Renderizar todos los campos de la sección */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {camposSeccion.map((campoConfig: CampoFormulario) => {
+                      // Renderizar campos conocidos con su lógica especial
+                      if (campoConfig.nombre === 'sede') {
+                        return (
+                          <div key={campoConfig.nombre}>
+                            <label htmlFor="sede" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('sede', 'Sede')} {isCampoObligatorio('sede') && '*'}
+                            </label>
+                            <select
+                              id="sede"
+                              name="sede"
+                              value={formData.sede}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('sede')}
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                            >
+                              {sedes.length > 0 ? (
+                                sedes.map(sede => (
+                                  <option key={sede} value={sede}>{sede}</option>
+                                ))
+                              ) : (
+                                <option value="">Sin sedes disponibles</option>
+                              )}
+                            </select>
+                          </div>
+                        );
+                      }
 
-              <div>
-                <label htmlFor="modelo" className="block mb-1 text-sm text-gray-700">
-                  Modelo *
-                </label>
-                <input
-                  type="text"
-                  id="modelo"
-                  name="modelo"
-                  value={formData.modelo}
-                  onChange={handleChange}
-                  required
-                  placeholder="Ej: OptiPlex 7090"
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
-                />
-              </div>
+                      if (campoConfig.nombre === 'ubicacion') {
+                        return (
+                          <div key={campoConfig.nombre}>
+                            <label htmlFor="ubicacion" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('ubicacion', 'Ubicación')} {isCampoObligatorio('ubicacion') && '*'}
+                            </label>
+                            <input
+                              type="text"
+                              id="ubicacion"
+                              name="ubicacion"
+                              value={formData.ubicacion}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('ubicacion')}
+                              placeholder="Ej: Oficina 101"
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                            />
+                          </div>
+                        );
+                      }
 
-              <div>
-                <label htmlFor="numeroSerie" className="block mb-1 text-sm text-gray-700">
-                  Número de Serie *
-                </label>
-                <input
-                  type="text"
-                  id="numeroSerie"
-                  name="numeroSerie"
-                  value={formData.numeroSerie}
-                  onChange={handleChange}
-                  required
-                  placeholder="Ej: SN123456789"
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label htmlFor="procesador" className="block mb-1 text-sm text-gray-700">
-                  Procesador
-                </label>
-                <input
-                  type="text"
-                  id="procesador"
-                  name="procesador"
-                  value={formData.procesador}
-                  onChange={handleChange}
-                  placeholder="Ej: Intel Core i5-10400"
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="ram" className="block mb-1 text-sm text-gray-700">
-                  RAM
-                </label>
-                <select
-                  id="ram"
-                  name="ram"
-                  value={formData.ram}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
-                >
-                  <option value="">Seleccionar RAM</option>
-                  <option value="8GB">8GB</option>
-                  <option value="16GB">16GB</option>
-                  <option value="20GB">20GB</option>
-                  <option value="32GB">32GB</option>
-                </select>
-              </div>
-              
-              <div>
-                <label htmlFor="discoDuro" className="block mb-1 text-sm text-gray-700">
-                  Disco Duro
-                </label>
-                <select
-                  id="discoDuro"
-                  name="discoDuro"
-                  value={formData.discoDuro}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white"
-                >
-                  <option value="">Seleccionar Disco Duro</option>
-                  <option value="256GB">256GB</option>
-                  <option value="500GB">500GB</option>
-                  <option value="1TB">1TB</option>
-                </select>
-              </div>
-            </div>
-          </div>
+                      if (campoConfig.nombre === 'piso') {
+                        return (
+                          <div key={campoConfig.nombre}>
+                            <label htmlFor="piso" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('piso', 'Piso')} {isCampoObligatorio('piso') && '*'}
+                            </label>
+                            <select
+                              id="piso"
+                              name="piso"
+                              value={formData.piso}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('piso')}
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                            >
+                              <option value="">Seleccionar Piso</option>
+                              <option value="1">1</option>
+                              <option value="2">2</option>
+                              <option value="3">3</option>
+                              <option value="4">4</option>
+                              <option value="5">5</option>
+                            </select>
+                          </div>
+                        );
+                      }
 
-          {/* Sección: Información de Adquisición */}
-          <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
-              Información de Adquisición
-            </h3>
-            
-            <div>
-              <label htmlFor="fechaAdquisicion" className="block mb-1 text-sm text-gray-700">
-                Fecha de Adquisición
-              </label>
-              <input
-                type="date"
-                id="fechaAdquisicion"
-                name="fechaAdquisicion"
-                value={formData.fechaAdquisicion}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
-              />
-            </div>
-          </div>
+                      if (campoConfig.nombre === 'edificio') {
+                        return (
+                          <div key={campoConfig.nombre}>
+                            <label htmlFor="edificio" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('edificio', 'Edificio')} {isCampoObligatorio('edificio') && '*'}
+                            </label>
+                            <select
+                              id="edificio"
+                              name="edificio"
+                              value={formData.edificio}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('edificio')}
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                            >
+                              <option value="">Seleccionar Edificio</option>
+                              <option value="A">A</option>
+                              <option value="B">B</option>
+                            </select>
+                          </div>
+                        );
+                      }
 
-          {/* Sección: Mantenimiento */}
-          <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
-              Mantenimiento
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="fechaUltimoMantenimiento" className="block mb-1 text-sm text-gray-700">
-                  Último Mantenimiento
-                </label>
-                <input
-                  type="date"
-                  id="fechaUltimoMantenimiento"
-                  name="fechaUltimoMantenimiento"
-                  value={formData.fechaUltimoMantenimiento}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
-                />
-              </div>
+                      if (campoConfig.nombre === 'responsable') {
+                        return (
+                          <div key={campoConfig.nombre} className="md:col-span-2">
+                            <label htmlFor="responsable" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('responsable', 'Responsable')} {isCampoObligatorio('responsable') && '*'}
+                            </label>
+                            <input
+                              type="text"
+                              id="responsable"
+                              name="responsable"
+                              value={formData.responsable}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('responsable')}
+                              placeholder="Ej: Juan Pérez"
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                            />
+                          </div>
+                        );
+                      }
 
-              <div>
-                <label htmlFor="proximoMantenimiento" className="block mb-1 text-sm text-gray-700">
-                  Próximo Mantenimiento
-                </label>
-                <input
-                  type="date"
-                  id="proximoMantenimiento"
-                  name="proximoMantenimiento"
-                  value={formData.proximoMantenimiento}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500"
-                />
-              </div>
-            </div>
-          </div>
+                      if (campoConfig.nombre === 'marca') {
+                        return (
+                          <div key={campoConfig.nombre}>
+                            <label htmlFor="marca" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('marca', 'Marca')} {isCampoObligatorio('marca') && '*'}
+                            </label>
+                            <input
+                              type="text"
+                              id="marca"
+                              name="marca"
+                              value={formData.marca}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('marca')}
+                              placeholder="Ej: Dell, HP, Lenovo"
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                            />
+                          </div>
+                        );
+                      }
 
-          {/* Sección: Observaciones y Descripción */}
-          <div className="space-y-4">
-            <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
-              Observaciones y Descripción
-            </h3>
-            
-            <div>
-              <label htmlFor="descripcion" className="block mb-1 text-sm text-gray-700">
-                Descripción
-              </label>
-              <textarea
-                id="descripcion"
-                name="descripcion"
-                value={formData.descripcion}
-                onChange={handleChange}
-                rows={3}
-                placeholder="Información adicional sobre el equipo..."
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 resize-y"
-              />
-            </div>
+                      if (campoConfig.nombre === 'modelo') {
+                        return (
+                          <div key={campoConfig.nombre}>
+                            <label htmlFor="modelo" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('modelo', 'Modelo')} {isCampoObligatorio('modelo') && '*'}
+                            </label>
+                            <input
+                              type="text"
+                              id="modelo"
+                              name="modelo"
+                              value={formData.modelo}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('modelo')}
+                              placeholder="Ej: OptiPlex 7090"
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                            />
+                          </div>
+                        );
+                      }
 
-            <div>
-              <label htmlFor="observaciones" className="block mb-1 text-sm text-gray-700">
-                Observaciones
-              </label>
-              <textarea
-                id="observaciones"
-                name="observaciones"
-                value={formData.observaciones}
-                onChange={handleChange}
-                rows={3}
-                placeholder="Notas adicionales, problemas conocidos, etc..."
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 resize-y"
-              />
-            </div>
-          </div>
+                      if (campoConfig.nombre === 'numeroSerie') {
+                        return (
+                          <div key={campoConfig.nombre}>
+                            <label htmlFor="numeroSerie" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('numeroSerie', 'Número de Serie')} {isCampoObligatorio('numeroSerie') && '*'}
+                            </label>
+                            <input
+                              type="text"
+                              id="numeroSerie"
+                              name="numeroSerie"
+                              value={formData.numeroSerie}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('numeroSerie')}
+                              placeholder="Ej: SN123456789"
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                            />
+                          </div>
+                        );
+                      }
+
+                      if (campoConfig.nombre === 'procesador') {
+                        return (
+                          <div key={campoConfig.nombre}>
+                            <label htmlFor="procesador" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('procesador', 'Procesador')} {isCampoObligatorio('procesador') && '*'}
+                            </label>
+                            <input
+                              type="text"
+                              id="procesador"
+                              name="procesador"
+                              value={formData.procesador}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('procesador')}
+                              placeholder="Ej: Intel Core i5-10400"
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                            />
+                          </div>
+                        );
+                      }
+
+                      if (campoConfig.nombre === 'ram') {
+                        return (
+                          <div key={campoConfig.nombre}>
+                            <label htmlFor="ram" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('ram', 'RAM')} {isCampoObligatorio('ram') && '*'}
+                            </label>
+                            <select
+                              id="ram"
+                              name="ram"
+                              value={formData.ram}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('ram')}
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                            >
+                              <option value="">Seleccionar RAM</option>
+                              <option value="8GB">8GB</option>
+                              <option value="16GB">16GB</option>
+                              <option value="20GB">20GB</option>
+                              <option value="32GB">32GB</option>
+                            </select>
+                          </div>
+                        );
+                      }
+
+                      if (campoConfig.nombre === 'discoDuro') {
+                        return (
+                          <div key={campoConfig.nombre}>
+                            <label htmlFor="discoDuro" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('discoDuro', 'Disco Duro')} {isCampoObligatorio('discoDuro') && '*'}
+                            </label>
+                            <select
+                              id="discoDuro"
+                              name="discoDuro"
+                              value={formData.discoDuro}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('discoDuro')}
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                            >
+                              <option value="">Seleccionar Disco Duro</option>
+                              <option value="256GB">256GB</option>
+                              <option value="500GB">500GB</option>
+                              <option value="1TB">1TB</option>
+                            </select>
+                          </div>
+                        );
+                      }
+
+                      if (campoConfig.nombre === 'fechaAdquisicion') {
+                        return (
+                          <div key={campoConfig.nombre}>
+                            <label htmlFor="fechaAdquisicion" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('fechaAdquisicion', 'Fecha de Adquisición')} {isCampoObligatorio('fechaAdquisicion') && '*'}
+                            </label>
+                            <input
+                              type="date"
+                              id="fechaAdquisicion"
+                              name="fechaAdquisicion"
+                              value={formData.fechaAdquisicion}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('fechaAdquisicion')}
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                            />
+                          </div>
+                        );
+                      }
+
+                      if (campoConfig.nombre === 'fechaUltimoMantenimiento') {
+                        return (
+                          <div key={campoConfig.nombre}>
+                            <label htmlFor="fechaUltimoMantenimiento" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('fechaUltimoMantenimiento', 'Último Mantenimiento')} {isCampoObligatorio('fechaUltimoMantenimiento') && '*'}
+                            </label>
+                            <input
+                              type="date"
+                              id="fechaUltimoMantenimiento"
+                              name="fechaUltimoMantenimiento"
+                              value={formData.fechaUltimoMantenimiento}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('fechaUltimoMantenimiento')}
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                            />
+                          </div>
+                        );
+                      }
+
+                      if (campoConfig.nombre === 'proximoMantenimiento') {
+                        return (
+                          <div key={campoConfig.nombre}>
+                            <label htmlFor="proximoMantenimiento" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('proximoMantenimiento', 'Próximo Mantenimiento')} {isCampoObligatorio('proximoMantenimiento') && '*'}
+                            </label>
+                            <input
+                              type="date"
+                              id="proximoMantenimiento"
+                              name="proximoMantenimiento"
+                              value={formData.proximoMantenimiento}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('proximoMantenimiento')}
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                            />
+                          </div>
+                        );
+                      }
+
+                      if (campoConfig.nombre === 'descripcion') {
+                        return (
+                          <div key={campoConfig.nombre} className="md:col-span-2">
+                            <label htmlFor="descripcion" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('descripcion', 'Descripción')} {isCampoObligatorio('descripcion') && '*'}
+                            </label>
+                            <textarea
+                              id="descripcion"
+                              name="descripcion"
+                              value={formData.descripcion}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('descripcion')}
+                              rows={3}
+                              placeholder="Información adicional sobre el equipo..."
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 resize-y rounded-md"
+                            />
+                          </div>
+                        );
+                      }
+
+                      if (campoConfig.nombre === 'observaciones') {
+                        return (
+                          <div key={campoConfig.nombre} className="md:col-span-2">
+                            <label htmlFor="observaciones" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('observaciones', 'Observaciones')} {isCampoObligatorio('observaciones') && '*'}
+                            </label>
+                            <textarea
+                              id="observaciones"
+                              name="observaciones"
+                              value={formData.observaciones}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('observaciones')}
+                              rows={3}
+                              placeholder="Notas adicionales, problemas conocidos, etc..."
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 resize-y rounded-md"
+                            />
+                          </div>
+                        );
+                      }
+
+                      // Para campos personalizados, usar renderCampoGenerico
+                      return renderCampoGenerico(campoConfig);
+                    })}
+                  </div>
+                </div>
+              );
+            })}
 
                   {/* Botones */}
           <div className="flex gap-3 pt-4 border-t border-gray-200">
