@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import {
   validateAndSanitizeEmail,
@@ -13,6 +13,8 @@ import {
   recordSuccessfulAttempt,
   getSecurityStatus
 } from '../services/securityService';
+import { isUserActive } from '../services/userRoleService';
+import { INSTITUTIONAL_COLORS } from '../constants/colors';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -90,6 +92,21 @@ export default function Login() {
 
     try {
       await signInWithEmailAndPassword(auth, emailValidation.sanitized, password);
+      
+      // Verificar si el usuario está activo
+      const userActive = await isUserActive(emailValidation.sanitized);
+      
+      if (!userActive) {
+        // Si el usuario está desactivado, cerrar sesión inmediatamente
+        if (auth.currentUser) {
+          await signOut(auth);
+        }
+        setError('Su cuenta se encuentra desactivada. Por favor, contacte al administrador.');
+        recordFailedAttempt();
+        setLoading(false);
+        return;
+      }
+      
       recordSuccessfulAttempt();
       setRetryAfter(undefined);
     } catch (err: any) {
@@ -123,29 +140,29 @@ export default function Login() {
       {/* Elementos decorativos animados */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div 
-          className={`absolute -top-40 -right-40 w-96 h-96 bg-green-800/10 rounded-full transition-all duration-[2000ms] ease-out ${
+          className={`absolute -top-40 -right-40 w-96 h-96 bg-green-900/10 rounded-full transition-all duration-[2000ms] ease-out ${
             mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
           }`}
         />
         <div 
-          className={`absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-green-900/10 rounded-full transition-all duration-[2000ms] delay-300 ease-out ${
+          className={`absolute -bottom-40 -left-40 w-[500px] h-[500px] ${INSTITUTIONAL_COLORS.bgPrimary}/10 rounded-full transition-all duration-[2000ms] delay-300 ease-out ${
             mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
           }`}
         />
         <div 
-          className={`absolute top-1/4 left-1/4 w-4 h-4 bg-green-700 rounded-full transition-all duration-1000 delay-500 ${
+          className={`absolute top-1/4 left-1/4 w-4 h-4 ${INSTITUTIONAL_COLORS.bgPrimary} rounded-full transition-all duration-1000 delay-500 ${
             mounted ? 'opacity-100' : 'opacity-0'
           }`}
           style={{ animation: mounted ? 'float 6s ease-in-out infinite' : 'none' }}
         />
         <div 
-          className={`absolute bottom-1/3 right-1/4 w-3 h-3 bg-green-600 rounded-full transition-all duration-1000 delay-700 ${
+          className={`absolute bottom-1/3 right-1/4 w-3 h-3 ${INSTITUTIONAL_COLORS.bgPrimary} rounded-full transition-all duration-1000 delay-700 ${
             mounted ? 'opacity-100' : 'opacity-0'
           }`}
           style={{ animation: mounted ? 'float 8s ease-in-out infinite reverse' : 'none' }}
         />
         <div 
-          className={`absolute top-1/2 right-1/3 w-2 h-2 bg-green-500 rounded-full transition-all duration-1000 delay-900 ${
+          className={`absolute top-1/2 right-1/3 w-2 h-2 ${INSTITUTIONAL_COLORS.bgPrimary} rounded-full transition-all duration-1000 delay-900 ${
             mounted ? 'opacity-100' : 'opacity-0'
           }`}
           style={{ animation: mounted ? 'float 5s ease-in-out infinite' : 'none' }}
@@ -193,7 +210,7 @@ export default function Login() {
               required
               maxLength={254}
               autoComplete="email"
-              className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-gray-200 focus:border-green-700 focus:ring-0 text-gray-900 placeholder-gray-400 transition-colors duration-300 outline-none"
+              className={`w-full px-0 py-3 bg-transparent border-0 border-b-2 border-gray-200 focus:${INSTITUTIONAL_COLORS.borderPrimary} focus:ring-0 text-gray-900 placeholder-gray-400 transition-colors duration-300 outline-none`}
               placeholder="Correo electrónico"
               disabled={isDisabled}
             />
@@ -210,14 +227,14 @@ export default function Login() {
               required
               maxLength={128}
               autoComplete="current-password"
-              className="w-full px-0 py-3 pr-10 bg-transparent border-0 border-b-2 border-gray-200 focus:border-green-700 focus:ring-0 text-gray-900 placeholder-gray-400 transition-colors duration-300 outline-none"
+              className={`w-full px-0 py-3 pr-10 bg-transparent border-0 border-b-2 border-gray-200 focus:${INSTITUTIONAL_COLORS.borderPrimary} focus:ring-0 text-gray-900 placeholder-gray-400 transition-colors duration-300 outline-none`}
               placeholder="Contraseña"
               disabled={isDisabled}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-green-700 transition-colors"
+              className={`absolute right-0 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:${INSTITUTIONAL_COLORS.textPrimary} transition-colors`}
               tabIndex={-1}
             >
               {showPassword ? (
@@ -260,13 +277,13 @@ export default function Login() {
             <button
               type="submit"
               disabled={isDisabled}
-              className="relative w-full py-4 bg-gradient-to-r from-green-800 to-green-900 text-white font-medium rounded-xl overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-xl hover:shadow-green-900/30 hover:from-green-700 hover:to-green-800"
+              className={`relative w-full py-4 bg-gradient-to-r ${INSTITUTIONAL_COLORS.gradientFrom} ${INSTITUTIONAL_COLORS.gradientTo} text-white font-medium rounded-xl overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-xl hover:shadow-green-900/30 hover:from-green-800 hover:to-green-900`}
             >
               {/* Efecto de brillo en hover */}
-              <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-700 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className={`absolute inset-0 bg-gradient-to-r ${INSTITUTIONAL_COLORS.gradientFrom} ${INSTITUTIONAL_COLORS.gradientTo} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
               
               {/* Línea animada en hover */}
-              <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-gradient-to-r from-green-500 to-green-600 group-hover:w-full transition-all duration-500" />
+              <div className={`absolute bottom-0 left-0 h-0.5 w-0 bg-gradient-to-r ${INSTITUTIONAL_COLORS.gradientFrom} ${INSTITUTIONAL_COLORS.gradientTo} group-hover:w-full transition-all duration-500`} />
               
               <span className={`relative flex items-center justify-center gap-2 transition-all duration-300 ${loading ? 'opacity-0' : ''}`}>
                 Ingresar

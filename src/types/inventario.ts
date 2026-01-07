@@ -26,6 +26,7 @@ export interface ItemInventario {
   procesador?: string;
   ram?: string;
   discoDuro?: string;
+  encargado?: string; // Nombre y correo del usuario que creó el item
 }
 
 export type EstadoItem = 'Disponible' | 'En Uso' | 'Mantenimiento' | 'Baja';

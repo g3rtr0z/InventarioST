@@ -210,6 +210,31 @@ export const toggleUserStatus = async (
 };
 
 /**
+ * Verificar si un usuario está activo
+ */
+export const isUserActive = async (userEmail: string): Promise<boolean> => {
+  if (!db) {
+    return true; // Si Firestore no está disponible, permitir acceso por defecto
+  }
+
+  try {
+    const userRef = doc(db as Firestore, USERS_COLLECTION, userEmail);
+    const userDoc = await getDoc(userRef);
+    
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      return userData.isActive !== false; // Si no existe el campo, considerar activo
+    }
+    
+    // Si el usuario no existe en la colección, permitir acceso (usuario nuevo)
+    return true;
+  } catch (error) {
+    console.error('Error al verificar estado de usuario:', error);
+    return true; // En caso de error, permitir acceso
+  }
+};
+
+/**
  * Crear un nuevo usuario
  */
 export const createUser = async (

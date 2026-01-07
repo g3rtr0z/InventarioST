@@ -1,4 +1,5 @@
 import type { ItemInventario } from '../types/inventario';
+import { INSTITUTIONAL_COLORS } from '../constants/colors';
 
 interface ItemListProps {
   items: ItemInventario[];
@@ -22,8 +23,8 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
 
   const getEstadoColor = (estado: string) => {
     const estadoMap: Record<string, string> = {
-      'Disponible': 'bg-green-100 text-green-800',
-      'En Uso': 'bg-green-100 text-green-800',
+      'Disponible': `${INSTITUTIONAL_COLORS.bgPrimary} text-white`,
+      'En Uso': `${INSTITUTIONAL_COLORS.bgPrimary} text-white`,
       'Mantenimiento': 'bg-yellow-100 text-yellow-700',
       'Baja': 'bg-red-100 text-red-700'
     };
@@ -57,8 +58,8 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
         <div
           key={item.id}
           className={`bg-white border-2 rounded-lg p-5 shadow-sm hover:shadow-lg transition-all flex flex-col ${
-            item.estado === 'Disponible' ? 'border-green-200 hover:border-green-300' :
-            item.estado === 'En Uso' ? 'border-green-200 hover:border-green-300' :
+            item.estado === 'Disponible' ? `${INSTITUTIONAL_COLORS.borderPrimary} hover:border-green-900` :
+            item.estado === 'En Uso' ? `${INSTITUTIONAL_COLORS.borderPrimary} hover:border-green-900` :
             item.estado === 'Mantenimiento' ? 'border-yellow-200 hover:border-yellow-300' :
             'border-red-200 hover:border-red-300'
           }`}
@@ -69,7 +70,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                 {item.nombre}
               </h3>
             </div>
-            <span className={`text-xs font-semibold px-2 py-1 rounded ${getEstadoColor(item.estado)}`}>
+            <span className={`text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${getEstadoColor(item.estado)}`}>
               {item.estado}
             </span>
           </div>
@@ -110,7 +111,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
             <div>
               <span className="text-gray-600">Tipo de Uso: </span>
               <span className={`text-gray-900 font-medium ${
-                item.tipoUso === 'Alumnos' ? 'text-blue-600' : 'text-green-600'
+                item.tipoUso === 'Alumnos' ? 'text-blue-600' : INSTITUTIONAL_COLORS.textPrimary
               }`}>
                 {item.tipoUso}
               </span>
@@ -139,6 +140,12 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
               <span className="text-gray-600">Responsable: </span>
               <span className="text-gray-900">{item.responsable}</span>
             </div>
+            {item.encargado && (
+              <div>
+                <span className="text-gray-600">Encargado: </span>
+                <span className="text-gray-900 font-medium">{item.encargado}</span>
+              </div>
+            )}
             {item.precio && (
               <div>
                 <span className="text-gray-600">Precio: </span>
@@ -168,7 +175,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
           <div className="flex gap-2 pt-4 border-t border-gray-200 mt-auto">
             <button
               onClick={() => onEdit(item)}
-              className="flex-1 px-3 py-1.5 bg-green-800 text-white text-sm font-medium rounded-md hover:bg-green-900 transition-colors"
+              className={`flex-1 px-3 py-1.5 ${INSTITUTIONAL_COLORS.bgPrimary} text-white text-sm font-medium rounded-md hover:bg-green-900 transition-colors`}
             >
               Editar
             </button>
@@ -200,6 +207,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                   <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Piso</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tipo de Uso</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Responsable</th>
+                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Encargado</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
@@ -207,45 +215,36 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                 {filteredItems.map((item) => (
                   <tr 
                     key={item.id} 
-                    className="hover:bg-gray-50 transition-colors"
+                    className="hover:bg-gray-50 transition-colors h-16"
                   >
-                    <td className="px-5 py-4 text-gray-900 font-medium">{item.nombre}</td>
-                    <td className="px-5 py-4 text-gray-700">{item.categoria}</td>
-                    <td className="px-5 py-4 text-gray-700">{item.marca} {item.modelo}</td>
-                    <td className="px-5 py-4 text-gray-700 font-mono text-xs">{item.numeroSerie}</td>
-                    <td className="px-5 py-4">
-                      <span className={`text-xs font-semibold px-2 py-1 rounded ${getEstadoColor(item.estado)}`}>
+                    <td className="px-5 py-3 align-middle text-gray-900 font-medium">{item.nombre}</td>
+                    <td className="px-5 py-3 align-middle text-gray-700">{item.categoria}</td>
+                    <td className="px-5 py-3 align-middle text-gray-700">{item.marca} {item.modelo}</td>
+                    <td className="px-5 py-3 align-middle text-gray-700 font-mono text-xs">{item.numeroSerie}</td>
+                    <td className="px-5 py-3 align-middle">
+                      <span className={`inline-block text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${getEstadoColor(item.estado)}`}>
                         {item.estado}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-gray-700 font-medium">{item.sede}</td>
-                    <td className="px-5 py-4 text-gray-700">{item.ubicacion}</td>
-                    <td className="px-5 py-4 text-gray-700">{item.piso || '-'}</td>
-                    <td className="px-5 py-4">
-                      <span className={`text-xs font-semibold px-2 py-1 rounded ${
+                    <td className="px-5 py-3 align-middle text-gray-700 font-medium">{item.sede}</td>
+                    <td className="px-5 py-3 align-middle text-gray-700">{item.ubicacion}</td>
+                    <td className="px-5 py-3 align-middle text-gray-700">{item.piso || '-'}</td>
+                    <td className="px-5 py-3 align-middle">
+                      <span className={`inline-block text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${
                         item.tipoUso === 'Alumnos' 
                           ? 'bg-blue-100 text-blue-700' 
-                          : 'bg-green-100 text-green-700'
+                          : `${INSTITUTIONAL_COLORS.bgPrimary} text-white`
                       }`}>
                         {item.tipoUso}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-gray-700">{item.responsable}</td>
-                    <td className="px-5 py-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            // TODO: Implementar función de impresión de QR
-                            console.log('Imprimir QR para:', item);
-                          }}
-                          className="px-3 py-1.5 bg-gray-600 text-white text-xs font-medium rounded-md hover:bg-gray-700 transition-colors"
-                          title="Imprimir código QR"
-                        >
-                          QR
-                        </button>
+                    <td className="px-5 py-3 align-middle text-gray-700">{item.responsable}</td>
+                    <td className="px-5 py-3 align-middle text-gray-700 font-medium">{item.encargado || '-'}</td>
+                    <td className="px-5 py-3 align-middle">
+                      <div className="flex gap-2 items-center">
                         <button
                           onClick={() => onEdit(item)}
-                          className="px-3 py-1.5 bg-green-800 text-white text-xs font-medium rounded-md hover:bg-green-900 transition-colors"
+                          className={`px-3 py-1.5 ${INSTITUTIONAL_COLORS.bgPrimary} text-white text-xs font-medium rounded-md hover:bg-green-900 transition-colors`}
                         >
                           Editar
                         </button>

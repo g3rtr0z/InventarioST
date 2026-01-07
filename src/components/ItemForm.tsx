@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { ItemInventario } from '../types/inventario';
 import { sanitizeText, validateNoXSS, validateNoSQLInjection } from '../utils/security';
 import { getConfig, subscribeToConfig, type CampoFormulario, type SeccionFormulario } from '../services/configService';
+import { INSTITUTIONAL_COLORS } from '../constants/colors';
 
 interface ItemFormProps {
   item?: ItemInventario | null;
@@ -10,9 +11,11 @@ interface ItemFormProps {
   items: ItemInventario[];
   onSave: (item: ItemInventario) => void;
   onCancel: () => void;
+  currentUserEmail?: string;
+  currentUserName?: string;
 }
 
-export default function ItemForm({ item, categorias, sedes, items, onSave, onCancel }: ItemFormProps) {
+export default function ItemForm({ item, categorias, sedes, items, onSave, onCancel, currentUserEmail = '', currentUserName = '' }: ItemFormProps) {
   const [formData, setFormData] = useState<Omit<ItemInventario, 'id'> & { [key: string]: any }>({
     nombre: '',
     categoria: categorias.length > 0 ? categorias[0] : '',
@@ -134,7 +137,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     const esObligatorio = campoConfig.obligatorio || false;
     const tipoCampo = campoConfig.tipo || 'text';
 
-    const baseClasses = "w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent rounded-md";
+    const baseClasses = `w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-md`;
     
     switch (tipoCampo) {
       case 'number':
@@ -269,8 +272,18 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         }
       });
       
+      // Incluir encargado si existe
+      if (rest.encargado) {
+        nuevoFormData.encargado = rest.encargado;
+      }
+      
       setFormData(nuevoFormData);
     } else {
+      // Al crear un nuevo item, asignar automáticamente el encargado
+      const encargadoTexto = currentUserName && currentUserEmail 
+        ? `${currentUserName} (${currentUserEmail})`
+        : currentUserEmail || '';
+      
       setFormData({
         nombre: '',
         categoria: categorias.length > 0 ? categorias[0] : '',
@@ -291,7 +304,8 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         tipoUso: 'Administrativo',
         procesador: '',
         ram: '',
-        discoDuro: ''
+        discoDuro: '',
+        encargado: encargadoTexto
       });
       setNombreError(''); // Limpiar error al cambiar de item
     }
@@ -452,7 +466,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
 
                 return (
                   <div key={seccion.nombre} className="space-y-4">
-                    <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
+                    <h3 className={`text-base font-semibold text-gray-800 border-b-2 ${INSTITUTIONAL_COLORS.borderPrimary} pb-2`}>
                       {seccion.etiqueta || seccion.nombre}
                     </h3>
                     
@@ -472,7 +486,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               onChange={handleChange}
                               required={isCampoObligatorio('nombre')}
                               placeholder="Ej: PC Oficina 1"
-                              className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent rounded-md ${
+                              className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-md ${
                                 nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
                               }`}
                             />
@@ -501,7 +515,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                                   value={formData.categoria}
                                   onChange={handleChange}
                                   required={isCampoObligatorio('categoria')}
-                                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-md`}
                                 >
                                   {categorias.length > 0 ? (
                                     categorias.map(cat => (
@@ -527,7 +541,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                                   value={formData.estado}
                                   onChange={handleChange}
                                   required={isCampoObligatorio('estado')}
-                                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-md`}
                                 >
                                   <option value="Disponible">Disponible</option>
                                   <option value="En Uso">En Uso</option>
@@ -550,7 +564,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                                   value={formData.tipoUso}
                                   onChange={handleChange}
                                   required={isCampoObligatorio('tipoUso')}
-                                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-md`}
                                 >
                                   <option value="Administrativo">Administrativo</option>
                                   <option value="Alumnos">Alumnos</option>
@@ -580,7 +594,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               onChange={handleChange}
                               required={isCampoObligatorio('nombre')}
                               placeholder="Ej: PC Oficina 1"
-                              className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent rounded-md ${
+                              className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-md ${
                                 nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
                               }`}
                             />
@@ -653,7 +667,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               onChange={handleChange}
                               required={isCampoObligatorio('ubicacion')}
                               placeholder="Ej: Oficina 101"
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
                             />
                           </div>
                         );
@@ -708,21 +722,41 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
 
                       if (campoConfig.nombre === 'responsable') {
                         return (
-                          <div key={campoConfig.nombre} className="md:col-span-2">
-                            <label htmlFor="responsable" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('responsable', 'Responsable')} {isCampoObligatorio('responsable') && '*'}
-                            </label>
-                            <input
-                              type="text"
-                              id="responsable"
-                              name="responsable"
-                              value={formData.responsable}
-                              onChange={handleChange}
-                              required={isCampoObligatorio('responsable')}
-                              placeholder="Ej: Juan Pérez"
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
-                            />
-                          </div>
+                          <>
+                            <div key={campoConfig.nombre} className="md:col-span-2">
+                              <label htmlFor="responsable" className="block mb-1 text-sm text-gray-700">
+                                {getCampoLabel('responsable', 'Responsable')} {isCampoObligatorio('responsable') && '*'}
+                              </label>
+                              <input
+                                type="text"
+                                id="responsable"
+                                name="responsable"
+                                value={formData.responsable}
+                                onChange={handleChange}
+                                required={isCampoObligatorio('responsable')}
+                                placeholder="Ej: Juan Pérez"
+                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                              />
+                            </div>
+                            {/* Campo Encargado (solo lectura) */}
+                            {formData.encargado && (
+                              <div key="encargado" className="md:col-span-2">
+                                <label htmlFor="encargado" className="block mb-1 text-sm text-gray-700">
+                                  Encargado
+                                </label>
+                                <input
+                                  type="text"
+                                  id="encargado"
+                                  name="encargado"
+                                  value={formData.encargado}
+                                  readOnly
+                                  disabled
+                                  className="w-full px-3 py-2 border border-gray-300 bg-gray-100 text-gray-600 rounded-md cursor-not-allowed"
+                                />
+                                <p className="mt-1 text-xs text-gray-500">Este campo se asigna automáticamente al crear el item</p>
+                              </div>
+                            )}
+                          </>
                         );
                       }
 
@@ -740,7 +774,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               onChange={handleChange}
                               required={isCampoObligatorio('marca')}
                               placeholder="Ej: Dell, HP, Lenovo"
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
                             />
                           </div>
                         );
@@ -760,7 +794,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               onChange={handleChange}
                               required={isCampoObligatorio('modelo')}
                               placeholder="Ej: OptiPlex 7090"
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
                             />
                           </div>
                         );
@@ -780,7 +814,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               onChange={handleChange}
                               required={isCampoObligatorio('numeroSerie')}
                               placeholder="Ej: SN123456789"
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
                             />
                           </div>
                         );
@@ -800,7 +834,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               onChange={handleChange}
                               required={isCampoObligatorio('procesador')}
                               placeholder="Ej: Intel Core i5-10400"
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
                             />
                           </div>
                         );
@@ -866,7 +900,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               value={formData.fechaAdquisicion}
                               onChange={handleChange}
                               required={isCampoObligatorio('fechaAdquisicion')}
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
                             />
                           </div>
                         );
@@ -885,7 +919,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               value={formData.fechaUltimoMantenimiento}
                               onChange={handleChange}
                               required={isCampoObligatorio('fechaUltimoMantenimiento')}
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
                             />
                           </div>
                         );
@@ -904,7 +938,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               value={formData.proximoMantenimiento}
                               onChange={handleChange}
                               required={isCampoObligatorio('proximoMantenimiento')}
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 rounded-md"
+                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
                             />
                           </div>
                         );
@@ -924,7 +958,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               required={isCampoObligatorio('descripcion')}
                               rows={3}
                               placeholder="Información adicional sobre el equipo..."
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 resize-y rounded-md"
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-800 resize-y rounded-md"
                             />
                           </div>
                         );
@@ -944,7 +978,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               required={isCampoObligatorio('observaciones')}
                               rows={3}
                               placeholder="Notas adicionales, problemas conocidos, etc..."
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 resize-y rounded-md"
+                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-800 resize-y rounded-md"
                             />
                           </div>
                         );
@@ -969,7 +1003,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors"
+              className={`flex-1 px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors`}
             >
               {item ? 'Actualizar' : 'Guardar'}
             </button>

@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
+import { INSTITUTIONAL_COLORS } from '../constants/colors';
 import ItemList from './ItemList';
 import ItemForm from './ItemForm';
 import type { ItemInventario } from '../types/inventario';
+import { getAllUsers } from '../services/userRoleService';
 import { 
   FaBox, 
   FaChartBar,
@@ -83,6 +85,23 @@ export default function UserPanel({
   const [sortBy, setSortBy] = useState<'nombre' | 'categoria' | 'estado' | 'ubicacion'>('nombre');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const sidebarTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [currentUserName, setCurrentUserName] = useState<string>('');
+  
+  // Obtener displayName del usuario actual
+  useEffect(() => {
+    const loadUserName = async () => {
+      if (currentUserEmail) {
+        try {
+          const users = await getAllUsers();
+          const currentUser = users.find(u => u.email === currentUserEmail);
+          setCurrentUserName(currentUser?.displayName || '');
+        } catch (err) {
+          console.error('Error al obtener nombre de usuario:', err);
+        }
+      }
+    };
+    loadUserName();
+  }, [currentUserEmail]);
 
   // Ordenar items
   const sortedItems = [...filteredAndSearchedItems].sort((a, b) => {
@@ -176,7 +195,7 @@ export default function UserPanel({
     <div className="min-h-screen bg-gray-50 w-full overflow-x-hidden">
       <div className="flex flex-col h-screen w-full">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-800 to-green-900 px-3 sm:px-6 flex justify-between items-center shadow-md w-full">
+        <div className={`bg-gradient-to-r ${INSTITUTIONAL_COLORS.gradientFrom} ${INSTITUTIONAL_COLORS.gradientTo} px-3 sm:px-6 flex justify-between items-center shadow-md w-full`}>
           <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -332,13 +351,13 @@ export default function UserPanel({
                         placeholder="Buscar por nombre, marca, modelo, serie, ubicación..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent"
+                        className={`w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
                       />
                     </div>
                     <div className="flex gap-2 items-center">
                       <button
                         onClick={onAddItem}
-                        className="px-3 py-2.5 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm flex items-center gap-2"
+                        className={`px-3 py-2.5 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors text-sm flex items-center gap-2`}
                       >
                         <FaPlus />
                         Agregar Item
@@ -348,7 +367,7 @@ export default function UserPanel({
                           onClick={() => setViewMode('cards')}
                           className={`px-3 py-2.5 text-sm font-medium transition-colors border-r border-gray-300 ${
                             viewMode === 'cards' 
-                              ? 'bg-green-800 text-white shadow-sm' 
+                              ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-sm` 
                               : 'bg-white text-gray-600 hover:text-gray-900'
                           }`}
                         >
@@ -358,7 +377,7 @@ export default function UserPanel({
                           onClick={() => setViewMode('table')}
                           className={`px-3 py-2.5 text-sm font-medium transition-colors ${
                             viewMode === 'table' 
-                              ? 'bg-green-800 text-white shadow-sm' 
+                              ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-sm` 
                               : 'bg-white text-gray-600 hover:text-gray-900'
                           }`}
                         >
@@ -385,7 +404,7 @@ export default function UserPanel({
                         <select
                           value={filterSede}
                           onChange={(e) => setFilterSede(e.target.value)}
-                          className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+                          className={`px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
                         >
                           <option value="Todas">Todas las sedes</option>
                           {sedes.map(sede => (
@@ -396,7 +415,7 @@ export default function UserPanel({
                         <select
                           value={filterEstado}
                           onChange={(e) => setFilterEstado(e.target.value)}
-                          className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+                          className={`px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
                         >
                           <option value="Todos">Todos los estados</option>
                           <option value="Disponible">Disponible</option>
@@ -408,7 +427,7 @@ export default function UserPanel({
                         <select
                           value={filterCategoria}
                           onChange={(e) => setFilterCategoria(e.target.value)}
-                          className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+                          className={`px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
                         >
                           <option value="Todas">Todas las categorías</option>
                           {categorias.map(cat => (
@@ -419,7 +438,7 @@ export default function UserPanel({
                         <select
                           value={filterTipoUso}
                           onChange={(e) => setFilterTipoUso(e.target.value)}
-                          className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+                          className={`px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
                         >
                           <option value="Todos">Todos los tipos</option>
                           <option value="Administrativo">Administrativo</option>
@@ -454,7 +473,7 @@ export default function UserPanel({
                         <select
                           value={sortBy}
                           onChange={(e) => setSortBy(e.target.value as 'nombre' | 'categoria' | 'estado' | 'ubicacion')}
-                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                          className={`px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
                         >
                           <option value="nombre">Nombre</option>
                           <option value="categoria">Categoría</option>
@@ -481,7 +500,7 @@ export default function UserPanel({
                             setItemsPerPage(Number(e.target.value));
                             setCurrentPage(1);
                           }}
-                          className="px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                          className={`px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
                         >
                           <option value="6">6 por página</option>
                           <option value="12">12 por página</option>
@@ -522,7 +541,7 @@ export default function UserPanel({
                                 onClick={() => setCurrentPage(pageNum)}
                                 className={`px-3 py-1.5 text-sm border rounded-md transition-colors ${
                                   currentPage === pageNum
-                                    ? 'bg-green-800 text-white border-green-800'
+                                    ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white ${INSTITUTIONAL_COLORS.borderPrimary}`
                                     : 'border-gray-300 hover:bg-gray-50'
                                 }`}
                               >
@@ -566,8 +585,8 @@ export default function UserPanel({
                     <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{estadisticas.total}</div>
                     <div className="text-xs sm:text-sm text-gray-600 font-medium">Total Items</div>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-3 sm:p-4 border border-green-200">
-                    <div className="text-2xl sm:text-3xl font-bold text-green-700 mb-1">{estadisticas.disponible}</div>
+                  <div className={`bg-green-50 rounded-lg p-3 sm:p-4 border ${INSTITUTIONAL_COLORS.borderPrimary}`}>
+                    <div className={`text-2xl sm:text-3xl font-bold ${INSTITUTIONAL_COLORS.textPrimary} mb-1`}>{estadisticas.disponible}</div>
                     <div className="text-xs sm:text-sm text-gray-600 font-medium">Disponibles</div>
                   </div>
                   <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-200">
@@ -625,6 +644,8 @@ export default function UserPanel({
           items={items}
           onSave={onSaveItem}
           onCancel={onCancelForm}
+          currentUserEmail={currentUserEmail}
+          currentUserName={currentUserName}
         />
       )}
     </div>

@@ -19,6 +19,7 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { exportToExcel } from './utils/exportToExcel';
 import { useSecurityHeaders } from './hooks/useSecurityHeaders';
 import { useUserRole } from './hooks/useUserRole';
+import { isUserActive } from './services/userRoleService';
 
 const CATEGORIAS_DEFAULT = [
   'Computadora',
@@ -68,8 +69,25 @@ function App() {
       return;
     }
     
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       const isAuthenticated = !!currentUser;
+      
+      // Si hay un usuario autenticado, verificar si está activo
+      if (isAuthenticated && currentUser?.email && auth) {
+        try {
+          const userActive = await isUserActive(currentUser.email);
+          if (!userActive) {
+            // Si el usuario está desactivado, cerrar sesión
+            await signOut(auth);
+            setUser(null);
+            setCheckingAuth(false);
+            return;
+          }
+        } catch (err) {
+          console.error('Error al verificar estado de usuario:', err);
+          // En caso de error, permitir acceso
+        }
+      }
       
       // En la primera verificación (recarga de página), no considerar como nuevo login
       if (isInitialCheckRef.current) {

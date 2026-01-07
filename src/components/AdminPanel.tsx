@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { INSTITUTIONAL_COLORS } from '../constants/colors';
 import ItemList from './ItemList';
 import ItemForm from './ItemForm';
 import type { ItemInventario } from '../types/inventario';
@@ -135,6 +136,9 @@ export default function AdminPanel({
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [errorUsers, setErrorUsers] = useState<string | null>(null);
   const [searchTermUsers, setSearchTermUsers] = useState('');
+  
+  // Obtener displayName del usuario actual
+  const currentUserName = users.find(u => u.email === currentUserEmail)?.displayName || '';
   const [nuevoUsuario, setNuevoUsuario] = useState({
     email: '',
     password: '',
@@ -789,13 +793,13 @@ export default function AdminPanel({
 
   const getRoleBadgeColor = (role: UserRole) => {
     return role === 'administrador' 
-      ? 'bg-green-100 text-green-700 border-green-200' 
+      ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white border-green-900` 
       : 'bg-gray-100 text-gray-700 border-gray-200';
   };
 
   const getStatusBadgeColor = (isActive: boolean) => {
     return isActive 
-      ? 'bg-green-100 text-green-700 border-green-200' 
+      ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white border-green-900` 
       : 'bg-red-100 text-red-700 border-red-200';
   };
 
@@ -819,11 +823,11 @@ export default function AdminPanel({
     <div className="min-h-screen bg-gray-50 w-full overflow-x-hidden">
       <div className="flex flex-col h-screen w-full">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-800 to-green-900 px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center shadow-md w-full">
+        <div className={`bg-gradient-to-r ${INSTITUTIONAL_COLORS.gradientFrom} ${INSTITUTIONAL_COLORS.gradientTo} px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center shadow-md w-full`}>
           <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="md:hidden text-white hover:bg-green-700 p-2 rounded-md transition-colors flex-shrink-0"
+              className={`md:hidden text-white hover:${INSTITUTIONAL_COLORS.bgPrimary} p-2 rounded-md transition-colors flex-shrink-0`}
               title="Toggle Sidebar"
             >
               <FaBars className="text-lg sm:text-xl" />
@@ -836,7 +840,7 @@ export default function AdminPanel({
           <div className="flex gap-1 sm:gap-2 flex-shrink-0">
             <button
               onClick={onExportExcel}
-              className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-green-700 border border-green-600 rounded-md hover:bg-green-600 transition-colors flex items-center gap-1 sm:gap-2"
+              className={`px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-white ${INSTITUTIONAL_COLORS.bgPrimary} border border-green-900 rounded-md hover:bg-green-900 transition-colors flex items-center gap-1 sm:gap-2`}
             >
               <FaFileExport className="text-sm sm:text-base" /> 
               <span className="hidden sm:inline">Exportar</span>
@@ -893,7 +897,7 @@ export default function AdminPanel({
                 onMouseLeave={() => setHoveredItem(null)}
                 className={`w-full ${sidebarOpen ? 'px-4 py-3 text-left' : 'px-2 py-3 justify-center'} rounded-lg transition-colors relative group ${
                   activeSection === 'inventario'
-                    ? 'bg-green-700 text-white shadow-md'
+                    ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-md`
                     : 'bg-white text-gray-700 hover:bg-gray-100'
                 }`}
                 title={!sidebarOpen ? 'Inventario' : ''}
@@ -922,7 +926,7 @@ export default function AdminPanel({
                 onMouseLeave={() => setHoveredItem(null)}
                 className={`w-full ${sidebarOpen ? 'px-4 py-3 text-left' : 'px-2 py-3 justify-center'} rounded-lg transition-colors relative group ${
                   activeSection === 'dashboard'
-                    ? 'bg-green-700 text-white shadow-md'
+                    ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-md`
                     : 'bg-white text-gray-700 hover:bg-gray-100'
                 }`}
                 title={!sidebarOpen ? 'Dashboard' : ''}
@@ -989,7 +993,7 @@ export default function AdminPanel({
                       }}
                       className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
                         activeSection === 'usuarios'
-                          ? 'bg-green-700 text-white shadow-md'
+                          ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-md`
                           : 'bg-white text-gray-700 hover:bg-gray-100'
                       }`}
                     >
@@ -1008,7 +1012,7 @@ export default function AdminPanel({
                       }}
                       className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
                         activeSection === 'categorias'
-                          ? 'bg-green-700 text-white shadow-md'
+                          ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-md`
                           : 'bg-white text-gray-700 hover:bg-gray-100'
                       }`}
                     >
@@ -1027,7 +1031,7 @@ export default function AdminPanel({
                       }}
                       className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
                         activeSection === 'sedes'
-                          ? 'bg-green-700 text-white shadow-md'
+                          ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-md`
                           : 'bg-white text-gray-700 hover:bg-gray-100'
                       }`}
                     >
@@ -1089,7 +1093,7 @@ export default function AdminPanel({
                       }}
                       className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
                         activeSection === 'reportes'
-                          ? 'bg-green-700 text-white shadow-md'
+                          ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-md`
                           : 'bg-white text-gray-700 hover:bg-gray-100'
                       }`}
                     >
@@ -1119,7 +1123,7 @@ export default function AdminPanel({
                   onMouseLeave={() => setHoveredItem(null)}
                   className={`w-full ${sidebarOpen ? 'px-4 py-3 text-left' : 'px-2 py-3 justify-center'} rounded-lg transition-colors relative group ${
                     activeSection === 'configuracion'
-                      ? 'bg-green-700 text-white shadow-md'
+                      ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-md`
                       : 'bg-white text-gray-700 hover:bg-gray-100'
                   }`}
                   title={!sidebarOpen ? 'Configuración' : ''}
@@ -1146,13 +1150,13 @@ export default function AdminPanel({
                   <>
                     <div className="text-xs text-gray-500 mb-1">Usuario actual</div>
                     <div className="text-sm font-semibold text-gray-900 truncate">{currentUserEmail}</div>
-                    <div className="text-xs text-green-700 font-medium mt-1 flex items-center gap-1">
+                    <div className={`text-xs ${INSTITUTIONAL_COLORS.textPrimary} font-medium mt-1 flex items-center gap-1`}>
                       <FaUserShield /> Administrador
                     </div>
                   </>
                 ) : (
                   <div className="flex justify-center">
-                    <FaUserShield className="text-green-700 text-lg" title={currentUserEmail} />
+                    <FaUserShield className={`${INSTITUTIONAL_COLORS.textPrimary} text-lg`} title={currentUserEmail} />
                   </div>
                 )}
               </div>
@@ -1174,13 +1178,13 @@ export default function AdminPanel({
                         placeholder="Buscar por nombre, marca, modelo, serie, ubicación..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent transition-all"
+                        className={`w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent transition-all`}
                       />
                     </div>
                     <div className="flex gap-2">
                       <button
                         onClick={onAddItem}
-                        className="px-4 py-2.5 bg-green-600 text-white hover:bg-green-700 rounded-md transition-colors text-sm font-medium flex items-center gap-2"
+                        className={`px-4 py-2.5 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium flex items-center gap-2`}
                         title="Agregar Item"
                       >
                         <FaPlus /> Agregar Item
@@ -1190,7 +1194,7 @@ export default function AdminPanel({
                           onClick={() => setViewMode('cards')}
                           className={`px-3 py-2.5 text-sm font-medium transition-colors border-r border-gray-300 ${
                             viewMode === 'cards' 
-                              ? 'bg-green-600 text-white shadow-sm' 
+                              ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-sm` 
                               : 'bg-white text-gray-600 hover:text-gray-900'
                           }`}
                         >
@@ -1200,7 +1204,7 @@ export default function AdminPanel({
                           onClick={() => setViewMode('table')}
                           className={`px-3 py-2.5 text-sm font-medium transition-colors ${
                             viewMode === 'table' 
-                              ? 'bg-green-600 text-white shadow-sm' 
+                              ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-sm` 
                               : 'bg-white text-gray-600 hover:text-gray-900'
                           }`}
                         >
@@ -1227,7 +1231,7 @@ export default function AdminPanel({
                         <select
                           value={filterSede}
                           onChange={(e) => setFilterSede(e.target.value)}
-                          className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+                          className={`px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
                         >
                           <option value="Todas">Todas las sedes</option>
                           {sedes.map(sede => (
@@ -1238,7 +1242,7 @@ export default function AdminPanel({
                         <select
                           value={filterEstado}
                           onChange={(e) => setFilterEstado(e.target.value)}
-                          className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+                          className={`px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
                         >
                           <option value="Todos">Todos los estados</option>
                           <option value="Disponible">Disponible</option>
@@ -1250,7 +1254,7 @@ export default function AdminPanel({
                         <select
                           value={filterCategoria}
                           onChange={(e) => setFilterCategoria(e.target.value)}
-                          className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+                          className={`px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
                         >
                           <option value="Todas">Todas las categorías</option>
                           {categorias.map(cat => (
@@ -1261,7 +1265,7 @@ export default function AdminPanel({
                         <select
                           value={filterTipoUso}
                           onChange={(e) => setFilterTipoUso(e.target.value)}
-                          className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+                          className={`px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
                         >
                           <option value="Todos">Todos los tipos</option>
                           <option value="Administrativo">Administrativo</option>
@@ -1299,7 +1303,7 @@ export default function AdminPanel({
                             setSortBy(e.target.value as 'nombre' | 'categoria' | 'estado' | 'ubicacion');
                             setCurrentPage(1);
                           }}
-                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+                          className={`px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
                         >
                           <option value="nombre">Nombre</option>
                           <option value="categoria">Categoría</option>
@@ -1365,7 +1369,7 @@ export default function AdminPanel({
                               onClick={() => setCurrentPage(pageNum)}
                               className={`px-3 py-1.5 text-sm border rounded-md transition-colors ${
                                 currentPage === pageNum
-                                  ? 'bg-green-600 text-white border-green-600'
+                                  ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white ${INSTITUTIONAL_COLORS.borderPrimary}`
                                   : 'border-gray-300 hover:bg-gray-50'
                               }`}
                             >
@@ -1408,8 +1412,8 @@ export default function AdminPanel({
                       <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{estadisticas.total}</div>
                       <div className="text-xs sm:text-sm text-gray-600 font-medium">Total Items</div>
                     </div>
-                    <div className="bg-green-50 rounded-lg p-3 sm:p-4 border border-green-200">
-                      <div className="text-2xl sm:text-3xl font-bold text-green-700 mb-1">{estadisticas.disponible}</div>
+                    <div className={`bg-green-50 rounded-lg p-3 sm:p-4 border ${INSTITUTIONAL_COLORS.borderPrimary}`}>
+                      <div className={`text-2xl sm:text-3xl font-bold ${INSTITUTIONAL_COLORS.textPrimary} mb-1`}>{estadisticas.disponible}</div>
                       <div className="text-xs sm:text-sm text-gray-600 font-medium">Disponibles</div>
                     </div>
                     <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-200">
@@ -1492,7 +1496,7 @@ export default function AdminPanel({
                     placeholder="Buscar por email o nombre..."
                     value={searchTermUsers}
                     onChange={(e) => setSearchTermUsers(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                    className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
                   />
                 </div>
 
@@ -1533,7 +1537,7 @@ export default function AdminPanel({
                               </div>
                             </div>
                             
-                            <div className="flex items-center gap-2 mt-2">
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
                               <span className={`text-xs font-semibold px-2 py-1 rounded border ${getRoleBadgeColor(user.role)} flex items-center gap-1`}>
                                 {user.role === 'administrador' ? (
                                   <>
@@ -1556,9 +1560,26 @@ export default function AdminPanel({
                                   </>
                                 )}
                               </span>
+                              {user.createdAt && (
+                                <span className="text-xs text-gray-500">
+                                  Creado: {new Date(user.createdAt).toLocaleString('es-MX', { 
+                                    year: 'numeric', 
+                                    month: '2-digit', 
+                                    day: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              )}
                               {user.lastLogin && (
                                 <span className="text-xs text-gray-500">
-                                  Último acceso: {new Date(user.lastLogin).toLocaleDateString('es-MX')}
+                                  Último acceso: {new Date(user.lastLogin).toLocaleString('es-MX', { 
+                                    year: 'numeric', 
+                                    month: '2-digit', 
+                                    day: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
                                 </span>
                               )}
                             </div>
@@ -1586,7 +1607,7 @@ export default function AdminPanel({
                               className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                                 user.isActive
                                   ? 'bg-yellow-500 text-white hover:bg-yellow-600'
-                                  : 'bg-green-500 text-white hover:bg-green-600'
+                                  : `${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900`
                               } ${
                                 user.email === currentUserEmail ? 'opacity-50 cursor-not-allowed' : ''
                               }`}
@@ -1638,11 +1659,11 @@ export default function AdminPanel({
                           }
                         }}
                         placeholder="Nombre de la categoría"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                        className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
                       />
                       <button
                         onClick={handleAgregarCategoria}
-                        className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-md transition-colors font-medium"
+                        className={`px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors font-medium`}
                         disabled={!nuevaCategoria.trim()}
                       >
                         + Agregar
@@ -1705,11 +1726,11 @@ export default function AdminPanel({
                           }
                         }}
                         placeholder="Nombre de la sede"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                        className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
                       />
                       <button
                         onClick={handleAgregarSede}
-                        className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-md transition-colors font-medium"
+                        className={`px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors font-medium`}
                         disabled={!nuevaSede.trim()}
                       >
                         + Agregar
@@ -1792,7 +1813,7 @@ export default function AdminPanel({
                       onClick={() => setConfigSubsection('formulario')}
                       className={`flex-1 min-w-[100px] px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                         configSubsection === 'formulario'
-                          ? 'bg-green-800 text-white'
+                          ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white`
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
@@ -1802,7 +1823,7 @@ export default function AdminPanel({
                       onClick={() => setConfigSubsection('secciones')}
                       className={`flex-1 min-w-[100px] px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                         configSubsection === 'secciones'
-                          ? 'bg-green-800 text-white'
+                          ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white`
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
@@ -1812,7 +1833,7 @@ export default function AdminPanel({
                       onClick={() => setConfigSubsection('estados')}
                       className={`flex-1 min-w-[100px] px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                         configSubsection === 'estados'
-                          ? 'bg-green-800 text-white'
+                          ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white`
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
@@ -1830,7 +1851,7 @@ export default function AdminPanel({
                     </p>
 
                     {/* Agregar nueva sección */}
-                    <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className={`mb-6 p-4 bg-green-50 rounded-lg border ${INSTITUTIONAL_COLORS.borderPrimary}`}>
                       <h5 className="text-base font-semibold text-gray-800 mb-3">Agregar Nueva Sección</h5>
                       <div className="flex gap-2">
                         <input
@@ -1843,11 +1864,11 @@ export default function AdminPanel({
                             }
                           }}
                           placeholder="Nombre de la sección (ej: Información Adicional)"
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
+                          className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent text-sm`}
                         />
                         <button
                           onClick={handleAgregarSeccion}
-                          className="px-4 py-2 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium"
+                          className={`px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium`}
                         >
                           Agregar
                         </button>
@@ -1872,7 +1893,7 @@ export default function AdminPanel({
                                   onClick={() => handleToggleSeccionVisible(seccion.nombre)}
                                   className={`p-2 rounded-md transition-colors ${
                                     seccion.visible
-                                      ? 'text-green-700 hover:bg-green-50'
+                                      ? 'text-green-800 hover:bg-green-50'
                                       : 'text-gray-400 hover:bg-gray-100'
                                   }`}
                                   title={seccion.visible ? 'Ocultar sección' : 'Mostrar sección'}
@@ -1893,12 +1914,12 @@ export default function AdminPanel({
                                             setEditandoSeccion(null);
                                           }
                                         }}
-                                        className="flex-1 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
+                                        className={`flex-1 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent text-sm`}
                                         autoFocus
                                       />
                                       <button
                                         onClick={() => handleEditarSeccion(seccion.nombre, editandoSeccion.nuevoNombre)}
-                                        className="px-2 py-1 text-green-700 hover:bg-green-50 rounded-md transition-colors"
+                                        className={`px-2 py-1 ${INSTITUTIONAL_COLORS.textPrimary} hover:bg-green-50 rounded-md transition-colors`}
                                         title="Guardar"
                                       >
                                         <FaCheck />
@@ -1928,7 +1949,7 @@ export default function AdminPanel({
                                 <div className="flex items-center gap-2">
                                   <button
                                     onClick={() => setEditandoSeccion({ nombre: seccion.nombre, nuevoNombre: seccion.nombre })}
-                                    className="px-3 py-1 text-xs text-green-700 hover:bg-green-50 rounded-md transition-colors"
+                                    className={`px-3 py-1 text-xs ${INSTITUTIONAL_COLORS.textPrimary} hover:bg-green-50 rounded-md transition-colors`}
                                     title="Editar nombre"
                                   >
                                     <FaEdit />
@@ -1991,13 +2012,13 @@ export default function AdminPanel({
                           value={nuevoEstado.nombre}
                           onChange={(e) => setNuevoEstado({ ...nuevoEstado, nombre: e.target.value })}
                           placeholder="Nombre del estado"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent"
+                          className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
                         />
                         <div className="flex gap-3">
                           <select
                             value={nuevoEstado.color}
                             onChange={(e) => setNuevoEstado({ ...nuevoEstado, color: e.target.value })}
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent"
+                            className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
                           >
                             <option value="bg-green-100 text-green-800">Verde</option>
                             <option value="bg-blue-100 text-blue-800">Azul</option>
@@ -2018,7 +2039,7 @@ export default function AdminPanel({
                         </div>
                         <button
                           onClick={handleAgregarEstado}
-                          className="w-full px-4 py-2 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium"
+                          className={`w-full px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium`}
                         >
                           Agregar Estado
                         </button>
@@ -2106,7 +2127,7 @@ export default function AdminPanel({
                                       onClick={() => handleToggleCampoVisible(campo.nombre)}
                                       className={`p-2 rounded-md transition-colors ${
                                         campo.visible
-                                          ? 'text-green-700 hover:bg-green-50'
+                                          ? 'text-green-800 hover:bg-green-50'
                                           : 'text-gray-400 hover:bg-gray-100'
                                       }`}
                                       title={campo.visible ? 'Ocultar campo' : 'Mostrar campo'}
@@ -2285,6 +2306,8 @@ export default function AdminPanel({
             items={items}
             onSave={onSaveItem}
             onCancel={onCancelForm}
+            currentUserEmail={currentUserEmail}
+            currentUserName={currentUserName}
           />
         )}
 
