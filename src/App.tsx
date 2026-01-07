@@ -368,7 +368,8 @@ function App() {
     item.marca.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.numeroSerie.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.ubicacion.toLowerCase().includes(searchTerm.toLowerCase())
+    item.ubicacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.responsable.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
 
@@ -413,6 +414,7 @@ function App() {
       item.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.numeroSerie.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.ubicacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.responsable.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.proveedor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.numeroFactura?.toLowerCase().includes(searchTerm.toLowerCase())
     );
