@@ -1,39 +1,32 @@
 /**
  * Hook para configurar headers de seguridad y políticas CSP
- * Actualiza los meta tags de seguridad en cada render para asegurar la configuración correcta
  */
 
 import { useEffect } from 'react';
 
 export function useSecurityHeaders() {
   useEffect(() => {
-    // Configurar Content Security Policy meta tag
-    // Actualizar siempre para asegurar la configuración correcta
-    const cspContent = [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.firebaseapp.com https://*.firebaseio.com https://apis.google.com https://*.gstatic.com",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: https:",
-      "font-src 'self' data:",
-      "connect-src 'self' https://*.firebaseio.com https://*.firebaseapp.com https://*.googleapis.com wss://*.firebaseio.com",
-      "frame-src 'self' https://lottie.host https://*.firebaseapp.com https://*.googleapis.com",
-      "object-src 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "upgrade-insecure-requests"
-      // Nota: frame-ancestors no funciona en meta tags, solo en headers HTTP
-      // La protección contra clickjacking se maneja mediante JavaScript abajo
-    ].join('; ');
-    
+    // Configurar Content Security Policy meta tag si no existe
     const existingCSP = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-    if (existingCSP) {
-      // Actualizar el CSP existente
-      existingCSP.setAttribute('content', cspContent);
-    } else {
-      // Crear nuevo meta tag CSP
+    
+    if (!existingCSP) {
       const cspMeta = document.createElement('meta');
       cspMeta.httpEquiv = 'Content-Security-Policy';
-      cspMeta.content = cspContent;
+      cspMeta.content = [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.firebaseapp.com https://*.firebaseio.com",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: https:",
+        "font-src 'self' data:",
+        "connect-src 'self' https://*.firebaseio.com https://*.firebaseapp.com https://*.googleapis.com wss://*.firebaseio.com",
+        "frame-src 'self' https://lottie.host",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "upgrade-insecure-requests"
+        // Nota: frame-ancestors no funciona en meta tags, solo en headers HTTP
+        // La protección contra clickjacking se maneja mediante JavaScript abajo
+      ].join('; ');
       document.head.appendChild(cspMeta);
     }
 
@@ -49,11 +42,7 @@ export function useSecurityHeaders() {
 
     securityHeaders.forEach(header => {
       const existing = document.querySelector(`meta[http-equiv="${header.httpEquiv}"]`);
-      if (existing) {
-        // Actualizar si ya existe
-        existing.setAttribute('content', header.content);
-      } else {
-        // Crear nuevo meta tag
+      if (!existing) {
         const meta = document.createElement('meta');
         meta.httpEquiv = header.httpEquiv;
         meta.content = header.content;

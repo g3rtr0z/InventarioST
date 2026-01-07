@@ -11,11 +11,9 @@ interface ItemFormProps {
   items: ItemInventario[];
   onSave: (item: ItemInventario) => void;
   onCancel: () => void;
-  currentUserEmail?: string;
-  currentUserName?: string;
 }
 
-export default function ItemForm({ item, categorias, sedes, items, onSave, onCancel, currentUserEmail = '', currentUserName = '' }: ItemFormProps) {
+export default function ItemForm({ item, categorias, sedes, items, onSave, onCancel }: ItemFormProps) {
   const [formData, setFormData] = useState<Omit<ItemInventario, 'id'> & { [key: string]: any }>({
     nombre: '',
     categoria: categorias.length > 0 ? categorias[0] : '',
@@ -272,18 +270,8 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         }
       });
       
-      // Incluir encargado si existe
-      if (rest.encargado) {
-        nuevoFormData.encargado = rest.encargado;
-      }
-      
       setFormData(nuevoFormData);
     } else {
-      // Al crear un nuevo item, asignar automáticamente el encargado
-      const encargadoTexto = currentUserName && currentUserEmail 
-        ? `${currentUserName} (${currentUserEmail})`
-        : currentUserEmail || '';
-      
       setFormData({
         nombre: '',
         categoria: categorias.length > 0 ? categorias[0] : '',
@@ -304,8 +292,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         tipoUso: 'Administrativo',
         procesador: '',
         ram: '',
-        discoDuro: '',
-        encargado: encargadoTexto
+        discoDuro: ''
       });
       setNombreError(''); // Limpiar error al cambiar de item
     }
@@ -722,41 +709,21 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
 
                       if (campoConfig.nombre === 'responsable') {
                         return (
-                          <>
-                            <div key={campoConfig.nombre} className="md:col-span-2">
-                              <label htmlFor="responsable" className="block mb-1 text-sm text-gray-700">
-                                {getCampoLabel('responsable', 'Responsable')} {isCampoObligatorio('responsable') && '*'}
-                              </label>
-                              <input
-                                type="text"
-                                id="responsable"
-                                name="responsable"
-                                value={formData.responsable}
-                                onChange={handleChange}
-                                required={isCampoObligatorio('responsable')}
-                                placeholder="Ej: Juan Pérez"
-                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
-                              />
-                            </div>
-                            {/* Campo Encargado (solo lectura) */}
-                            {formData.encargado && (
-                              <div key="encargado" className="md:col-span-2">
-                                <label htmlFor="encargado" className="block mb-1 text-sm text-gray-700">
-                                  Encargado
-                                </label>
-                                <input
-                                  type="text"
-                                  id="encargado"
-                                  name="encargado"
-                                  value={formData.encargado}
-                                  readOnly
-                                  disabled
-                                  className="w-full px-3 py-2 border border-gray-300 bg-gray-100 text-gray-600 rounded-md cursor-not-allowed"
-                                />
-                                <p className="mt-1 text-xs text-gray-500">Este campo se asigna automáticamente al crear el item</p>
-                              </div>
-                            )}
-                          </>
+                          <div key={campoConfig.nombre} className="md:col-span-2">
+                            <label htmlFor="responsable" className="block mb-1 text-sm text-gray-700">
+                              {getCampoLabel('responsable', 'Responsable')} {isCampoObligatorio('responsable') && '*'}
+                            </label>
+                            <input
+                              type="text"
+                              id="responsable"
+                              name="responsable"
+                              value={formData.responsable}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('responsable')}
+                              placeholder="Ej: Juan Pérez"
+                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                            />
+                          </div>
                         );
                       }
 

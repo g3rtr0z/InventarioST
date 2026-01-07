@@ -140,12 +140,6 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
               <span className="text-gray-600">Responsable: </span>
               <span className="text-gray-900">{item.responsable}</span>
             </div>
-            {item.encargado && (
-              <div>
-                <span className="text-gray-600">Encargado: </span>
-                <span className="text-gray-900 font-medium">{item.encargado}</span>
-              </div>
-            )}
             {item.precio && (
               <div>
                 <span className="text-gray-600">Precio: </span>
@@ -207,7 +201,6 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                   <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Piso</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tipo de Uso</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Responsable</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Encargado</th>
                   <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
@@ -239,7 +232,6 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                       </span>
                     </td>
                     <td className="px-5 py-3 align-middle text-gray-700">{item.responsable}</td>
-                    <td className="px-5 py-3 align-middle text-gray-700 font-medium">{item.encargado || '-'}</td>
                     <td className="px-5 py-3 align-middle">
                       <div className="flex gap-2 items-center">
                         <button

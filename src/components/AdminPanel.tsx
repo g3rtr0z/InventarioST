@@ -3,8 +3,9 @@ import { INSTITUTIONAL_COLORS } from '../constants/colors';
 import ItemList from './ItemList';
 import ItemForm from './ItemForm';
 import type { ItemInventario } from '../types/inventario';
-import jsPDF from 'jspdf';
 import { getAllUsers, changeUserRole, toggleUserStatus, createUser, deleteUserAccount, type UserInfo, type UserRole } from '../services/userRoleService';
+import { signOut } from 'firebase/auth';
+import { auth } from '../config/firebase';
 import { 
   getConfig, 
   updateEstados, 
@@ -137,9 +138,6 @@ export default function AdminPanel({
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [errorUsers, setErrorUsers] = useState<string | null>(null);
   const [searchTermUsers, setSearchTermUsers] = useState('');
-  
-  // Obtener displayName del usuario actual
-  const currentUserName = users.find(u => u.email === currentUserEmail)?.displayName || '';
   const [nuevoUsuario, setNuevoUsuario] = useState({
     email: '',
     password: '',
@@ -710,7 +708,7 @@ export default function AdminPanel({
     setLoadingUsers(true);
 
     try {
-      await createUser(
+      const shouldSignOut = await createUser(
         nuevoUsuario.email.trim(),
         nuevoUsuario.password,
         nuevoUsuario.displayName.trim(),
@@ -726,10 +724,13 @@ export default function AdminPanel({
       });
       setMostrarFormularioUsuario(false);
       
-      // Recargar lista de usuarios
-      await loadUsers();
+      // Mostrar mensaje de confirmación
+      alert('Usuario creado correctamente');
       
-      alert('Usuario creado exitosamente');
+      // Si se debe cerrar la sesión (porque se inició sesión con el usuario recién creado)
+      if (shouldSignOut && auth) {
+        await signOut(auth);
+      }
     } catch (err: any) {
       const errorMessage = err.message || 'Error al crear el usuario';
       setErrorUsers(errorMessage);
@@ -758,168 +759,6 @@ export default function AdminPanel({
       const errorMessage = err.message || 'Error al eliminar el usuario';
       setErrorUsers(errorMessage);
       console.error(err);
-    }
-  };
-
-
-  const handleGenerarPDFPorEncargado = () => {
-    try {
-      const doc = new jsPDF();
-      let yPos = 20;
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 20;
-      const lineHeight = 4.5; // Interlineado mínimo
-
-      // Título
-      doc.setFontSize(20);
-      doc.setFont('arial', 'bold');
-      doc.setTextColor(22, 101, 52); // Verde oscuro institucional
-      doc.text('INFORME POR ENCARGADO', pageWidth / 2, yPos, { align: 'center' });
-      yPos += 10;
-
-      // Fecha de generación
-      doc.setFontSize(10);
-      doc.setFont('arial', 'normal');
-      doc.setTextColor(0, 0, 0);
-      const fecha = new Date().toLocaleString('es-MX', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      doc.text(`Generado el: ${fecha}`, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 15;
-
-      // Agrupar items por encargado (solo con nombre de encargado)
-      const itemsPorEncargado: Record<string, ItemInventario[]> = {};
-      items.forEach(item => {
-        const encargado = (item.encargado || '').trim();
-        if (!encargado) return; // omitir items sin encargado
-        if (!itemsPorEncargado[encargado]) {
-          itemsPorEncargado[encargado] = [];
-        }
-        itemsPorEncargado[encargado].push(item);
-      });
-
-      // Si no hay encargados válidos, avisar y salir
-      if (Object.keys(itemsPorEncargado).length === 0) {
-        alert('No hay items con encargado para generar el informe.');
-        return;
-      }
-
-      // Función helper para verificar si hay espacio y agregar nueva página si es necesario
-      const checkPageBreak = (requiredSpace: number = lineHeight) => {
-        if (yPos + requiredSpace > pageHeight - margin) {
-          doc.addPage();
-          yPos = 20;
-        }
-      };
-
-      // Ordenar encargados por cantidad de items (mayor a menor)
-      const encargadosOrdenados = Object.entries(itemsPorEncargado)
-        .sort((a, b) => b[1].length - a[1].length);
-
-      // Generar reporte por cada encargado
-      encargadosOrdenados.forEach(([encargado, itemsEncargado], encargadoIndex) => {
-        // Título del encargado
-        checkPageBreak(20);
-        doc.setFontSize(16);
-        doc.setFont('arial', 'bold');
-        doc.setTextColor(0, 0, 0); // Negro
-        doc.text('ENCARGADO:', margin, yPos);
-        yPos += lineHeight + 2;
-        
-        // Nombre del encargado (puede ser largo con correo)
-        checkPageBreak(lineHeight);
-        doc.setFontSize(12);
-        doc.setFont('arial', 'normal');
-        doc.setTextColor(0, 0, 0); // Negro
-        // Dividir el texto del encargado si es muy largo
-        const encargadoLines = doc.splitTextToSize(encargado, pageWidth - 2 * margin);
-        doc.text(encargadoLines, margin, yPos);
-        yPos += (encargadoLines.length * lineHeight) + 3;
-
-        // Cantidad de items
-        doc.setFontSize(10);
-        doc.setFont('arial', 'normal');
-        doc.setTextColor(0, 0, 0);
-        doc.text(`Total de items: ${itemsEncargado.length}`, margin, yPos);
-        yPos += lineHeight + 3;
-
-        // Lista de items del encargado
-        doc.setFontSize(9);
-        itemsEncargado.forEach((item, index) => {
-          // Nombre del item
-          checkPageBreak(lineHeight);
-          doc.setFontSize(10);
-          doc.setFont('arial', 'bold');
-          doc.text(`${index + 1}. ${item.nombre}`, margin, yPos);
-          yPos += lineHeight;
-
-          // Categoría
-          checkPageBreak(lineHeight);
-          doc.setFontSize(9);
-          doc.setFont('arial', 'normal');
-          doc.text(`   Categoría: ${item.categoria}`, margin, yPos);
-          yPos += lineHeight;
-          
-          // Estado
-          checkPageBreak(lineHeight);
-          doc.text(`   Estado: ${item.estado}`, margin, yPos);
-          yPos += lineHeight;
-          
-          // Sede
-          checkPageBreak(lineHeight);
-          doc.text(`   Sede: ${item.sede}`, margin, yPos);
-          yPos += lineHeight;
-          
-          // Ubicación
-          checkPageBreak(lineHeight);
-          doc.text(`   Ubicación: ${item.ubicacion}`, margin, yPos);
-          yPos += lineHeight;
-          
-          // Responsable
-          if (item.responsable) {
-            checkPageBreak(lineHeight);
-            doc.text(`   Responsable: ${item.responsable}`, margin, yPos);
-            yPos += lineHeight;
-          }
-          
-          // Marca/Modelo
-          if (item.marca || item.modelo) {
-            checkPageBreak(lineHeight);
-            const marcaModelo = [item.marca, item.modelo].filter(Boolean).join(' ');
-            doc.text(`   Marca/Modelo: ${marcaModelo}`, margin, yPos);
-            yPos += lineHeight;
-          }
-          
-          // Serie
-          if (item.numeroSerie) {
-            checkPageBreak(lineHeight);
-            doc.text(`   Serie: ${item.numeroSerie}`, margin, yPos);
-            yPos += lineHeight;
-          }
-          
-          // Espacio adicional entre items
-          checkPageBreak(2);
-          yPos += 2;
-        });
-
-        // Espacio entre encargados
-        if (encargadoIndex < encargadosOrdenados.length - 1) {
-          checkPageBreak(5);
-          yPos += 5;
-        }
-      });
-
-      // Guardar PDF
-      const fileName = `Informe_Por_Encargado_${new Date().toISOString().split('T')[0]}.pdf`;
-      doc.save(fileName);
-    } catch (error) {
-      console.error('Error al generar PDF por encargado:', error);
-      alert('Error al generar el PDF. Por favor, intente nuevamente.');
     }
   };
 
@@ -1207,27 +1046,34 @@ export default function AdminPanel({
                 )}
               </div>
 
-              {/* Reportes (ingreso directo, sin desplegable) */}
+              {/* Dropdown: Reportes */}
               <div className="mt-2">
                 <button
                   onClick={() => {
-                    setActiveSection('reportes');
-                    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                      setTimeout(() => setSidebarOpen(false), 100);
+                    if (!sidebarOpen) {
+                      setSidebarOpen(true);
+                      setOpenDropdowns({ ...openDropdowns, configuracion: true });
+                    } else {
+                      toggleDropdown('configuracion');
                     }
                   }}
                   onMouseEnter={() => setHoveredItem('reportes')}
                   onMouseLeave={() => setHoveredItem(null)}
-                  className={`w-full ${sidebarOpen ? 'px-4 py-3 text-left' : 'px-2 py-3 justify-center'} rounded-lg transition-colors relative group ${
-                    activeSection === 'reportes'
-                      ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-md`
-                      : 'bg-white text-gray-700 hover:bg-gray-100'
-                  }`}
+                  className={`w-full ${sidebarOpen ? 'px-4 py-3 text-left' : 'px-2 py-3 justify-center'} rounded-lg transition-colors relative group bg-white text-gray-700 hover:bg-gray-100`}
                   title={!sidebarOpen ? 'Reportes' : ''}
                 >
-                  <div className={`flex items-center ${sidebarOpen ? 'gap-3 justify-start' : 'justify-center'}`}>
-                    <FaFileAlt className={`text-lg ${activeSection === 'reportes' ? 'text-white' : 'text-gray-600'}`} />
-                    {sidebarOpen && <span className="font-medium">Reportes</span>}
+                  <div className={`flex items-center ${sidebarOpen ? 'gap-3 justify-between' : 'justify-center'}`}>
+                    <div className={`flex items-center ${sidebarOpen ? 'gap-3' : ''}`}>
+                      <FaFileAlt className="text-lg text-gray-600" />
+                      {sidebarOpen && <span className="font-medium">Reportes</span>}
+                    </div>
+                    {sidebarOpen && (
+                      openDropdowns.configuracion ? (
+                        <FaChevronDown className="text-gray-500 text-xs" />
+                      ) : (
+                        <FaChevronRight className="text-gray-500 text-xs" />
+                      )
+                    )}
                   </div>
                   {/* Tooltip cuando está contraído */}
                   {!sidebarOpen && hoveredItem === 'reportes' && (
@@ -1237,6 +1083,29 @@ export default function AdminPanel({
                     </div>
                   )}
                 </button>
+                
+                {openDropdowns.configuracion && sidebarOpen && (
+                  <div className="ml-4 mt-1 space-y-1">
+                    <button
+                      onClick={() => {
+                        setActiveSection('reportes');
+                        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                          setTimeout(() => setSidebarOpen(false), 100);
+                        }
+                      }}
+                      className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
+                        activeSection === 'reportes'
+                          ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-md`
+                          : 'bg-white text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <FaFileAlt className={`text-sm ${activeSection === 'reportes' ? 'text-white' : 'text-gray-600'}`} />
+                        <span className="text-sm font-medium">Reportes</span>
+                      </div>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Configuración */}
@@ -1603,7 +1472,7 @@ export default function AdminPanel({
                 )}
 
                 {/* Botón para abrir modal de nuevo usuario */}
-                <div className="mb-4 flex justify-start">
+                <div className="mb-4 flex justify-end">
                   <button
                     onClick={() => {
                       setMostrarFormularioUsuario(true);
@@ -1906,27 +1775,30 @@ export default function AdminPanel({
 
             {activeSection === 'reportes' && (
               <div className="space-y-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold text-gray-900">Reportes y Análisis</h3>
-                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Reportes y Análisis</h3>
                 <div className="bg-white rounded-lg p-6 border border-gray-200">
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <div className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                      <FaUser /> Informe por Encargado
+                  <p className="text-gray-600 mb-4">Funcionalidades de reportes avanzados próximamente:</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                        <FaChartBar /> Reportes por Período
+                      </div>
+                      <div className="text-sm text-gray-600">Items agregados/modificados en un rango de fechas</div>
                     </div>
-                    <div className="text-sm text-gray-600 mb-4">
-                      Genera un reporte PDF agrupando todos los items por el usuario encargado que los creó.
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="text-lg font-semibold text-gray-900 mb-2">🔧 Mantenimientos</div>
+                      <div className="text-sm text-gray-600">Items que requieren mantenimiento próximamente</div>
                     </div>
-                    <div className="text-xs text-gray-500 mb-4">
-                      El informe incluirá todos los items organizados por encargado, mostrando detalles completos de cada item.
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="text-lg font-semibold text-gray-900 mb-2">📅 Garantías</div>
+                      <div className="text-sm text-gray-600">Items con garantías próximas a vencer</div>
                     </div>
-                    <button
-                      onClick={handleGenerarPDFPorEncargado}
-                      className={`px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium flex items-center gap-2`}
-                    >
-                      <FaFileExport />
-                      Generar Informe por Encargado
-                    </button>
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                        <FaUser /> Por Responsable
+                      </div>
+                      <div className="text-sm text-gray-600">Distribución de items por responsable</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2436,8 +2308,6 @@ export default function AdminPanel({
             items={items}
             onSave={onSaveItem}
             onCancel={onCancelForm}
-            currentUserEmail={currentUserEmail}
-            currentUserName={currentUserName}
           />
         )}
 

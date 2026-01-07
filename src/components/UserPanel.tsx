@@ -3,7 +3,6 @@ import { INSTITUTIONAL_COLORS } from '../constants/colors';
 import ItemList from './ItemList';
 import ItemForm from './ItemForm';
 import type { ItemInventario } from '../types/inventario';
-import { getAllUsers } from '../services/userRoleService';
 import { 
   FaBox, 
   FaChartBar,
@@ -85,23 +84,6 @@ export default function UserPanel({
   const [sortBy, setSortBy] = useState<'nombre' | 'categoria' | 'estado' | 'ubicacion'>('nombre');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const sidebarTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [currentUserName, setCurrentUserName] = useState<string>('');
-  
-  // Obtener displayName del usuario actual
-  useEffect(() => {
-    const loadUserName = async () => {
-      if (currentUserEmail) {
-        try {
-          const users = await getAllUsers();
-          const currentUser = users.find(u => u.email === currentUserEmail);
-          setCurrentUserName(currentUser?.displayName || '');
-        } catch (err) {
-          console.error('Error al obtener nombre de usuario:', err);
-        }
-      }
-    };
-    loadUserName();
-  }, [currentUserEmail]);
 
   // Ordenar items
   const sortedItems = [...filteredAndSearchedItems].sort((a, b) => {
@@ -644,8 +626,6 @@ export default function UserPanel({
           items={items}
           onSave={onSaveItem}
           onCancel={onCancelForm}
-          currentUserEmail={currentUserEmail}
-          currentUserName={currentUserName}
         />
       )}
     </div>

@@ -9,9 +9,8 @@ import {
   orderBy,
   type Firestore
 } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { httpsCallable } from 'firebase/functions';
-import { db, auth, functions } from '../config/firebase';
+import { createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { db, auth } from '../config/firebase';
 
 const ROLES_COLLECTION = 'userRoles';
 const USERS_COLLECTION = 'users';
@@ -211,50 +210,27 @@ export const toggleUserStatus = async (
 };
 
 /**
- * Verificar si un usuario está activo
- */
-export const isUserActive = async (userEmail: string): Promise<boolean> => {
-  if (!db) {
-    return true; // Si Firestore no está disponible, permitir acceso por defecto
-  }
-
-  try {
-    const userRef = doc(db as Firestore, USERS_COLLECTION, userEmail);
-    const userDoc = await getDoc(userRef);
-    
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      return userData.isActive !== false; // Si no existe el campo, considerar activo
-    }
-    
-    // Si el usuario no existe en la colección, permitir acceso (usuario nuevo)
-    return true;
-  } catch (error) {
-    console.error('Error al verificar estado de usuario:', error);
-    return true; // En caso de error, permitir acceso
-  }
-};
-
-/**
  * Crear un nuevo usuario
+ * Nota: createUserWithEmailAndPassword inicia sesión automáticamente con el usuario recién creado.
+ * Retorna true si se debe cerrar la sesión (porque se inició sesión con el usuario recién creado).
  */
 export const createUser = async (
   email: string,
   password: string,
   displayName: string,
   role: UserRole
-): Promise<void> => {
+): Promise<boolean> => {
   if (!auth || !db) {
     throw new Error('Firebase no está disponible');
   }
 
+  // Guardar el email del administrador actual antes de crear el usuario
+  const adminEmail = auth.currentUser?.email;
+
   try {
     // Crear usuario en Firebase Authentication
+    // Esto automáticamente inicia sesión con el usuario recién creado
     await createUserWithEmailAndPassword(auth, email, password);
-    
-    // Actualizar el perfil del usuario con el nombre
-    // Nota: Firebase Auth no permite actualizar displayName desde el cliente sin el usuario autenticado
-    // Por eso guardamos el displayName solo en Firestore
     
     // Crear registro en Firestore
     const now = new Date().toISOString();
@@ -270,6 +246,13 @@ export const createUser = async (
     // Establecer rol en la colección de roles
     const roleRef = doc(db as Firestore, ROLES_COLLECTION, email);
     await setDoc(roleRef, { role });
+
+    // Verificar si el usuario actual es diferente al administrador
+    // Si es así, significa que se inició sesión con el usuario recién creado
+    const currentUserEmail = auth.currentUser?.email;
+    const shouldSignOut = currentUserEmail === email && currentUserEmail !== adminEmail;
+    
+    return shouldSignOut;
   } catch (error: any) {
     console.error('Error al crear usuario:', error);
     
@@ -290,33 +273,16 @@ export const deleteUserAccount = async (userEmail: string): Promise<void> => {
   }
 
   try {
-    // 1) Intentar eliminar de Firebase Authentication mediante Cloud Function (requiere privilegios)
-    // Si falla, continuamos con la eliminación de Firestore
-    if (functions) {
-      try {
-        const deleteAuthUser = httpsCallable(functions, 'adminDeleteAuthUser');
-        await deleteAuthUser({ email: userEmail });
-      } catch (authDeleteErr: any) {
-        // Si la Cloud Function no está desplegada o falla, solo registramos el error
-        // pero continuamos con la eliminación de Firestore
-        console.warn('No se pudo eliminar el usuario de Authentication (Cloud Function no disponible o falló):', authDeleteErr?.message || authDeleteErr);
-        // No lanzamos el error aquí, permitimos que continúe la eliminación de Firestore
-      }
-    } else {
-      console.warn('Funciones de Firebase no están disponibles. Solo se eliminará de Firestore.');
-    }
-
-    // 2) Eliminar de Firestore (colección de usuarios)
+    // Eliminar de Firestore (colección de usuarios)
     const userRef = doc(db as Firestore, USERS_COLLECTION, userEmail);
     await deleteDoc(userRef);
 
-    // 3) Eliminar de Firestore (colección de roles)
+    // Eliminar de Firestore (colección de roles)
     const roleRef = doc(db as Firestore, ROLES_COLLECTION, userEmail);
     await deleteDoc(roleRef);
 
-    // Nota: Si la Cloud Function no está desplegada, el usuario se eliminará de Firestore
-    // pero permanecerá en Firebase Authentication. Para eliminarlo completamente,
-    // es necesario desplegar la Cloud Function 'adminDeleteAuthUser'.
+    // Nota: Eliminar de Firebase Authentication requiere autenticación del usuario
+    // o un backend con privilegios de administrador. Por ahora solo eliminamos de Firestore.
   } catch (error) {
     console.error('Error al eliminar usuario:', error);
     throw error;

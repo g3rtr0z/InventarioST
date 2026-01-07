@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import {
   validateAndSanitizeEmail,
@@ -13,7 +13,6 @@ import {
   recordSuccessfulAttempt,
   getSecurityStatus
 } from '../services/securityService';
-import { isUserActive } from '../services/userRoleService';
 import { INSTITUTIONAL_COLORS } from '../constants/colors';
 
 export default function Login() {
@@ -92,21 +91,6 @@ export default function Login() {
 
     try {
       await signInWithEmailAndPassword(auth, emailValidation.sanitized, password);
-      
-      // Verificar si el usuario está activo
-      const userActive = await isUserActive(emailValidation.sanitized);
-      
-      if (!userActive) {
-        // Si el usuario está desactivado, cerrar sesión inmediatamente
-        if (auth.currentUser) {
-          await signOut(auth);
-        }
-        setError('Su cuenta se encuentra desactivada. Por favor, contacte al administrador.');
-        recordFailedAttempt();
-        setLoading(false);
-        return;
-      }
-      
       recordSuccessfulAttempt();
       setRetryAfter(undefined);
     } catch (err: any) {
