@@ -10,7 +10,8 @@ import {
   type Firestore
 } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { db, auth } from '../config/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, auth, functions } from '../config/firebase';
 
 const ROLES_COLLECTION = 'userRoles';
 const USERS_COLLECTION = 'users';
@@ -289,16 +290,33 @@ export const deleteUserAccount = async (userEmail: string): Promise<void> => {
   }
 
   try {
-    // Eliminar de Firestore (colección de usuarios)
+    // 1) Intentar eliminar de Firebase Authentication mediante Cloud Function (requiere privilegios)
+    // Si falla, continuamos con la eliminación de Firestore
+    if (functions) {
+      try {
+        const deleteAuthUser = httpsCallable(functions, 'adminDeleteAuthUser');
+        await deleteAuthUser({ email: userEmail });
+      } catch (authDeleteErr: any) {
+        // Si la Cloud Function no está desplegada o falla, solo registramos el error
+        // pero continuamos con la eliminación de Firestore
+        console.warn('No se pudo eliminar el usuario de Authentication (Cloud Function no disponible o falló):', authDeleteErr?.message || authDeleteErr);
+        // No lanzamos el error aquí, permitimos que continúe la eliminación de Firestore
+      }
+    } else {
+      console.warn('Funciones de Firebase no están disponibles. Solo se eliminará de Firestore.');
+    }
+
+    // 2) Eliminar de Firestore (colección de usuarios)
     const userRef = doc(db as Firestore, USERS_COLLECTION, userEmail);
     await deleteDoc(userRef);
 
-    // Eliminar de Firestore (colección de roles)
+    // 3) Eliminar de Firestore (colección de roles)
     const roleRef = doc(db as Firestore, ROLES_COLLECTION, userEmail);
     await deleteDoc(roleRef);
 
-    // Nota: Eliminar de Firebase Authentication requiere autenticación del usuario
-    // o un backend con privilegios de administrador. Por ahora solo eliminamos de Firestore.
+    // Nota: Si la Cloud Function no está desplegada, el usuario se eliminará de Firestore
+    // pero permanecerá en Firebase Authentication. Para eliminarlo completamente,
+    // es necesario desplegar la Cloud Function 'adminDeleteAuthUser'.
   } catch (error) {
     console.error('Error al eliminar usuario:', error);
     throw error;

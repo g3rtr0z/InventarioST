@@ -1,0 +1,23 @@
+{
+  "name": "inventario-st-functions",
+  "description": "Cloud Functions for Inventario ST",
+  "scripts": {
+    "build": "tsc",
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions",
+    "lint": "eslint --ext .ts src"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "firebase-admin": "^12.5.0",
+    "firebase-functions": "^5.1.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  },
+  "private": true
+}
+

@@ -1,6 +1,7 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getAuth, type Auth } from 'firebase/auth';
+import { getFunctions, type Functions } from 'firebase/functions';
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -31,6 +32,7 @@ export const isFirebaseReady = checkFirebaseConfig();
 let app: FirebaseApp | undefined;
 let db: Firestore | undefined;
 let auth: Auth | undefined;
+let functions: Functions | undefined;
 
 if (isFirebaseReady) {
   try {
@@ -40,12 +42,15 @@ if (isFirebaseReady) {
     db = getFirestore(app);
     // Inicializar Auth
     auth = getAuth(app);
+    // Inicializar Functions
+    functions = getFunctions(app);
   } catch (error) {
     db = undefined;
     app = undefined;
     auth = undefined;
+    functions = undefined;
   }
 }
 
-export { db, auth };
+export { db, auth, functions };
 export default app;
