@@ -327,8 +327,9 @@ export default function UserPanel({
               <div className="space-y-6">
                 {/* Barra de búsqueda y controles */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                  <div className="flex flex-col md:flex-row gap-3 mb-4">
-                    <div className="flex-1 relative">
+                  <div className="flex flex-col gap-3 mb-4">
+                    {/* Barra de búsqueda */}
+                    <div className="relative">
                       <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input
                         type="text"
@@ -338,7 +339,8 @@ export default function UserPanel({
                         className={`w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
                       />
                     </div>
-                    <div className="flex gap-2 items-center">
+                    {/* Botones: Agregar Item a la izquierda, Tarjetas/Tabla a la derecha */}
+                    <div className="flex justify-between items-center gap-2">
                       <button
                         onClick={onAddItem}
                         className={`px-3 py-2.5 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors text-sm flex items-center gap-2`}
