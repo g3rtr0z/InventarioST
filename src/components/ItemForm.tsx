@@ -917,8 +917,9 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                             >
                               <option value="">Seleccionar Disco Duro</option>
                               <option value="256GB">256GB</option>
-                              <option value="500GB">500GB</option>
+                              <option value="512GB">500GB</option>
                               <option value="1TB">1TB</option>
+                              <option value="1.5TB">1.5 TB</option>
                             </select>
                           </div>
                         );
