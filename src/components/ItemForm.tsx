@@ -43,6 +43,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     encargado: ''
   });
   const [nombreError, setNombreError] = useState<string>('');
+  const [numeroSerieError, setNumeroSerieError] = useState<string>('');
   const [configFormulario, setConfigFormulario] = useState<CampoFormulario[]>([]);
   const [seccionesFormulario, setSeccionesFormulario] = useState<SeccionFormulario[]>([]);
 
@@ -282,6 +283,8 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       }
       
       setFormData(nuevoFormData);
+      setNombreError(''); // Limpiar error al cambiar de item
+      setNumeroSerieError(''); // Limpiar error al cambiar de item
     } else {
       // Al crear un nuevo item, establecer el encargado con el nombre y correo del usuario actual
       const encargadoValue = currentUserName && currentUserEmail 
@@ -312,6 +315,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         encargado: encargadoValue
       });
       setNombreError(''); // Limpiar error al cambiar de item
+      setNumeroSerieError(''); // Limpiar error al cambiar de item
     }
   }, [item, categorias]);
 
@@ -358,6 +362,25 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         setNombreError(`El nombre "${value}" ya existe en la base de datos.`);
       } else {
         setNombreError('');
+      }
+    }
+
+    // Validar número de serie único en tiempo real
+    if (name === 'numeroSerie') {
+      const numeroSerieNormalizado = value.trim().toUpperCase();
+      const numeroSerieDuplicado = items.find(existingItem => {
+        const existingNumeroSerieNormalizado = existingItem.numeroSerie?.trim().toUpperCase() || '';
+        // Si estamos editando, excluir el item actual de la validación
+        if (item && existingItem.id === item.id) {
+          return false;
+        }
+        return existingNumeroSerieNormalizado === numeroSerieNormalizado && numeroSerieNormalizado !== '';
+      });
+
+      if (numeroSerieDuplicado && value.trim() !== '') {
+        setNumeroSerieError(`El número de serie "${value}" ya existe en la base de datos.`);
+      } else {
+        setNumeroSerieError('');
       }
     }
   };
@@ -418,6 +441,24 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     if (nombreDuplicado) {
       setNombreError(`El nombre "${sanitizedData.nombre}" ya existe en la base de datos. Por favor, usa un nombre diferente.`);
       return;
+    }
+
+    // Validar número de serie único antes de enviar
+    if (sanitizedData.numeroSerie && sanitizedData.numeroSerie.trim() !== '') {
+      const numeroSerieNormalizado = sanitizedData.numeroSerie.trim().toUpperCase();
+      const numeroSerieDuplicado = items.find(existingItem => {
+        const existingNumeroSerieNormalizado = existingItem.numeroSerie?.trim().toUpperCase() || '';
+        // Si estamos editando, excluir el item actual de la validación
+        if (item && existingItem.id === item.id) {
+          return false;
+        }
+        return existingNumeroSerieNormalizado === numeroSerieNormalizado;
+      });
+
+      if (numeroSerieDuplicado) {
+        setNumeroSerieError(`El número de serie "${sanitizedData.numeroSerie}" ya existe en la base de datos. Por favor, usa un número de serie diferente.`);
+        return;
+      }
     }
 
     const itemToSave: ItemInventario = {
@@ -721,6 +762,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               <option value="">Seleccionar Edificio</option>
                               <option value="A">A</option>
                               <option value="B">B</option>
+                              <option value="C">C</option>
                             </select>
                           </div>
                         );
@@ -851,8 +893,11 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               onChange={handleChange}
                               required={isCampoObligatorio('numeroSerie')}
                               placeholder="Ej: SN123456789"
-                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                              className={`w-full px-3 py-2 border ${numeroSerieError ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
                             />
+                            {numeroSerieError && (
+                              <p className="mt-1 text-sm text-red-600">{numeroSerieError}</p>
+                            )}
                           </div>
                         );
                       }

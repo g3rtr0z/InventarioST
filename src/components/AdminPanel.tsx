@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { INSTITUTIONAL_COLORS } from '../constants/colors';
 import ItemList from './ItemList';
 import ItemForm from './ItemForm';
+import Pagination from './Pagination';
 import type { ItemInventario } from '../types/inventario';
 import { getAllUsers, changeUserRole, toggleUserStatus, createUser, deleteUserAccount, type UserInfo, type UserRole } from '../services/userRoleService';
 import { 
@@ -21,7 +22,6 @@ import {
   FaUsers, 
   FaFolder, 
   FaBuilding, 
-  FaFileAlt,
   FaBars,
   FaChevronDown,
   FaChevronRight,
@@ -111,7 +111,7 @@ export default function AdminPanel({
   onExportExcel,
   onLogout
 }: AdminPanelProps) {
-  const [activeSection, setActiveSection] = useState<'inventario' | 'dashboard' | 'usuarios' | 'categorias' | 'sedes' | 'reportes' | 'configuracion'>('inventario');
+  const [activeSection, setActiveSection] = useState<'inventario' | 'dashboard' | 'usuarios' | 'categorias' | 'sedes' | 'configuracion'>('inventario');
   const [configSubsection, setConfigSubsection] = useState<'estados' | 'formulario' | 'secciones'>('formulario');
 
   if (!isAdmin) {
@@ -122,8 +122,7 @@ export default function AdminPanel({
   const [sidebarOpen, setSidebarOpen] = useState(false); // Iniciar contraído
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({
-    gestion: false,
-    reportes: false
+    gestion: false
   });
   const sidebarTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
@@ -1052,67 +1051,6 @@ export default function AdminPanel({
                 </div>
               )}
 
-              {/* Dropdown: Reportes */}
-              <div className="mt-2">
-                <button
-                  onClick={() => {
-                    if (!sidebarOpen) {
-                      setSidebarOpen(true);
-                      setOpenDropdowns({ ...openDropdowns, configuracion: true });
-                    } else {
-                      toggleDropdown('configuracion');
-                    }
-                  }}
-                  onMouseEnter={() => setHoveredItem('reportes')}
-                  onMouseLeave={() => setHoveredItem(null)}
-                  className={`w-full ${sidebarOpen ? 'px-4 py-3 text-left' : 'px-2 py-3 justify-center'} rounded-lg transition-colors relative group bg-white text-gray-700 hover:bg-gray-100`}
-                  title={!sidebarOpen ? 'Reportes' : ''}
-                >
-                  <div className={`flex items-center ${sidebarOpen ? 'gap-3 justify-between' : 'justify-center'}`}>
-                    <div className={`flex items-center ${sidebarOpen ? 'gap-3' : ''}`}>
-                      <FaFileAlt className="text-lg text-gray-600" />
-                      {sidebarOpen && <span className="font-medium">Reportes</span>}
-                    </div>
-                    {sidebarOpen && (
-                      openDropdowns.configuracion ? (
-                        <FaChevronDown className="text-gray-500 text-xs" />
-                      ) : (
-                        <FaChevronRight className="text-gray-500 text-xs" />
-                      )
-                    )}
-                  </div>
-                  {/* Tooltip cuando está contraído */}
-                  {!sidebarOpen && hoveredItem === 'reportes' && (
-                    <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-md whitespace-nowrap z-50 shadow-lg">
-                      Reportes
-                      <div className="absolute left-0 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
-                    </div>
-                  )}
-                </button>
-                
-                {openDropdowns.configuracion && sidebarOpen && (
-                  <div className="ml-4 mt-1 space-y-1">
-                    <button
-                      onClick={() => {
-                        setActiveSection('reportes');
-                        if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                          setTimeout(() => setSidebarOpen(false), 100);
-                        }
-                      }}
-                      className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
-                        activeSection === 'reportes'
-                          ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-md`
-                          : 'bg-white text-gray-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <FaFileAlt className={`text-sm ${activeSection === 'reportes' ? 'text-white' : 'text-gray-600'}`} />
-                        <span className="text-sm font-medium">Reportes</span>
-                      </div>
-                    </button>
-                  </div>
-                )}
-              </div>
 
               {/* Configuración */}
               <div className="mt-2">
@@ -1300,103 +1238,65 @@ export default function AdminPanel({
                   </div>
                 </div>
 
-                {/* Controles de ordenamiento y paginación */}
+                {/* Controles de ordenamiento */}
                 {sortedItems.length > 0 && (
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      {/* Ordenamiento */}
-                      <div className="flex items-center gap-3">
-                        <label className="text-sm font-medium text-gray-700">Ordenar por:</label>
-                        <select
-                          value={sortBy}
-                          onChange={(e) => {
-                            setSortBy(e.target.value as 'nombre' | 'categoria' | 'estado' | 'ubicacion');
-                            setCurrentPage(1);
-                          }}
-                          className={`px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
-                        >
-                          <option value="nombre">Nombre</option>
-                          <option value="categoria">Categoría</option>
-                          <option value="estado">Estado</option>
-                          <option value="ubicacion">Ubicación</option>
-                        </select>
-                        <button
-                          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                          title={sortOrder === 'asc' ? 'Orden ascendente' : 'Orden descendente'}
-                        >
-                          {sortOrder === 'asc' ? <FaArrowUp /> : <FaArrowDown />}
-                        </button>
-                      </div>
-
-                      {/* Información de paginación */}
-                      <div className="flex items-center gap-4">
-                        <div className="text-sm text-gray-600">
-                          Mostrando <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(endIndex, sortedItems.length)}</span> de <span className="font-medium">{sortedItems.length}</span> items
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        {/* Ordenamiento */}
+                        <div className="flex items-center gap-3">
+                          <label className="text-sm font-medium text-gray-700">Ordenar por:</label>
+                          <select
+                            value={sortBy}
+                            onChange={(e) => {
+                              setSortBy(e.target.value as 'nombre' | 'categoria' | 'estado' | 'ubicacion');
+                              setCurrentPage(1);
+                            }}
+                            className={`px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
+                          >
+                            <option value="nombre">Nombre</option>
+                            <option value="categoria">Categoría</option>
+                            <option value="estado">Estado</option>
+                            <option value="ubicacion">Ubicación</option>
+                          </select>
+                          <button
+                            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                            className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                            title={sortOrder === 'asc' ? 'Orden ascendente' : 'Orden descendente'}
+                          >
+                            {sortOrder === 'asc' ? <FaArrowUp /> : <FaArrowDown />}
+                          </button>
                         </div>
-                        <select
-                          value={itemsPerPage}
-                          onChange={(e) => {
-                            setItemsPerPage(Number(e.target.value));
-                            setCurrentPage(1);
-                          }}
-                          className="px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
-                        >
-                          <option value="6">6 por página</option>
-                          <option value="12">12 por página</option>
-                          <option value="24">24 por página</option>
-                          <option value="48">48 por página</option>
-                        </select>
+
+                        {/* Información de paginación */}
+                        <div className="flex items-center gap-4">
+                          <div className="text-sm text-gray-600">
+                            Mostrando <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(endIndex, sortedItems.length)}</span> de <span className="font-medium">{sortedItems.length}</span> items
+                          </div>
+                          <select
+                            value={itemsPerPage}
+                            onChange={(e) => {
+                              setItemsPerPage(Number(e.target.value));
+                              setCurrentPage(1);
+                            }}
+                            className="px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
+                          >
+                            <option value="6">6 por página</option>
+                            <option value="12">12 por página</option>
+                            <option value="24">24 por página</option>
+                            <option value="48">48 por página</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Paginación */}
-                    {totalPages > 1 && (
-                      <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-gray-200">
-                        <button
-                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                          disabled={currentPage === 1}
-                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Anterior
-                        </button>
-                        
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                          let pageNum;
-                          if (totalPages <= 5) {
-                            pageNum = i + 1;
-                          } else if (currentPage <= 3) {
-                            pageNum = i + 1;
-                          } else if (currentPage >= totalPages - 2) {
-                            pageNum = totalPages - 4 + i;
-                          } else {
-                            pageNum = currentPage - 2 + i;
-                          }
-                          
-                          return (
-                            <button
-                              key={pageNum}
-                              onClick={() => setCurrentPage(pageNum)}
-                              className={`px-3 py-1.5 text-sm border rounded-md transition-colors ${
-                                currentPage === pageNum
-                                  ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white ${INSTITUTIONAL_COLORS.borderPrimary}`
-                                  : 'border-gray-300 hover:bg-gray-50'
-                              }`}
-                            >
-                              {pageNum}
-                            </button>
-                          );
-                        })}
-                        
-                        <button
-                          onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                          disabled={currentPage === totalPages}
-                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Siguiente
-                        </button>
-                      </div>
-                    )}
+                    {/* Paginación arriba */}
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                      showLabels={true}
+                    />
                   </div>
                 )}
 
@@ -1408,6 +1308,16 @@ export default function AdminPanel({
                   searchTerm=""
                   viewMode={viewMode}
                 />
+
+                {/* Paginación al final */}
+                {sortedItems.length > 0 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    showLabels={true}
+                  />
+                )}
               </div>
             )}
 
@@ -1776,37 +1686,6 @@ export default function AdminPanel({
                         ))}
                       </div>
                     )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeSection === 'reportes' && (
-              <div className="space-y-4">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Reportes y Análisis</h3>
-                <div className="bg-white rounded-lg p-6 border border-gray-200">
-                  <p className="text-gray-600 mb-4">Funcionalidades de reportes avanzados próximamente:</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <div className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                        <FaChartBar /> Reportes por Período
-                      </div>
-                      <div className="text-sm text-gray-600">Items agregados/modificados en un rango de fechas</div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <div className="text-lg font-semibold text-gray-900 mb-2">🔧 Mantenimientos</div>
-                      <div className="text-sm text-gray-600">Items que requieren mantenimiento próximamente</div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <div className="text-lg font-semibold text-gray-900 mb-2">📅 Garantías</div>
-                      <div className="text-sm text-gray-600">Items con garantías próximas a vencer</div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <div className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                        <FaUser /> Por Responsable
-                      </div>
-                      <div className="text-sm text-gray-600">Distribución de items por responsable</div>
-                    </div>
                   </div>
                 </div>
               </div>

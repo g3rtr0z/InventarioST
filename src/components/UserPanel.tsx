@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { INSTITUTIONAL_COLORS } from '../constants/colors';
 import ItemList from './ItemList';
 import ItemForm from './ItemForm';
+import Pagination from './Pagination';
 import type { ItemInventario } from '../types/inventario';
 import { 
   FaBox, 
@@ -13,9 +14,7 @@ import {
   FaSearch,
   FaUser,
   FaArrowUp,
-  FaArrowDown,
-  FaChevronLeft,
-  FaChevronRight
+  FaArrowDown
 } from 'react-icons/fa';
 
 interface UserPanelProps {
@@ -449,104 +448,61 @@ export default function UserPanel({
                   </div>
                 </div>
 
-                {/* Controles de ordenamiento y paginación */}
+                {/* Controles de ordenamiento */}
                 {sortedItems.length > 0 && (
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      {/* Ordenamiento */}
-                      <div className="flex items-center gap-3">
-                        <label className="text-sm font-medium text-gray-700">Ordenar por:</label>
-                        <select
-                          value={sortBy}
-                          onChange={(e) => setSortBy(e.target.value as 'nombre' | 'categoria' | 'estado' | 'ubicacion')}
-                          className={`px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
-                        >
-                          <option value="nombre">Nombre</option>
-                          <option value="categoria">Categoría</option>
-                          <option value="estado">Estado</option>
-                          <option value="ubicacion">Ubicación</option>
-                        </select>
-                        <button
-                          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                          title={sortOrder === 'asc' ? 'Orden ascendente' : 'Orden descendente'}
-                        >
-                          {sortOrder === 'asc' ? <FaArrowUp /> : <FaArrowDown />}
-                        </button>
-                      </div>
-
-                      {/* Información de paginación */}
-                      <div className="flex items-center gap-4">
-                        <div className="text-sm text-gray-600">
-                          Mostrando <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(endIndex, sortedItems.length)}</span> de <span className="font-medium">{sortedItems.length}</span> items
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        {/* Ordenamiento */}
+                        <div className="flex items-center gap-3">
+                          <label className="text-sm font-medium text-gray-700">Ordenar por:</label>
+                          <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value as 'nombre' | 'categoria' | 'estado' | 'ubicacion')}
+                            className={`px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
+                          >
+                            <option value="nombre">Nombre</option>
+                            <option value="categoria">Categoría</option>
+                            <option value="estado">Estado</option>
+                            <option value="ubicacion">Ubicación</option>
+                          </select>
+                          <button
+                            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                            className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                            title={sortOrder === 'asc' ? 'Orden ascendente' : 'Orden descendente'}
+                          >
+                            {sortOrder === 'asc' ? <FaArrowUp /> : <FaArrowDown />}
+                          </button>
                         </div>
-                        <select
-                          value={itemsPerPage}
-                          onChange={(e) => {
-                            setItemsPerPage(Number(e.target.value));
-                            setCurrentPage(1);
-                          }}
-                          className={`px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
-                        >
-                          <option value="6">6 por página</option>
-                          <option value="12">12 por página</option>
-                          <option value="24">24 por página</option>
-                          <option value="48">48 por página</option>
-                        </select>
+
+                        {/* Información de paginación */}
+                        <div className="flex items-center gap-4">
+                          <div className="text-sm text-gray-600">
+                            Mostrando <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(endIndex, sortedItems.length)}</span> de <span className="font-medium">{sortedItems.length}</span> items
+                          </div>
+                          <select
+                            value={itemsPerPage}
+                            onChange={(e) => {
+                              setItemsPerPage(Number(e.target.value));
+                              setCurrentPage(1);
+                            }}
+                            className={`px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
+                          >
+                            <option value="6">6 por página</option>
+                            <option value="12">12 por página</option>
+                            <option value="24">24 por página</option>
+                            <option value="48">48 por página</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Paginación */}
-                    {totalPages > 1 && (
-                      <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-gray-200">
-                        <button
-                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                          disabled={currentPage === 1}
-                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                          title="Página anterior"
-                        >
-                          <FaChevronLeft />
-                        </button>
-                        
-                        <div className="flex gap-1">
-                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                            let pageNum;
-                            if (totalPages <= 5) {
-                              pageNum = i + 1;
-                            } else if (currentPage <= 3) {
-                              pageNum = i + 1;
-                            } else if (currentPage >= totalPages - 2) {
-                              pageNum = totalPages - 4 + i;
-                            } else {
-                              pageNum = currentPage - 2 + i;
-                            }
-                            
-                            return (
-                              <button
-                                key={pageNum}
-                                onClick={() => setCurrentPage(pageNum)}
-                                className={`px-3 py-1.5 text-sm border rounded-md transition-colors ${
-                                  currentPage === pageNum
-                                    ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white ${INSTITUTIONAL_COLORS.borderPrimary}`
-                                    : 'border-gray-300 hover:bg-gray-50'
-                                }`}
-                              >
-                                {pageNum}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        
-                        <button
-                          onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                          disabled={currentPage === totalPages}
-                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                          title="Página siguiente"
-                        >
-                          <FaChevronRight />
-                        </button>
-                      </div>
-                    )}
+                    {/* Paginación arriba */}
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                    />
                   </div>
                 )}
 
@@ -558,6 +514,15 @@ export default function UserPanel({
                   searchTerm=""
                   viewMode={viewMode}
                 />
+
+                {/* Paginación al final */}
+                {sortedItems.length > 0 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
               </div>
             )}
 
