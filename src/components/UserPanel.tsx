@@ -20,6 +20,7 @@ import {
 
 interface UserPanelProps {
   currentUserEmail: string;
+  currentUserName?: string;
   categorias: string[];
   sedes: string[];
   items: ItemInventario[];
@@ -49,6 +50,7 @@ interface UserPanelProps {
 
 export default function UserPanel({
   currentUserEmail,
+  currentUserName,
   categorias,
   sedes,
   items,
@@ -626,6 +628,9 @@ export default function UserPanel({
           items={items}
           onSave={onSaveItem}
           onCancel={onCancelForm}
+          currentUserEmail={currentUserEmail}
+          currentUserName={currentUserName}
+          isAdmin={false}
         />
       )}
     </div>

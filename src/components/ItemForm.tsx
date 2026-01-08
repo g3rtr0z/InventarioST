@@ -3,6 +3,7 @@ import type { ItemInventario } from '../types/inventario';
 import { sanitizeText, validateNoXSS, validateNoSQLInjection } from '../utils/security';
 import { getConfig, subscribeToConfig, type CampoFormulario, type SeccionFormulario } from '../services/configService';
 import { INSTITUTIONAL_COLORS } from '../constants/colors';
+import type { UserInfo } from '../services/userRoleService';
 
 interface ItemFormProps {
   item?: ItemInventario | null;
@@ -11,9 +12,13 @@ interface ItemFormProps {
   items: ItemInventario[];
   onSave: (item: ItemInventario) => void;
   onCancel: () => void;
+  currentUserEmail?: string;
+  currentUserName?: string;
+  isAdmin?: boolean;
+  usuarios?: UserInfo[];
 }
 
-export default function ItemForm({ item, categorias, sedes, items, onSave, onCancel }: ItemFormProps) {
+export default function ItemForm({ item, categorias, sedes, items, onSave, onCancel, currentUserEmail = '', currentUserName = '', isAdmin = false, usuarios = [] }: ItemFormProps) {
   const [formData, setFormData] = useState<Omit<ItemInventario, 'id'> & { [key: string]: any }>({
     nombre: '',
     categoria: categorias.length > 0 ? categorias[0] : '',
@@ -34,7 +39,8 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     tipoUso: 'Administrativo',
     procesador: '',
     ram: '',
-    discoDuro: ''
+    discoDuro: '',
+    encargado: ''
   });
   const [nombreError, setNombreError] = useState<string>('');
   const [configFormulario, setConfigFormulario] = useState<CampoFormulario[]>([]);
@@ -115,7 +121,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
   // Lista de campos conocidos que tienen renderizado especial
   const camposConocidos = [
     'nombre', 'categoria', 'estado', 'tipoUso',
-    'sede', 'ubicacion', 'piso', 'edificio', 'responsable',
+    'sede', 'ubicacion', 'piso', 'edificio', 'responsable', 'encargado',
     'marca', 'modelo', 'numeroSerie', 'procesador', 'ram', 'discoDuro',
     'fechaAdquisicion',
     'fechaUltimoMantenimiento', 'proximoMantenimiento',
@@ -270,8 +276,18 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         }
       });
       
+      // Incluir encargado si existe en el item
+      if (rest.encargado) {
+        nuevoFormData.encargado = rest.encargado;
+      }
+      
       setFormData(nuevoFormData);
     } else {
+      // Al crear un nuevo item, establecer el encargado con el nombre y correo del usuario actual
+      const encargadoValue = currentUserName && currentUserEmail 
+        ? `${currentUserName} (${currentUserEmail})`
+        : currentUserEmail || '';
+      
       setFormData({
         nombre: '',
         categoria: categorias.length > 0 ? categorias[0] : '',
@@ -292,7 +308,8 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         tipoUso: 'Administrativo',
         procesador: '',
         ram: '',
-        discoDuro: ''
+        discoDuro: '',
+        encargado: encargadoValue
       });
       setNombreError(''); // Limpiar error al cambiar de item
     }
@@ -363,7 +380,8 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       edificio: sanitizeText(formData.edificio || ''),
       procesador: sanitizeText(formData.procesador || ''),
       ram: sanitizeText(formData.ram || ''),
-      discoDuro: sanitizeText(formData.discoDuro || '')
+      discoDuro: sanitizeText(formData.discoDuro || ''),
+      encargado: formData.encargado ? sanitizeText(formData.encargado) : undefined
     };
 
     // Validar que no contenga código peligroso
@@ -375,7 +393,8 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       sanitizedData.ubicacion,
       sanitizedData.responsable,
       sanitizedData.descripcion,
-      sanitizedData.observaciones
+      sanitizedData.observaciones,
+      sanitizedData.encargado
     ];
 
     for (const field of fieldsToValidate) {
@@ -709,22 +728,73 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
 
                       if (campoConfig.nombre === 'responsable') {
                         return (
-                          <div key={campoConfig.nombre} className="md:col-span-2">
-                            <label htmlFor="responsable" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('responsable', 'Responsable')} {isCampoObligatorio('responsable') && '*'}
-                            </label>
-                            <input
-                              type="text"
-                              id="responsable"
-                              name="responsable"
-                              value={formData.responsable}
-                              onChange={handleChange}
-                              required={isCampoObligatorio('responsable')}
-                              placeholder="Ej: Juan Pérez"
-                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
-                            />
-                          </div>
+                          <>
+                            <div key={campoConfig.nombre} className="md:col-span-2">
+                              <label htmlFor="responsable" className="block mb-1 text-sm text-gray-700">
+                                {getCampoLabel('responsable', 'Responsable')} {isCampoObligatorio('responsable') && '*'}
+                              </label>
+                              <input
+                                type="text"
+                                id="responsable"
+                                name="responsable"
+                                value={formData.responsable}
+                                onChange={handleChange}
+                                required={isCampoObligatorio('responsable')}
+                                placeholder="Ej: Juan Pérez"
+                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                              />
+                            </div>
+                            {/* Campo Encargado - Siempre visible después de Responsable */}
+                            <div key="encargado" className="md:col-span-2">
+                              <label htmlFor="encargado" className="block mb-1 text-sm text-gray-700">
+                                Encargado (quien creó el item)
+                                {isAdmin && <span className="text-gray-500 text-xs ml-2">(Editable para administradores)</span>}
+                              </label>
+                              {isAdmin ? (
+                                <select
+                                  id="encargado"
+                                  name="encargado"
+                                  value={formData.encargado || ''}
+                                  onChange={handleChange}
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md bg-white`}
+                                >
+                                  <option value="">Seleccione un usuario</option>
+                                  {usuarios
+                                    .filter((usuario) => usuario.isActive)
+                                    .map((usuario) => {
+                                      const displayText = usuario.displayName 
+                                        ? `${usuario.displayName} (${usuario.email})`
+                                        : usuario.email;
+                                      return (
+                                        <option key={usuario.email} value={displayText}>
+                                          {displayText}
+                                        </option>
+                                      );
+                                    })}
+                                </select>
+                              ) : (
+                                <>
+                                  <input
+                                    type="text"
+                                    id="encargado"
+                                    name="encargado"
+                                    value={formData.encargado || ''}
+                                    readOnly
+                                    disabled
+                                    className="w-full px-3 py-2 border border-gray-300 bg-gray-100 text-gray-600 rounded-md cursor-not-allowed"
+                                    placeholder="Se establece automáticamente al crear el item"
+                                  />
+                                  <p className="mt-1 text-xs text-gray-500">Este campo se establece automáticamente con el nombre y correo del usuario que crea el item</p>
+                                </>
+                              )}
+                            </div>
+                          </>
                         );
+                      }
+
+                      if (campoConfig.nombre === 'encargado') {
+                        // Ya se renderiza después de responsable, no renderizar aquí
+                        return null;
                       }
 
                       if (campoConfig.nombre === 'marca') {

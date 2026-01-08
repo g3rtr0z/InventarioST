@@ -423,6 +423,7 @@ function App() {
       <AdminPanel
         isAdmin={isAdmin}
         currentUserEmail={user?.email || ''}
+        currentUserName={user?.displayName || ''}
         categorias={categorias}
         sedes={sedes}
         items={items}
@@ -458,6 +459,7 @@ function App() {
   return (
     <UserPanel
       currentUserEmail={user?.email || ''}
+      currentUserName={user?.displayName || ''}
       categorias={categorias}
       sedes={sedes}
       items={items}

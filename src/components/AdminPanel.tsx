@@ -49,6 +49,7 @@ import {
 interface AdminPanelProps {
   isAdmin: boolean;
   currentUserEmail: string;
+  currentUserName?: string;
   categorias: string[];
   sedes: string[];
   items: ItemInventario[];
@@ -81,6 +82,7 @@ interface AdminPanelProps {
 export default function AdminPanel({
   isAdmin,
   currentUserEmail,
+  currentUserName = '',
   categorias,
   sedes,
   items,
@@ -253,7 +255,14 @@ export default function AdminPanel({
   const endIndex = startIndex + itemsPerPage;
   const paginatedItems = sortedItems.slice(startIndex, endIndex);
 
-  // Cargar usuarios cuando se accede a la sección
+  // Cargar usuarios cuando se accede a la sección o al montar si es admin
+  useEffect(() => {
+    if (isAdmin) {
+      loadUsers();
+    }
+  }, [isAdmin]);
+  
+  // Recargar usuarios cuando se accede a la sección de usuarios
   useEffect(() => {
     if (activeSection === 'usuarios' && isAdmin) {
       loadUsers();
@@ -941,64 +950,65 @@ export default function AdminPanel({
                 )}
               </button>
 
-              {/* Dropdown: Gestión */}
-              <div className="mt-2">
-                <button
-                  onClick={() => {
-                    if (!sidebarOpen) {
-                      setSidebarOpen(true);
-                      setOpenDropdowns({ ...openDropdowns, gestion: true });
-                    } else {
-                      toggleDropdown('gestion');
-                    }
-                  }}
-                  onMouseEnter={() => setHoveredItem('gestion')}
-                  onMouseLeave={() => setHoveredItem(null)}
-                  className={`w-full ${sidebarOpen ? 'px-4 py-3 text-left' : 'px-2 py-3 justify-center'} rounded-lg transition-colors relative group bg-white text-gray-700 hover:bg-gray-100`}
-                  title={!sidebarOpen ? 'Gestión' : ''}
-                >
-                  <div className={`flex items-center ${sidebarOpen ? 'gap-3 justify-between' : 'justify-center'}`}>
-                    <div className={`flex items-center ${sidebarOpen ? 'gap-3' : ''}`}>
-                      <FaUsers className="text-lg text-gray-600" />
-                      {sidebarOpen && <span className="font-medium">Gestión</span>}
-                    </div>
-                    {sidebarOpen && (
-                      openDropdowns.gestion ? (
-                        <FaChevronDown className="text-gray-500 text-xs" />
-                      ) : (
-                        <FaChevronRight className="text-gray-500 text-xs" />
-                      )
-                    )}
-                  </div>
-                  {/* Tooltip cuando está contraído */}
-                  {!sidebarOpen && hoveredItem === 'gestion' && (
-                    <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-md whitespace-nowrap z-50 shadow-lg">
-                      Gestión
-                      <div className="absolute left-0 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
-                    </div>
-                  )}
-                </button>
-                
-                {openDropdowns.gestion && sidebarOpen && (
-                  <div className="ml-4 mt-1 space-y-1">
-                    <button
-                      onClick={() => {
-                        setActiveSection('usuarios');
-                        if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                          setTimeout(() => setSidebarOpen(false), 100);
-                        }
-                      }}
-                      className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
-                        activeSection === 'usuarios'
-                          ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-md`
-                          : 'bg-white text-gray-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <FaUsers className={`text-sm ${activeSection === 'usuarios' ? 'text-white' : 'text-gray-600'}`} />
-                        <span className="text-sm font-medium">Usuarios</span>
+              {/* Dropdown: Gestión - Solo para administradores */}
+              {isAdmin && (
+                <div className="mt-2">
+                  <button
+                    onClick={() => {
+                      if (!sidebarOpen) {
+                        setSidebarOpen(true);
+                        setOpenDropdowns({ ...openDropdowns, gestion: true });
+                      } else {
+                        toggleDropdown('gestion');
+                      }
+                    }}
+                    onMouseEnter={() => setHoveredItem('gestion')}
+                    onMouseLeave={() => setHoveredItem(null)}
+                    className={`w-full ${sidebarOpen ? 'px-4 py-3 text-left' : 'px-2 py-3 justify-center'} rounded-lg transition-colors relative group bg-white text-gray-700 hover:bg-gray-100`}
+                    title={!sidebarOpen ? 'Gestión' : ''}
+                  >
+                    <div className={`flex items-center ${sidebarOpen ? 'gap-3 justify-between' : 'justify-center'}`}>
+                      <div className={`flex items-center ${sidebarOpen ? 'gap-3' : ''}`}>
+                        <FaUsers className="text-lg text-gray-600" />
+                        {sidebarOpen && <span className="font-medium">Gestión</span>}
                       </div>
-                    </button>
+                      {sidebarOpen && (
+                        openDropdowns.gestion ? (
+                          <FaChevronDown className="text-gray-500 text-xs" />
+                        ) : (
+                          <FaChevronRight className="text-gray-500 text-xs" />
+                        )
+                      )}
+                    </div>
+                    {/* Tooltip cuando está contraído */}
+                    {!sidebarOpen && hoveredItem === 'gestion' && (
+                      <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-md whitespace-nowrap z-50 shadow-lg">
+                        Gestión
+                        <div className="absolute left-0 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
+                      </div>
+                    )}
+                  </button>
+                  
+                  {openDropdowns.gestion && sidebarOpen && (
+                    <div className="ml-4 mt-1 space-y-1">
+                      <button
+                        onClick={() => {
+                          setActiveSection('usuarios');
+                          if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                            setTimeout(() => setSidebarOpen(false), 100);
+                          }
+                        }}
+                        className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
+                          activeSection === 'usuarios'
+                            ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-md`
+                            : 'bg-white text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <FaUsers className={`text-sm ${activeSection === 'usuarios' ? 'text-white' : 'text-gray-600'}`} />
+                          <span className="text-sm font-medium">Usuarios</span>
+                        </div>
+                      </button>
                     
                     <button
                       onClick={() => {
@@ -1039,7 +1049,8 @@ export default function AdminPanel({
                     </button>
                   </div>
                 )}
-              </div>
+                </div>
+              )}
 
               {/* Dropdown: Reportes */}
               <div className="mt-2">
@@ -1456,7 +1467,7 @@ export default function AdminPanel({
               </div>
             )}
 
-            {activeSection === 'usuarios' && (
+            {activeSection === 'usuarios' && isAdmin && (
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Gestión de Usuarios</h3>
                 
@@ -2303,6 +2314,10 @@ export default function AdminPanel({
             items={items}
             onSave={onSaveItem}
             onCancel={onCancelForm}
+            currentUserEmail={currentUserEmail}
+            currentUserName={currentUserName}
+            isAdmin={isAdmin}
+            usuarios={users}
           />
         )}
 
