@@ -40,6 +40,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     procesador: '',
     ram: '',
     discoDuro: '',
+    horasDeUso: '',
     encargado: ''
   });
   const [nombreError, setNombreError] = useState<string>('');
@@ -266,7 +267,8 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         tipoUso: rest.tipoUso || 'Administrativo',
         procesador: rest.procesador || '',
         ram: rest.ram || '',
-        discoDuro: rest.discoDuro || ''
+        discoDuro: rest.discoDuro || '',
+        horasDeUso: (rest as any).horasDeUso || ''
       };
       
       // Agregar campos personalizados del item si existen
@@ -309,6 +311,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         procesador: '',
         ram: '',
         discoDuro: '',
+        horasDeUso: '',
         encargado: encargadoValue
       });
       setNombreError(''); // Limpiar error al cambiar de item
@@ -342,8 +345,22 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       setFormData(prev => ({ ...prev, [name]: value }));
     }
 
-    // Validar nombre único en tiempo real
+    // Si cambia la categoría a Proyectores, limpiar el nombre
+    if (name === 'categoria' && value.toLowerCase() === 'proyectores') {
+      setFormData(prev => ({ ...prev, nombre: '' }));
+      setNombreError('');
+    }
+
+    // Validar nombre único en tiempo real (solo si no es proyector)
     if (name === 'nombre') {
+      const esProyector = formData.categoria.toLowerCase() === 'proyectores';
+      if (esProyector) {
+        // Para proyectores, no validar y limpiar el nombre
+        setFormData(prev => ({ ...prev, nombre: '' }));
+        setNombreError('');
+        return;
+      }
+      
       const nombreNormalizado = value.trim().toLowerCase();
       const nombreDuplicado = items.find(existingItem => {
         const existingNombreNormalizado = existingItem.nombre.trim().toLowerCase();
@@ -381,6 +398,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       procesador: sanitizeText(formData.procesador || ''),
       ram: sanitizeText(formData.ram || ''),
       discoDuro: sanitizeText(formData.discoDuro || ''),
+      horasDeUso: sanitizeText(formData.horasDeUso || ''),
       encargado: formData.encargado ? sanitizeText(formData.encargado) : undefined
     };
 
@@ -404,20 +422,26 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       }
     }
     
-    // Validar nombre único antes de enviar
-    const nombreNormalizado = sanitizedData.nombre.trim().toLowerCase();
-    const nombreDuplicado = items.find(existingItem => {
-      const existingNombreNormalizado = existingItem.nombre.trim().toLowerCase();
-      // Si estamos editando, excluir el item actual de la validación
-      if (item && existingItem.id === item.id) {
-        return false;
-      }
-      return existingNombreNormalizado === nombreNormalizado;
-    });
+    // Validar nombre único antes de enviar (solo si no es proyector)
+    const esProyector = sanitizedData.categoria.toLowerCase() === 'proyectores';
+    if (!esProyector) {
+      const nombreNormalizado = sanitizedData.nombre.trim().toLowerCase();
+      const nombreDuplicado = items.find(existingItem => {
+        const existingNombreNormalizado = existingItem.nombre.trim().toLowerCase();
+        // Si estamos editando, excluir el item actual de la validación
+        if (item && existingItem.id === item.id) {
+          return false;
+        }
+        return existingNombreNormalizado === nombreNormalizado;
+      });
 
-    if (nombreDuplicado) {
-      setNombreError(`El nombre "${sanitizedData.nombre}" ya existe en la base de datos. Por favor, usa un nombre diferente.`);
-      return;
+      if (nombreDuplicado) {
+        setNombreError(`El nombre "${sanitizedData.nombre}" ya existe en la base de datos. Por favor, usa un nombre diferente.`);
+        return;
+      }
+    } else {
+      // Para proyectores, limpiar el nombre
+      sanitizedData.nombre = '';
     }
 
     const itemToSave: ItemInventario = {
@@ -479,10 +503,12 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                     {/* Campos antes del grid */}
                     {camposAntesDelGrid.map((campoConfig: CampoFormulario) => {
                       if (campoConfig.nombre === 'nombre') {
+                        const esProyector = formData.categoria.toLowerCase() === 'proyectores';
                         return (
                           <div key={campoConfig.nombre}>
                             <label htmlFor="nombre" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('nombre', 'Nombre del Equipo')} {isCampoObligatorio('nombre') && '*'}
+                              {getCampoLabel('nombre', 'Nombre del Equipo')} {!esProyector && isCampoObligatorio('nombre') && '*'}
+                              {esProyector && <span className="text-gray-500 text-xs ml-2">(No aplica para Proyectores)</span>}
                             </label>
                             <input
                               type="text"
@@ -490,13 +516,14 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               name="nombre"
                               value={formData.nombre}
                               onChange={handleChange}
-                              required={isCampoObligatorio('nombre')}
-                              placeholder="Ej: PC Oficina 1"
+                              required={!esProyector && isCampoObligatorio('nombre')}
+                              disabled={esProyector}
+                              placeholder={esProyector ? "No aplica para Proyectores" : "Ej: PC Oficina 1"}
                               className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-md ${
                                 nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
-                              }`}
+                              } ${esProyector ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                             />
-                            {nombreError && (
+                            {nombreError && !esProyector && (
                               <p className="mt-1 text-sm text-red-600">{nombreError}</p>
                             )}
                           </div>
@@ -587,10 +614,12 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                     {/* Campos después del grid */}
                     {camposDespuesDelGrid.map((campoConfig: CampoFormulario) => {
                       if (campoConfig.nombre === 'nombre') {
+                        const esProyector = formData.categoria.toLowerCase() === 'proyectores';
                         return (
                           <div key={campoConfig.nombre}>
                             <label htmlFor="nombre" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('nombre', 'Nombre del Equipo')} {isCampoObligatorio('nombre') && '*'}
+                              {getCampoLabel('nombre', 'Nombre del Equipo')} {!esProyector && isCampoObligatorio('nombre') && '*'}
+                              {esProyector && <span className="text-gray-500 text-xs ml-2">(No aplica para Proyectores)</span>}
                             </label>
                             <input
                               type="text"
@@ -598,13 +627,14 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               name="nombre"
                               value={formData.nombre}
                               onChange={handleChange}
-                              required={isCampoObligatorio('nombre')}
-                              placeholder="Ej: PC Oficina 1"
+                              required={!esProyector && isCampoObligatorio('nombre')}
+                              disabled={esProyector}
+                              placeholder={esProyector ? "No aplica para Proyectores" : "Ej: PC Oficina 1"}
                               className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-md ${
                                 nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
-                              }`}
+                              } ${esProyector ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                             />
-                            {nombreError && (
+                            {nombreError && !esProyector && (
                               <p className="mt-1 text-sm text-red-600">{nombreError}</p>
                             )}
                           </div>
@@ -623,6 +653,12 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
               }
 
               // Renderizado genérico para otras secciones
+              // Verificar si es proyector y si es sección de especificaciones técnicas
+              const esProyector = formData.categoria.toLowerCase() === 'proyectores';
+              const esSeccionEspecificaciones = seccion.nombre.toLowerCase().includes('especificaciones') || 
+                                                seccion.nombre.toLowerCase().includes('técnicas') ||
+                                                seccion.nombre.toLowerCase().includes('tecnicas');
+              
               return (
                 <div key={seccion.nombre} className="space-y-4">
                   <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
@@ -857,72 +893,146 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                         );
                       }
 
-                      if (campoConfig.nombre === 'procesador') {
-                        return (
-                          <div key={campoConfig.nombre}>
-                            <label htmlFor="procesador" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('procesador', 'Procesador')} {isCampoObligatorio('procesador') && '*'}
-                            </label>
-                            <input
-                              type="text"
-                              id="procesador"
-                              name="procesador"
-                              value={formData.procesador}
-                              onChange={handleChange}
-                              required={isCampoObligatorio('procesador')}
-                              placeholder="Ej: Intel Core i5-10400"
-                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
-                            />
-                          </div>
-                        );
+                      // Para Proyectores, mostrar campos específicos en Especificaciones Técnicas
+                      if (esProyector && esSeccionEspecificaciones) {
+                        // Para proyectores, ocultar procesador, ram, discoDuro
+                        if (campoConfig.nombre === 'procesador' || campoConfig.nombre === 'ram' || campoConfig.nombre === 'discoDuro') {
+                          return null;
+                        }
+
+                        // Renderizar marca en especificaciones técnicas para proyectores
+                        if (campoConfig.nombre === 'marca') {
+                          return (
+                            <div key="marca-especificaciones">
+                              <label htmlFor="marca-especificaciones" className="block mb-1 text-sm text-gray-700">
+                                Marca {isCampoObligatorio('marca') && '*'}
+                              </label>
+                              <input
+                                type="text"
+                                id="marca-especificaciones"
+                                name="marca"
+                                value={formData.marca}
+                                onChange={handleChange}
+                                required={isCampoObligatorio('marca')}
+                                placeholder="Ej: Epson, BenQ, Optoma"
+                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                              />
+                            </div>
+                          );
+                        }
+
+                        // Renderizar numeroSerie en especificaciones técnicas para proyectores
+                        if (campoConfig.nombre === 'numeroSerie') {
+                          return (
+                            <div key="numeroSerie-especificaciones">
+                              <label htmlFor="numeroSerie-especificaciones" className="block mb-1 text-sm text-gray-700">
+                                Número de Serie {isCampoObligatorio('numeroSerie') && '*'}
+                              </label>
+                              <input
+                                type="text"
+                                id="numeroSerie-especificaciones"
+                                name="numeroSerie"
+                                value={formData.numeroSerie}
+                                onChange={handleChange}
+                                required={isCampoObligatorio('numeroSerie')}
+                                placeholder="Ej: SN123456789"
+                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                              />
+                            </div>
+                          );
+                        }
+
+                        // Renderizar horasDeUso (si es un campo personalizado o reemplazamos procesador)
+                        if (campoConfig.nombre === 'horasDeUso') {
+                          return (
+                            <div key="horasDeUso">
+                              <label htmlFor="horasDeUso" className="block mb-1 text-sm text-gray-700">
+                                Horas de Uso {isCampoObligatorio('horasDeUso') && '*'}
+                              </label>
+                              <input
+                                type="text"
+                                id="horasDeUso"
+                                name="horasDeUso"
+                                value={formData.horasDeUso || ''}
+                                onChange={handleChange}
+                                required={isCampoObligatorio('horasDeUso')}
+                                placeholder="Ej: 1500 horas"
+                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                              />
+                            </div>
+                          );
+                        }
                       }
 
-                      if (campoConfig.nombre === 'ram') {
-                        return (
-                          <div key={campoConfig.nombre}>
-                            <label htmlFor="ram" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('ram', 'RAM')} {isCampoObligatorio('ram') && '*'}
-                            </label>
-                            <select
-                              id="ram"
-                              name="ram"
-                              value={formData.ram}
-                              onChange={handleChange}
-                              required={isCampoObligatorio('ram')}
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
-                            >
-                              <option value="">Seleccionar RAM</option>
-                              <option value="8GB">8GB</option>
-                              <option value="16GB">16GB</option>
-                              <option value="20GB">20GB</option>
-                              <option value="32GB">32GB</option>
-                            </select>
-                          </div>
-                        );
-                      }
+                      // Para otras categorías o secciones, mostrar campos normales
+                      if (!esProyector || !esSeccionEspecificaciones) {
+                        if (campoConfig.nombre === 'procesador') {
+                          return (
+                            <div key={campoConfig.nombre}>
+                              <label htmlFor="procesador" className="block mb-1 text-sm text-gray-700">
+                                {getCampoLabel('procesador', 'Procesador')} {isCampoObligatorio('procesador') && '*'}
+                              </label>
+                              <input
+                                type="text"
+                                id="procesador"
+                                name="procesador"
+                                value={formData.procesador}
+                                onChange={handleChange}
+                                required={isCampoObligatorio('procesador')}
+                                placeholder="Ej: Intel Core i5-10400"
+                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                              />
+                            </div>
+                          );
+                        }
 
-                      if (campoConfig.nombre === 'discoDuro') {
-                        return (
-                          <div key={campoConfig.nombre}>
-                            <label htmlFor="discoDuro" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('discoDuro', 'Disco Duro')} {isCampoObligatorio('discoDuro') && '*'}
-                            </label>
-                            <select
-                              id="discoDuro"
-                              name="discoDuro"
-                              value={formData.discoDuro}
-                              onChange={handleChange}
-                              required={isCampoObligatorio('discoDuro')}
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
-                            >
-                              <option value="">Seleccionar Disco Duro</option>
-                              <option value="256GB">256GB</option>
-                              <option value="512GB">500GB</option>
-                              <option value="1TB">1TB</option>
-                              <option value="1.5TB">1.5 TB</option>
-                            </select>
-                          </div>
-                        );
+                        if (campoConfig.nombre === 'ram') {
+                          return (
+                            <div key={campoConfig.nombre}>
+                              <label htmlFor="ram" className="block mb-1 text-sm text-gray-700">
+                                {getCampoLabel('ram', 'RAM')} {isCampoObligatorio('ram') && '*'}
+                              </label>
+                              <select
+                                id="ram"
+                                name="ram"
+                                value={formData.ram}
+                                onChange={handleChange}
+                                required={isCampoObligatorio('ram')}
+                                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                              >
+                                <option value="">Seleccionar RAM</option>
+                                <option value="8GB">8GB</option>
+                                <option value="16GB">16GB</option>
+                                <option value="20GB">20GB</option>
+                                <option value="32GB">32GB</option>
+                              </select>
+                            </div>
+                          );
+                        }
+
+                        if (campoConfig.nombre === 'discoDuro') {
+                          return (
+                            <div key={campoConfig.nombre}>
+                              <label htmlFor="discoDuro" className="block mb-1 text-sm text-gray-700">
+                                {getCampoLabel('discoDuro', 'Disco Duro')} {isCampoObligatorio('discoDuro') && '*'}
+                              </label>
+                              <select
+                                id="discoDuro"
+                                name="discoDuro"
+                                value={formData.discoDuro}
+                                onChange={handleChange}
+                                required={isCampoObligatorio('discoDuro')}
+                                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
+                              >
+                                <option value="">Seleccionar Disco Duro</option>
+                                <option value="256GB">256GB</option>
+                                <option value="512GB">500GB</option>
+                                <option value="1TB">1TB</option>
+                                <option value="1.5TB">1.5 TB</option>
+                              </select>
+                            </div>
+                          );
+                        }
                       }
 
                       if (campoConfig.nombre === 'fechaAdquisicion') {
@@ -1025,6 +1135,66 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                       // Para campos personalizados, usar renderCampoGenerico
                       return renderCampoGenerico(campoConfig);
                     })}
+                    
+                    {/* Para Proyectores, agregar campos adicionales al final de Especificaciones Técnicas */}
+                    {esProyector && esSeccionEspecificaciones && (
+                      <>
+                        {/* Mostrar marca si no está ya en la sección */}
+                        {!camposSeccion.find(c => c.nombre === 'marca') && (
+                          <div key="marca-proyector">
+                            <label htmlFor="marca-proyector" className="block mb-1 text-sm text-gray-700">
+                              Marca {isCampoObligatorio('marca') && '*'}
+                            </label>
+                            <input
+                              type="text"
+                              id="marca-proyector"
+                              name="marca"
+                              value={formData.marca}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('marca')}
+                              placeholder="Ej: Epson, BenQ, Optoma"
+                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Mostrar numeroSerie si no está ya en la sección */}
+                        {!camposSeccion.find(c => c.nombre === 'numeroSerie') && (
+                          <div key="numeroSerie-proyector">
+                            <label htmlFor="numeroSerie-proyector" className="block mb-1 text-sm text-gray-700">
+                              Número de Serie {isCampoObligatorio('numeroSerie') && '*'}
+                            </label>
+                            <input
+                              type="text"
+                              id="numeroSerie-proyector"
+                              name="numeroSerie"
+                              value={formData.numeroSerie}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('numeroSerie')}
+                              placeholder="Ej: SN123456789"
+                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Mostrar horasDeUso */}
+                        <div key="horasDeUso-proyector">
+                          <label htmlFor="horasDeUso-proyector" className="block mb-1 text-sm text-gray-700">
+                            Horas de Uso {isCampoObligatorio('horasDeUso') && '*'}
+                          </label>
+                          <input
+                            type="text"
+                            id="horasDeUso-proyector"
+                            name="horasDeUso"
+                            value={formData.horasDeUso || ''}
+                            onChange={handleChange}
+                            required={isCampoObligatorio('horasDeUso')}
+                            placeholder="Ej: 1500 horas"
+                            className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               );

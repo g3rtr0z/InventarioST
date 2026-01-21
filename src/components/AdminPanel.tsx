@@ -768,10 +768,29 @@ export default function AdminPanel({
     }
   };
 
-  const handleAgregarCategoria = () => {
-    if (nuevaCategoria.trim() && !categorias.includes(nuevaCategoria.trim())) {
-      onCategoriasChange([...categorias, nuevaCategoria.trim()]);
+  const handleAgregarCategoria = async () => {
+    const categoriaTrimmed = nuevaCategoria.trim();
+    
+    if (!categoriaTrimmed) {
+      alert('Por favor, ingresa un nombre para la categoría.');
+      return;
+    }
+    
+    // Verificar si la categoría ya existe (comparación case-insensitive)
+    const categoriaExiste = categorias.some(
+      cat => cat.trim().toLowerCase() === categoriaTrimmed.toLowerCase()
+    );
+    
+    if (categoriaExiste) {
+      alert(`La categoría "${categoriaTrimmed}" ya existe.`);
+      return;
+    }
+    
+    try {
+      await onCategoriasChange([...categorias, categoriaTrimmed]);
       setNuevaCategoria('');
+    } catch (error) {
+      alert('Error al agregar la categoría. Por favor, intenta nuevamente.');
     }
   };
 
@@ -1679,7 +1698,7 @@ export default function AdminPanel({
                       />
                       <button
                         onClick={handleAgregarCategoria}
-                        className={`px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors font-medium`}
+                        className={`px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
                         disabled={!nuevaCategoria.trim()}
                       >
                         + Agregar

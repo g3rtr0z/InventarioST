@@ -328,12 +328,14 @@ function App() {
     setEditingItem(null);
   };
 
-  const handleCategoriasChange = async (nuevasCategorias: string[]) => {
+  const handleCategoriasChange = async (nuevasCategorias: string[]): Promise<void> => {
     try {
       setCategorias(nuevasCategorias);
       await saveCategorias(nuevasCategorias);
-    } catch (error) {
-      alert('Error al guardar las categorías. Por favor, intenta nuevamente.');
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Error desconocido';
+      alert(`Error al guardar las categorías: ${errorMessage}`);
+      throw error; // Re-lanzar el error para que el componente pueda manejarlo
     }
   };
 
