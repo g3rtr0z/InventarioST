@@ -36,7 +36,10 @@ export const getItems = async (): Promise<ItemInventario[]> => {
       id: doc.id,
       ...doc.data()
     })) as ItemInventario[];
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === 'permission-denied') {
+      throw new Error('Permiso denegado. Verifica las reglas de Firestore.');
+    }
     throw error;
   }
 };

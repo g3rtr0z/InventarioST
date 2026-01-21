@@ -45,6 +45,7 @@ interface UserPanelProps {
   filteredAndSearchedItems: ItemInventario[];
   onExportExcel: () => void;
   onLogout: () => void;
+  error?: string | null;
 }
 
 export default function UserPanel({
@@ -74,7 +75,8 @@ export default function UserPanel({
   editingItem,
   filteredAndSearchedItems,
   onExportExcel,
-  onLogout
+  onLogout,
+  error
 }: UserPanelProps) {
   const [activeSection, setActiveSection] = useState<'inventario' | 'estadisticas'>('inventario');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -322,6 +324,12 @@ export default function UserPanel({
           {/* Contenido principal */}
           <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-gray-50 w-full">
             <div className="max-w-[1200px] mx-auto">
+            {/* Mensaje de error */}
+            {error && (
+              <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
+                <p className="text-sm text-red-700 font-medium">{error}</p>
+              </div>
+            )}
             {activeSection === 'inventario' && (
               <div className="space-y-6">
                 {/* Barra de búsqueda y controles */}

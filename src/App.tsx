@@ -55,7 +55,7 @@ function App() {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [sedes, setSedes] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [_error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loadStartTime, setLoadStartTime] = useState<number | null>(null);
   const [isNewLogin, setIsNewLogin] = useState(false);
 
@@ -187,9 +187,14 @@ function App() {
           setError('Error al conectar con Firebase. Verifica tu conexión y configuración.');
         }
       }, 10000);
-    } catch (err) {
+    } catch (err: any) {
       setLoading(false);
-      setError('Error al conectar con Firebase. Verifica tu configuración.');
+      
+      if (err?.code === 'permission-denied' || err?.message?.includes('permission')) {
+        setError('Permisos denegados. Verifica las reglas de Firestore.');
+      } else {
+        setError('Error al conectar con Firebase. Verifica tu conexión.');
+      }
     }
 
     return () => {
@@ -451,6 +456,7 @@ function App() {
         filteredAndSearchedItems={filteredAndSearchedItems}
         onExportExcel={handleExportExcel}
         onLogout={handleLogout}
+        error={error}
       />
     );
   }
@@ -485,6 +491,7 @@ function App() {
       filteredAndSearchedItems={filteredAndSearchedItems}
       onExportExcel={handleExportExcel}
       onLogout={handleLogout}
+      error={error}
     />
   );
 }
