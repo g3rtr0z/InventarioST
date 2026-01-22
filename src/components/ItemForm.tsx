@@ -40,7 +40,8 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     procesador: '',
     ram: '',
     discoDuro: '',
-    horasDeUso: '',
+    horasNormales: '',
+    horasEco: '',
     encargado: ''
   });
   const [nombreError, setNombreError] = useState<string>('');
@@ -280,7 +281,8 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         procesador: rest.procesador || '',
         ram: rest.ram || '',
         discoDuro: rest.discoDuro || '',
-        horasDeUso: (rest as any).horasDeUso || ''
+        horasNormales: (rest as any).horasNormales || '',
+        horasEco: (rest as any).horasEco || '',
       };
 
       // Agregar campos personalizados del item si existen
@@ -323,7 +325,8 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         procesador: '',
         ram: '',
         discoDuro: '',
-        horasDeUso: '',
+        horasNormales: '',
+        horasEco: '',
         encargado: encargadoValue
       });
       setNombreError(''); // Limpiar error al cambiar de item
@@ -361,6 +364,11 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     if (name === 'categoria' && value.toLowerCase() === 'proyectores') {
       setFormData(prev => ({ ...prev, nombre: '' }));
       setNombreError('');
+    }
+
+    // Si cambia la marca y es proyector, limpiar el modelo
+    if (name === 'marca' && formData.categoria.toLowerCase() === 'proyectores') {
+      setFormData(prev => ({ ...prev, modelo: '' }));
     }
 
     // Validar nombre único en tiempo real (solo si no es proyector)
@@ -410,7 +418,8 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       procesador: sanitizeText(formData.procesador || ''),
       ram: sanitizeText(formData.ram || ''),
       discoDuro: sanitizeText(formData.discoDuro || ''),
-      horasDeUso: sanitizeText(formData.horasDeUso || ''),
+      horasNormales: sanitizeText(formData.horasNormales || ''),
+      horasEco: sanitizeText(formData.horasEco || ''),
       encargado: formData.encargado ? sanitizeText(formData.encargado) : undefined
     };
 
@@ -452,10 +461,12 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         return;
       }
     } else {
-      // Para proyectores, generar nombre basado en ubicación con la nueva lógica de siglas
+      // Para proyectores, generar nombre basado en sede, ubicación y edificio (al final)
       const sedeSigla = getSedeSigla(sanitizedData.sede);
+      const edificioLetra = sanitizedData.edificio ? sanitizedData.edificio.trim().charAt(0).toUpperCase() : '';
       const ubicacionLimpia = sanitizedData.ubicacion ? sanitizedData.ubicacion.replace(/\s+/g, '').toUpperCase() : 'SALA';
-      sanitizedData.nombre = `PROY-${sedeSigla}-${ubicacionLimpia}`;
+
+      sanitizedData.nombre = `PROY-${sedeSigla}-${ubicacionLimpia}${edificioLetra}`;
     }
 
     const itemToSave: ItemInventario = {
@@ -532,7 +543,11 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               onChange={handleChange}
                               required={!esProyector && isCampoObligatorio('nombre')}
                               disabled={esProyector}
-                              placeholder={esProyector ? `Ej: PROY-${getSedeSigla(formData.sede)}-${formData.ubicacion.replace(/\s+/g, '').toUpperCase() || 'SALA'}` : "Ej: PC Oficina 1"}
+                              placeholder={esProyector ? (() => {
+                                const ed = formData.edificio ? formData.edificio.trim().charAt(0).toUpperCase() : '';
+                                const ubicacion = formData.ubicacion.replace(/\s+/g, '').toUpperCase() || 'SALA';
+                                return `Ej: PROY-${getSedeSigla(formData.sede)}-${ubicacion}${ed}`;
+                              })() : "Ej: PC Oficina 1"}
                               className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-md ${nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
                                 } ${esProyector ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                             />
@@ -642,7 +657,11 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               onChange={handleChange}
                               required={!esProyector && isCampoObligatorio('nombre')}
                               disabled={esProyector}
-                              placeholder={esProyector ? `Ej: PROY-${getSedeSigla(formData.sede)}-${formData.ubicacion.replace(/\s+/g, '').toUpperCase() || 'SALA'}` : "Ej: PC Oficina 1"}
+                              placeholder={esProyector ? (() => {
+                                const ed = formData.edificio ? formData.edificio.trim().charAt(0).toUpperCase() : '';
+                                const ubicacion = formData.ubicacion.replace(/\s+/g, '').toUpperCase() || 'SALA';
+                                return `Ej: PROY-${getSedeSigla(formData.sede)}-${ubicacion}${ed}`;
+                              })() : "Ej: PC Oficina 1"}
                               className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-md ${nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
                                 } ${esProyector ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                             />
@@ -851,36 +870,73 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                             <label htmlFor="marca" className="block mb-1 text-sm text-gray-700">
                               {getCampoLabel('marca', 'Marca')} {isCampoObligatorio('marca') && '*'}
                             </label>
-                            <input
-                              type="text"
-                              id="marca"
-                              name="marca"
-                              value={formData.marca}
-                              onChange={handleChange}
-                              required={isCampoObligatorio('marca')}
-                              placeholder="Ej: Dell, HP, Lenovo"
-                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
-                            />
+                            {esProyector ? (
+                              <select
+                                id="marca"
+                                name="marca"
+                                value={formData.marca}
+                                onChange={handleChange}
+                                required={isCampoObligatorio('marca')}
+                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-md`}
+                              >
+                                <option value="">Seleccione una marca</option>
+                                <option value="Epson">Epson</option>
+                                <option value="Viewsonic">Viewsonic</option>
+                              </select>
+                            ) : (
+                              <input
+                                type="text"
+                                id="marca"
+                                name="marca"
+                                value={formData.marca}
+                                onChange={handleChange}
+                                required={isCampoObligatorio('marca')}
+                                placeholder="Ej: Dell, HP, Lenovo"
+                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                              />
+                            )}
                           </div>
                         );
                       }
 
                       if (campoConfig.nombre === 'modelo') {
+                        const modelsForBrand = formData.marca === 'Epson'
+                          ? ['X05+', 'E20', 'EB-L260F']
+                          : formData.marca === 'Viewsonic'
+                            ? ['PA503W']
+                            : [];
+
                         return (
                           <div key={campoConfig.nombre}>
                             <label htmlFor="modelo" className="block mb-1 text-sm text-gray-700">
                               {getCampoLabel('modelo', 'Modelo')} {isCampoObligatorio('modelo') && '*'}
                             </label>
-                            <input
-                              type="text"
-                              id="modelo"
-                              name="modelo"
-                              value={formData.modelo}
-                              onChange={handleChange}
-                              required={isCampoObligatorio('modelo')}
-                              placeholder="Ej: OptiPlex 7090"
-                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
-                            />
+                            {esProyector && modelsForBrand.length > 0 ? (
+                              <select
+                                id="modelo"
+                                name="modelo"
+                                value={formData.modelo}
+                                onChange={handleChange}
+                                required={isCampoObligatorio('modelo')}
+                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-md`}
+                              >
+                                <option value="">Seleccione un modelo</option>
+                                {modelsForBrand.map(model => (
+                                  <option key={model} value={model}>{model}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input
+                                type="text"
+                                id="modelo"
+                                name="modelo"
+                                value={formData.modelo}
+                                onChange={handleChange}
+                                required={isCampoObligatorio('modelo')}
+                                placeholder={esProyector ? "Primero seleccione una marca" : "Ej: OptiPlex 7090"}
+                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                              />
+                            )}
                           </div>
                         );
                       }
@@ -919,16 +975,59 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               <label htmlFor="marca-especificaciones" className="block mb-1 text-sm text-gray-700">
                                 Marca {isCampoObligatorio('marca') && '*'}
                               </label>
-                              <input
-                                type="text"
+                              <select
                                 id="marca-especificaciones"
                                 name="marca"
                                 value={formData.marca}
                                 onChange={handleChange}
                                 required={isCampoObligatorio('marca')}
-                                placeholder="Ej: Epson, BenQ, Optoma"
-                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
-                              />
+                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-md`}
+                              >
+                                <option value="">Seleccione una marca</option>
+                                <option value="Epson">Epson</option>
+                                <option value="Viewsonic">Viewsonic</option>
+                              </select>
+                            </div>
+                          );
+                        }
+                        if (campoConfig.nombre === 'modelo') {
+                          const modelsForBrand = formData.marca === 'Epson'
+                            ? ['X05+', 'E20', 'EB-L260F']
+                            : formData.marca === 'Viewsonic'
+                              ? ['PA503W']
+                              : [];
+
+                          return (
+                            <div key="modelo-especificaciones">
+                              <label htmlFor="modelo-especificaciones" className="block mb-1 text-sm text-gray-700">
+                                Modelo {isCampoObligatorio('modelo') && '*'}
+                              </label>
+                              {modelsForBrand.length > 0 ? (
+                                <select
+                                  id="modelo-especificaciones"
+                                  name="modelo"
+                                  value={formData.modelo}
+                                  onChange={handleChange}
+                                  required={isCampoObligatorio('modelo')}
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-md`}
+                                >
+                                  <option value="">Seleccione un modelo</option>
+                                  {modelsForBrand.map(model => (
+                                    <option key={model} value={model}>{model}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input
+                                  type="text"
+                                  id="modelo-especificaciones"
+                                  name="modelo"
+                                  value={formData.modelo}
+                                  onChange={handleChange}
+                                  required={isCampoObligatorio('modelo')}
+                                  placeholder="Primero seleccione una marca"
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                                />
+                              )}
                             </div>
                           );
                         }
@@ -954,21 +1053,42 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                           );
                         }
 
-                        // Renderizar horasDeUso (si es un campo personalizado o reemplazamos procesador)
-                        if (campoConfig.nombre === 'horasDeUso') {
+                        // Renderizar horasNormales
+                        if (campoConfig.nombre === 'horasNormales' || (campoConfig.nombre === 'procesador' && esProyector)) {
                           return (
-                            <div key="horasDeUso">
-                              <label htmlFor="horasDeUso" className="block mb-1 text-sm text-gray-700">
-                                Horas de Uso {isCampoObligatorio('horasDeUso') && '*'}
+                            <div key="horasNormales">
+                              <label htmlFor="horasNormales" className="block mb-1 text-sm text-gray-700">
+                                Horas normales {isCampoObligatorio('horasNormales') && '*'}
                               </label>
                               <input
                                 type="text"
-                                id="horasDeUso"
-                                name="horasDeUso"
-                                value={formData.horasDeUso || ''}
+                                id="horasNormales"
+                                name="horasNormales"
+                                value={formData.horasNormales || ''}
                                 onChange={handleChange}
-                                required={isCampoObligatorio('horasDeUso')}
-                                placeholder="Ej: 1500 horas"
+                                required={isCampoObligatorio('horasNormales')}
+                                placeholder="Ej: 1000h"
+                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                              />
+                            </div>
+                          );
+                        }
+
+                        // Renderizar horasEco
+                        if (campoConfig.nombre === 'horasEco' || (campoConfig.nombre === 'ram' && esProyector)) {
+                          return (
+                            <div key="horasEco">
+                              <label htmlFor="horasEco" className="block mb-1 text-sm text-gray-700">
+                                Horas eco {isCampoObligatorio('horasEco') && '*'}
+                              </label>
+                              <input
+                                type="text"
+                                id="horasEco"
+                                name="horasEco"
+                                value={formData.horasEco || ''}
+                                onChange={handleChange}
+                                required={isCampoObligatorio('horasEco')}
+                                placeholder="Ej: 500h"
                                 className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
                               />
                             </div>
@@ -1189,19 +1309,36 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                           </div>
                         )}
 
-                        {/* Mostrar horasDeUso */}
-                        <div key="horasDeUso-proyector">
-                          <label htmlFor="horasDeUso-proyector" className="block mb-1 text-sm text-gray-700">
-                            Horas de Uso {isCampoObligatorio('horasDeUso') && '*'}
+                        {/* Mostrar horasNormales */}
+                        <div key="horasNormales-proyector">
+                          <label htmlFor="horasNormales-proyector" className="block mb-1 text-sm text-gray-700">
+                            Horas normales {isCampoObligatorio('horasNormales') && '*'}
                           </label>
                           <input
                             type="text"
-                            id="horasDeUso-proyector"
-                            name="horasDeUso"
-                            value={formData.horasDeUso || ''}
+                            id="horasNormales-proyector"
+                            name="horasNormales"
+                            value={formData.horasNormales || ''}
                             onChange={handleChange}
-                            required={isCampoObligatorio('horasDeUso')}
-                            placeholder="Ej: 1500 horas"
+                            required={isCampoObligatorio('horasNormales')}
+                            placeholder="Ej: 1000h"
+                            className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                          />
+                        </div>
+
+                        {/* Mostrar horasEco */}
+                        <div key="horasEco-proyector">
+                          <label htmlFor="horasEco-proyector" className="block mb-1 text-sm text-gray-700">
+                            Horas eco {isCampoObligatorio('horasEco') && '*'}
+                          </label>
+                          <input
+                            type="text"
+                            id="horasEco-proyector"
+                            name="horasEco"
+                            value={formData.horasEco || ''}
+                            onChange={handleChange}
+                            required={isCampoObligatorio('horasEco')}
+                            placeholder="Ej: 500h"
                             className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
                           />
                         </div>

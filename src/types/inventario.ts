@@ -26,7 +26,8 @@ export interface ItemInventario {
   procesador?: string;
   ram?: string;
   discoDuro?: string;
-  horasDeUso?: string; // Horas de uso para proyectores
+  horasNormales?: string; // Horas normales para proyectores
+  horasEco?: string; // Horas eco para proyectores
   encargado?: string; // Nombre y correo del usuario que creó el item
 }
 

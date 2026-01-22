@@ -55,138 +55,154 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
       {/* Vista de Tarjetas */}
       {viewMode === 'cards' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {filteredItems.map(item => (
-        <div
-          key={item.id}
-          className={`bg-white border-2 rounded-lg p-5 shadow-sm hover:shadow-lg transition-all flex flex-col ${
-            item.estado === 'Disponible' ? `${INSTITUTIONAL_COLORS.borderPrimary} hover:border-green-900` :
-            item.estado === 'En Uso' ? `${INSTITUTIONAL_COLORS.borderPrimary} hover:border-green-900` :
-            item.estado === 'Mantenimiento' ? 'border-yellow-200 hover:border-yellow-300' :
-            'border-red-200 hover:border-red-300'
-          }`}
-        >
-          <div className="flex justify-between items-start mb-4 pb-3 border-b border-gray-200">
-            <div className="flex items-center gap-2 flex-1">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {item.nombre}
-              </h3>
-            </div>
-            <span className={`text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${getEstadoColor(item.estado)}`}>
-              {item.estado}
-            </span>
-          </div>
-
-          <div className="space-y-2 text-sm mb-3 flex-grow">
-            <div>
-              <span className="text-gray-600">Categoría: </span>
-              <span className="text-gray-900">{item.categoria}</span>
-            </div>
-            <div>
-              <span className="text-gray-600">Marca/Modelo: </span>
-              <span className="text-gray-900">{item.marca} {item.modelo}</span>
-            </div>
-            <div>
-              <span className="text-gray-600">Serie: </span>
-              <span className="text-gray-900">{item.numeroSerie}</span>
-            </div>
-            <div>
-              <span className="text-gray-600">Sede: </span>
-              <span className="text-gray-900 font-medium">{item.sede}</span>
-            </div>
-            <div>
-              <span className="text-gray-600">Ubicación: </span>
-              <span className="text-gray-900">{item.ubicacion}</span>
-            </div>
-            {item.piso && (
-              <div>
-                <span className="text-gray-600">Piso: </span>
-                <span className="text-gray-900">{item.piso}</span>
-              </div>
-            )}
-            {item.edificio && (
-              <div>
-                <span className="text-gray-600">Edificio: </span>
-                <span className="text-gray-900">{item.edificio}</span>
-              </div>
-            )}
-            <div>
-              <span className="text-gray-600">Tipo de Uso: </span>
-              <span className={`text-gray-900 font-medium ${
-                item.tipoUso === 'Alumnos' ? 'text-blue-600' : INSTITUTIONAL_COLORS.textPrimary
-              }`}>
-                {item.tipoUso}
-              </span>
-            </div>
-            {(item.procesador || item.ram || item.discoDuro) && (
-              <div className="pt-2 border-t border-gray-200">
-                <div className="text-xs font-semibold text-gray-600 mb-1">Especificaciones:</div>
-                {item.procesador && (
-                  <div className="text-xs text-gray-700">
-                    <span className="font-medium">Procesador:</span> {item.procesador}
-                  </div>
-                )}
-                {item.ram && (
-                  <div className="text-xs text-gray-700">
-                    <span className="font-medium">RAM:</span> {item.ram}
-                  </div>
-                )}
-                {item.discoDuro && (
-                  <div className="text-xs text-gray-700">
-                    <span className="font-medium">Disco:</span> {item.discoDuro}
-                  </div>
-                )}
-              </div>
-            )}
-            <div>
-              <span className="text-gray-600">Responsable: </span>
-              <span className="text-gray-900">{item.responsable}</span>
-            </div>
-            <div>
-              <span className="text-gray-600">Encargado: </span>
-              <span className="text-gray-900">{item.encargado || '-'}</span>
-            </div>
-            {item.precio && (
-              <div>
-                <span className="text-gray-600">Precio: </span>
-                <span className="text-gray-900 font-medium">{formatCurrency(item.precio)}</span>
-              </div>
-            )}
-            {item.proveedor && (
-              <div>
-                <span className="text-gray-600">Proveedor: </span>
-                <span className="text-gray-900">{item.proveedor}</span>
-              </div>
-            )}
-            {item.fechaVencimientoGarantia && (
-              <div>
-                <span className="text-gray-600">Garantía vence: </span>
-                <span className="text-gray-900">{formatDate(item.fechaVencimientoGarantia)}</span>
-              </div>
-            )}
-            {item.descripcion && (
-              <div className="pt-2 border-t border-gray-100">
-                <span className="text-gray-600">Descripción: </span>
-                <span className="text-gray-900">{item.descripcion}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-2 pt-4 border-t border-gray-200 mt-auto">
-            <button
-              onClick={() => onEdit(item)}
-              className={`flex-1 px-3 py-1.5 ${INSTITUTIONAL_COLORS.bgPrimary} text-white text-sm font-medium rounded-md hover:bg-green-900 transition-colors`}
+          {filteredItems.map(item => (
+            <div
+              key={item.id}
+              className={`bg-white border-2 rounded-lg p-5 shadow-sm hover:shadow-lg transition-all flex flex-col ${item.estado === 'Disponible' ? `${INSTITUTIONAL_COLORS.borderPrimary} hover:border-green-900` :
+                item.estado === 'En Uso' ? `${INSTITUTIONAL_COLORS.borderPrimary} hover:border-green-900` :
+                  item.estado === 'Mantenimiento' ? 'border-yellow-200 hover:border-yellow-300' :
+                    'border-red-200 hover:border-red-300'
+                }`}
             >
-              Editar
-            </button>
-            <button
-              onClick={() => onDelete(item.id)}
-              className="flex-1 px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
-            >
-              Eliminar
-            </button>
-          </div>
-        </div>
-      ))}
+              <div className="flex justify-between items-start mb-4 pb-3 border-b border-gray-200">
+                <div className="flex items-center gap-2 flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {item.nombre}
+                  </h3>
+                </div>
+                <span className={`text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${getEstadoColor(item.estado)}`}>
+                  {item.estado}
+                </span>
+              </div>
+
+              <div className="space-y-2 text-sm mb-3 flex-grow">
+                <div>
+                  <span className="text-gray-600">Categoría: </span>
+                  <span className="text-gray-900">{item.categoria}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Marca/Modelo: </span>
+                  <span className="text-gray-900">{item.marca} {item.modelo}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Serie: </span>
+                  <span className="text-gray-900">{item.numeroSerie}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Sede: </span>
+                  <span className="text-gray-900 font-medium">{item.sede}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Ubicación: </span>
+                  <span className="text-gray-900">{item.ubicacion}</span>
+                </div>
+                {item.piso && (
+                  <div>
+                    <span className="text-gray-600">Piso: </span>
+                    <span className="text-gray-900">{item.piso}</span>
+                  </div>
+                )}
+                {item.edificio && (
+                  <div>
+                    <span className="text-gray-600">Edificio: </span>
+                    <span className="text-gray-900">{item.edificio}</span>
+                  </div>
+                )}
+                <div>
+                  <span className="text-gray-600">Tipo de Uso: </span>
+                  <span className={`text-gray-900 font-medium ${item.tipoUso === 'Alumnos' ? 'text-blue-600' : INSTITUTIONAL_COLORS.textPrimary
+                    }`}>
+                    {item.tipoUso}
+                  </span>
+                </div>
+                {/* Especificaciones para PCs */}
+                {item.categoria.toLowerCase() !== 'proyectores' && (item.procesador || item.ram || item.discoDuro) && (
+                  <div className="pt-2 border-t border-gray-200">
+                    <div className="text-xs font-semibold text-gray-600 mb-1">Especificaciones:</div>
+                    {item.procesador && (
+                      <div className="text-xs text-gray-700">
+                        <span className="font-medium">Procesador:</span> {item.procesador}
+                      </div>
+                    )}
+                    {item.ram && (
+                      <div className="text-xs text-gray-700">
+                        <span className="font-medium">RAM:</span> {item.ram}
+                      </div>
+                    )}
+                    {item.discoDuro && (
+                      <div className="text-xs text-gray-700">
+                        <span className="font-medium">Disco:</span> {item.discoDuro}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Especificaciones para Proyectores */}
+                {item.categoria.toLowerCase() === 'proyectores' && (item.horasNormales || item.horasEco) && (
+                  <div className="pt-2 border-t border-gray-200">
+                    <div className="text-xs font-semibold text-gray-600 mb-1">Uso de Lámpara:</div>
+                    {item.horasNormales && (
+                      <div className="text-xs text-gray-700">
+                        <span className="font-medium">Horas Normales:</span> {item.horasNormales}
+                      </div>
+                    )}
+                    {item.horasEco && (
+                      <div className="text-xs text-gray-700">
+                        <span className="font-medium">Horas Eco:</span> {item.horasEco}
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div>
+                  <span className="text-gray-600">Responsable: </span>
+                  <span className="text-gray-900">{item.responsable}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Encargado: </span>
+                  <span className="text-gray-900">{item.encargado || '-'}</span>
+                </div>
+                {item.precio && (
+                  <div>
+                    <span className="text-gray-600">Precio: </span>
+                    <span className="text-gray-900 font-medium">{formatCurrency(item.precio)}</span>
+                  </div>
+                )}
+                {item.proveedor && (
+                  <div>
+                    <span className="text-gray-600">Proveedor: </span>
+                    <span className="text-gray-900">{item.proveedor}</span>
+                  </div>
+                )}
+                {item.fechaVencimientoGarantia && (
+                  <div>
+                    <span className="text-gray-600">Garantía vence: </span>
+                    <span className="text-gray-900">{formatDate(item.fechaVencimientoGarantia)}</span>
+                  </div>
+                )}
+                {item.descripcion && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <span className="text-gray-600">Descripción: </span>
+                    <span className="text-gray-900">{item.descripcion}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 pt-4 border-t border-gray-200 mt-auto">
+                <button
+                  onClick={() => onEdit(item)}
+                  className={`flex-1 px-3 py-1.5 ${INSTITUTIONAL_COLORS.bgPrimary} text-white text-sm font-medium rounded-md hover:bg-green-900 transition-colors`}
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => onDelete(item.id)}
+                  className="flex-1 px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -212,8 +228,8 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredItems.map((item) => (
-                  <tr 
-                    key={item.id} 
+                  <tr
+                    key={item.id}
                     className="hover:bg-gray-50 transition-colors h-16"
                   >
                     <td className="px-5 py-3 align-middle text-gray-900 font-medium">{item.nombre}</td>
@@ -229,11 +245,10 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                     <td className="px-5 py-3 align-middle text-gray-700">{item.ubicacion}</td>
                     <td className="px-5 py-3 align-middle text-gray-700">{item.piso || '-'}</td>
                     <td className="px-5 py-3 align-middle">
-                      <span className={`inline-block text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${
-                        item.tipoUso === 'Alumnos' 
-                          ? 'bg-blue-100 text-blue-700' 
-                          : `${INSTITUTIONAL_COLORS.bgPrimary} text-white`
-                      }`}>
+                      <span className={`inline-block text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ${item.tipoUso === 'Alumnos'
+                        ? 'bg-blue-100 text-blue-700'
+                        : `${INSTITUTIONAL_COLORS.bgPrimary} text-white`
+                        }`}>
                         {item.tipoUso}
                       </span>
                     </td>

@@ -22,6 +22,8 @@ export const exportToExcel = (items: ItemInventario[], filename: string = 'inven
     'Procesador': item.procesador || '',
     'RAM': item.ram || '',
     'Disco Duro': item.discoDuro || '',
+    'Horas Normales': item.horasNormales || '',
+    'Horas Eco': item.horasEco || '',
     'Fecha de Adquisición': item.fechaAdquisicion || '',
     'Descripción': item.descripcion || '',
     'Observaciones': item.observaciones || '',
@@ -31,10 +33,10 @@ export const exportToExcel = (items: ItemInventario[], filename: string = 'inven
 
   // Crear un libro de trabajo
   const wb = XLSX.utils.book_new();
-  
+
   // Crear una hoja de cálculo con los datos
   const ws = XLSX.utils.json_to_sheet(data);
-  
+
   // Ajustar el ancho de las columnas
   const colWidths = [
     { wch: 20 }, // Nombre
@@ -46,12 +48,14 @@ export const exportToExcel = (items: ItemInventario[], filename: string = 'inven
     { wch: 20 }, // Sede
     { wch: 15 }, // Ubicación
     { wch: 20 }, // Responsable
-    { wch: 10 }, // Edificio
+    { wch: 20 }, // Edificio
     { wch: 10 }, // Piso
     { wch: 15 }, // Tipo de Uso
     { wch: 25 }, // Procesador
     { wch: 15 }, // RAM
     { wch: 20 }, // Disco Duro
+    { wch: 15 }, // Horas Normales
+    { wch: 15 }, // Horas Eco
     { wch: 18 }, // Fecha de Adquisición
     { wch: 30 }, // Descripción
     { wch: 30 }, // Observaciones
@@ -59,14 +63,14 @@ export const exportToExcel = (items: ItemInventario[], filename: string = 'inven
     { wch: 20 }  // Próximo Mantenimiento
   ];
   ws['!cols'] = colWidths;
-  
+
   // Agregar la hoja al libro
   XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
-  
+
   // Generar el nombre del archivo con fecha
   const fecha = new Date().toISOString().split('T')[0];
   const nombreArchivo = `${filename}_${fecha}.xlsx`;
-  
+
   // Descargar el archivo
   XLSX.writeFile(wb, nombreArchivo);
 };
