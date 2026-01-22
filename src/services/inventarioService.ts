@@ -126,7 +126,10 @@ export const addItem = async (item: Omit<ItemInventario, 'id'>): Promise<string>
   }
 
   // Validar que el item tenga todos los campos requeridos
-  if (!item.nombre || !item.categoria || !item.marca || !item.modelo || !item.numeroSerie || !item.estado || !item.ubicacion || !item.responsable || !item.tipoUso || !item.sede) {
+  const esProyector = item.categoria?.toLowerCase() === 'proyectores';
+  const nombreValido = esProyector ? true : !!item.nombre;
+
+  if (!nombreValido || !item.categoria || !item.marca || !item.modelo || !item.numeroSerie || !item.estado || !item.ubicacion || !item.responsable || !item.tipoUso || !item.sede) {
     throw new Error('Todos los campos requeridos deben estar completos');
   }
 

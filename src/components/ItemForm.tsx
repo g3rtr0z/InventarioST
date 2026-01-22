@@ -54,7 +54,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         const config = await getConfig();
         setConfigFormulario(config.formulario || []);
         setSeccionesFormulario(config.seccionesFormulario || []);
-        
+
         // Inicializar campos personalizados en formData
         const camposPersonalizados = config.formulario || [];
         setFormData(prev => {
@@ -77,7 +77,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     const unsubscribe = subscribeToConfig((config) => {
       setConfigFormulario(config.formulario || []);
       setSeccionesFormulario(config.seccionesFormulario || []);
-      
+
       // Inicializar campos personalizados en formData si no existen
       const camposPersonalizados = config.formulario || [];
       setFormData(prev => {
@@ -112,6 +112,18 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     return config?.etiqueta || labelDefault;
   };
 
+  // Función helper para obtener siglas de sede
+  const getSedeSigla = (sede: string): string => {
+    if (!sede) return 'SN';
+    const words = sede.trim().split(/\s+/);
+    if (words.length >= 2) {
+      // Tomar inicial de la 1° + 3 letras de la 2° (ej: Manuel Rodriguez -> MROD)
+      return (words[0][0] + words[1].substring(0, 3)).toUpperCase();
+    }
+    // Tomar primeras 4 letras (ej: Rancagua -> RANC)
+    return sede.substring(0, 4).toUpperCase();
+  };
+
   // Función helper para obtener campos ordenados de una sección
   const getCamposOrdenados = (seccion: string): CampoFormulario[] => {
     return configFormulario
@@ -143,7 +155,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     const tipoCampo = campoConfig.tipo || 'text';
 
     const baseClasses = `w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-md`;
-    
+
     switch (tipoCampo) {
       case 'number':
         return (
@@ -162,7 +174,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
             />
           </div>
         );
-      
+
       case 'date':
         return (
           <div key={campoNombre}>
@@ -180,7 +192,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
             />
           </div>
         );
-      
+
       case 'textarea':
         return (
           <div key={campoNombre} className="md:col-span-2">
@@ -198,7 +210,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
             />
           </div>
         );
-      
+
       case 'select':
         // Para select, necesitaríamos opciones. Por ahora lo dejamos como text
         return (
@@ -218,7 +230,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
             />
           </div>
         );
-      
+
       default: // text
         return (
           <div key={campoNombre}>
@@ -243,11 +255,11 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
   useEffect(() => {
     if (item) {
       const { id, ...rest } = item;
-      const categoriaValida = categorias.includes(rest.categoria) 
-        ? rest.categoria 
+      const categoriaValida = categorias.includes(rest.categoria)
+        ? rest.categoria
         : (categorias.length > 0 ? categorias[0] : '');
       // Incluir todos los campos del item, incluyendo campos personalizados
-      const nuevoFormData: any = { 
+      const nuevoFormData: any = {
         nombre: rest.nombre,
         categoria: categoriaValida,
         marca: rest.marca,
@@ -270,26 +282,26 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         discoDuro: rest.discoDuro || '',
         horasDeUso: (rest as any).horasDeUso || ''
       };
-      
+
       // Agregar campos personalizados del item si existen
       Object.keys(rest).forEach(key => {
         if (!(key in nuevoFormData)) {
           nuevoFormData[key] = (rest as any)[key] || '';
         }
       });
-      
+
       // Incluir encargado si existe en el item
       if (rest.encargado) {
         nuevoFormData.encargado = rest.encargado;
       }
-      
+
       setFormData(nuevoFormData);
     } else {
       // Al crear un nuevo item, establecer el encargado con el nombre y correo del usuario actual
-      const encargadoValue = currentUserName && currentUserEmail 
+      const encargadoValue = currentUserName && currentUserEmail
         ? `${currentUserName} (${currentUserEmail})`
         : currentUserEmail || '';
-      
+
       setFormData({
         nombre: '',
         categoria: categorias.length > 0 ? categorias[0] : '',
@@ -320,7 +332,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    
+
     // Permitir que el usuario escriba normalmente, solo validar patrones peligrosos
     if (type !== 'number' && typeof value === 'string') {
       // Validar contra XSS (solo bloquear si es realmente peligroso)
@@ -328,13 +340,13 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         setNombreError('El texto contiene caracteres no permitidos.');
         return;
       }
-      
+
       // Validar contra inyección SQL (solo bloquear si es realmente peligroso)
       if (!validateNoSQLInjection(value)) {
         setNombreError('El texto contiene patrones sospechosos.');
         return;
       }
-      
+
       // NO sanitizar mientras escribe, permitir espacios y caracteres normales
       // Guardar el valor tal cual lo escribe el usuario
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -360,7 +372,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         setNombreError('');
         return;
       }
-      
+
       const nombreNormalizado = value.trim().toLowerCase();
       const nombreDuplicado = items.find(existingItem => {
         const existingNombreNormalizado = existingItem.nombre.trim().toLowerCase();
@@ -381,7 +393,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Sanitizar todos los campos de texto antes de enviar
     const sanitizedData = {
       ...formData,
@@ -421,7 +433,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         return;
       }
     }
-    
+
     // Validar nombre único antes de enviar (solo si no es proyector)
     const esProyector = sanitizedData.categoria.toLowerCase() === 'proyectores';
     if (!esProyector) {
@@ -440,8 +452,10 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         return;
       }
     } else {
-      // Para proyectores, limpiar el nombre
-      sanitizedData.nombre = '';
+      // Para proyectores, generar nombre basado en ubicación con la nueva lógica de siglas
+      const sedeSigla = getSedeSigla(sanitizedData.sede);
+      const ubicacionLimpia = sanitizedData.ubicacion ? sanitizedData.ubicacion.replace(/\s+/g, '').toUpperCase() : 'SALA';
+      sanitizedData.nombre = `PROY-${sedeSigla}-${ubicacionLimpia}`;
     }
 
     const itemToSave: ItemInventario = {
@@ -484,10 +498,10 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                 const camposGrid = ['categoria', 'estado', 'tipoUso'];
                 const camposEnGrid = camposSeccion.filter((c: CampoFormulario) => camposGrid.includes(c.nombre));
                 const camposSolo = camposSeccion.filter((c: CampoFormulario) => !camposGrid.includes(c.nombre));
-                
+
                 // Determinar si hay campos antes del grid
                 const primerCampoGrid = camposEnGrid.length > 0 ? camposEnGrid[0] : null;
-                const camposAntesDelGrid = primerCampoGrid 
+                const camposAntesDelGrid = primerCampoGrid
                   ? camposSolo.filter((c: CampoFormulario) => c.orden < primerCampoGrid.orden)
                   : camposSolo;
                 const camposDespuesDelGrid = primerCampoGrid
@@ -499,7 +513,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                     <h3 className={`text-base font-semibold text-gray-800 border-b-2 ${INSTITUTIONAL_COLORS.borderPrimary} pb-2`}>
                       {seccion.etiqueta || seccion.nombre}
                     </h3>
-                    
+
                     {/* Campos antes del grid */}
                     {camposAntesDelGrid.map((campoConfig: CampoFormulario) => {
                       if (campoConfig.nombre === 'nombre') {
@@ -518,10 +532,9 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               onChange={handleChange}
                               required={!esProyector && isCampoObligatorio('nombre')}
                               disabled={esProyector}
-                              placeholder={esProyector ? "No aplica para Proyectores" : "Ej: PC Oficina 1"}
-                              className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-md ${
-                                nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
-                              } ${esProyector ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
+                              placeholder={esProyector ? `Ej: PROY-${getSedeSigla(formData.sede)}-${formData.ubicacion.replace(/\s+/g, '').toUpperCase() || 'SALA'}` : "Ej: PC Oficina 1"}
+                              className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-md ${nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
+                                } ${esProyector ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                             />
                             {nombreError && !esProyector && (
                               <p className="mt-1 text-sm text-red-600">{nombreError}</p>
@@ -629,10 +642,9 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               onChange={handleChange}
                               required={!esProyector && isCampoObligatorio('nombre')}
                               disabled={esProyector}
-                              placeholder={esProyector ? "No aplica para Proyectores" : "Ej: PC Oficina 1"}
-                              className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-md ${
-                                nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
-                              } ${esProyector ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
+                              placeholder={esProyector ? `Ej: PROY-${getSedeSigla(formData.sede)}-${formData.ubicacion.replace(/\s+/g, '').toUpperCase() || 'SALA'}` : "Ej: PC Oficina 1"}
+                              className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-md ${nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
+                                } ${esProyector ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                             />
                             {nombreError && !esProyector && (
                               <p className="mt-1 text-sm text-red-600">{nombreError}</p>
@@ -655,16 +667,16 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
               // Renderizado genérico para otras secciones
               // Verificar si es proyector y si es sección de especificaciones técnicas
               const esProyector = formData.categoria.toLowerCase() === 'proyectores';
-              const esSeccionEspecificaciones = seccion.nombre.toLowerCase().includes('especificaciones') || 
-                                                seccion.nombre.toLowerCase().includes('técnicas') ||
-                                                seccion.nombre.toLowerCase().includes('tecnicas');
-              
+              const esSeccionEspecificaciones = seccion.nombre.toLowerCase().includes('especificaciones') ||
+                seccion.nombre.toLowerCase().includes('técnicas') ||
+                seccion.nombre.toLowerCase().includes('tecnicas');
+
               return (
                 <div key={seccion.nombre} className="space-y-4">
                   <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
                     {seccion.etiqueta || seccion.nombre}
                   </h3>
-                  
+
                   {/* Renderizar todos los campos de la sección */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {camposSeccion.map((campoConfig: CampoFormulario) => {
@@ -798,7 +810,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                                   {usuarios
                                     .filter((usuario) => usuario.isActive)
                                     .map((usuario) => {
-                                      const displayText = usuario.displayName 
+                                      const displayText = usuario.displayName
                                         ? `${usuario.displayName} (${usuario.email})`
                                         : usuario.email;
                                       return (
@@ -1135,7 +1147,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                       // Para campos personalizados, usar renderCampoGenerico
                       return renderCampoGenerico(campoConfig);
                     })}
-                    
+
                     {/* Para Proyectores, agregar campos adicionales al final de Especificaciones Técnicas */}
                     {esProyector && esSeccionEspecificaciones && (
                       <>
@@ -1157,7 +1169,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                             />
                           </div>
                         )}
-                        
+
                         {/* Mostrar numeroSerie si no está ya en la sección */}
                         {!camposSeccion.find(c => c.nombre === 'numeroSerie') && (
                           <div key="numeroSerie-proyector">
@@ -1176,7 +1188,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                             />
                           </div>
                         )}
-                        
+
                         {/* Mostrar horasDeUso */}
                         <div key="horasDeUso-proyector">
                           <label htmlFor="horasDeUso-proyector" className="block mb-1 text-sm text-gray-700">
@@ -1200,7 +1212,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
               );
             })}
 
-                  {/* Botones */}
+          {/* Botones */}
           <div className="flex gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
