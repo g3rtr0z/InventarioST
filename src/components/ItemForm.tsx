@@ -807,6 +807,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               <option value="">Seleccionar Edificio</option>
                               <option value="A">A</option>
                               <option value="B">B</option>
+                              <option value="C">C</option>
                             </select>
                           </div>
                         );
