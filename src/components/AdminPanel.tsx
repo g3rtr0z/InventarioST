@@ -43,7 +43,8 @@ import {
   FaUser,
   FaCheckCircle,
   FaTimesCircle,
-  FaArrowRight
+  FaArrowRight,
+  FaFileImport
 } from 'react-icons/fa';
 
 interface AdminPanelProps {
@@ -76,6 +77,7 @@ interface AdminPanelProps {
   editingItem: ItemInventario | null;
   filteredAndSearchedItems: ItemInventario[];
   onExportExcel: () => void;
+  onImportExcel: (file: File) => void;
   onLogout: () => void;
   error?: string | null;
 }
@@ -110,6 +112,7 @@ export default function AdminPanel({
   editingItem,
   filteredAndSearchedItems,
   onExportExcel,
+  onImportExcel,
   onLogout,
   error
 }: AdminPanelProps) {
@@ -128,6 +131,21 @@ export default function AdminPanel({
     reportes: false
   });
   const sidebarTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleImportButtonClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    onImportExcel(file);
+    // Permitir volver a seleccionar el mismo archivo
+    e.target.value = '';
+  };
   
   // Estados para paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -864,7 +882,21 @@ export default function AdminPanel({
               <p className="text-green-100 text-xs sm:text-sm mt-0.5 sm:mt-1 hidden sm:block">Gestión completa del sistema</p>
             </div>
           </div>
-          <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+          <div className="flex gap-1 sm:gap-2 flex-shrink-0 items-center">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <button
+              onClick={handleImportButtonClick}
+              className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-blue-600 border border-blue-500 rounded-md hover:bg-blue-500 transition-colors flex items-center gap-1 sm:gap-2"
+            >
+              <FaFileImport className="text-sm sm:text-base" />
+              <span className="hidden sm:inline">Importar</span>
+            </button>
             <button
               onClick={onExportExcel}
               className={`px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-white ${INSTITUTIONAL_COLORS.bgPrimary} border border-green-900 rounded-md hover:bg-green-900 transition-colors flex items-center gap-1 sm:gap-2`}

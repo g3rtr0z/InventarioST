@@ -16,7 +16,7 @@ import {
 } from './services/inventarioService';
 import { isFirebaseReady, auth } from './config/firebase';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-import { exportToExcel } from './utils/exportToExcel';
+import { exportToExcel, importFromExcel } from './utils/exportToExcel';
 import { useSecurityHeaders } from './hooks/useSecurityHeaders';
 import { useUserRole } from './hooks/useUserRole';
 import { isUserActive } from './services/userRoleService';
@@ -286,6 +286,10 @@ function App() {
       const nombreNormalizado = item.nombre.trim().toLowerCase();
       const nombreDuplicado = items.find(existingItem => {
         const existingNombreNormalizado = existingItem.nombre.trim().toLowerCase();
+        // Ignorar equipos dados de baja al validar duplicados
+        if (existingItem.estado === 'Baja') {
+          return false;
+        }
         // Si estamos editando, excluir el item actual de la validación
         if (editingItem && existingItem.id === editingItem.id) {
           return false;
@@ -391,6 +395,89 @@ function App() {
     exportToExcel(itemsToExport, 'inventario_departamento_informatica');
   };
 
+  const handleImportExcel = async (file: File) => {
+    try {
+      const importedWithoutId = await importFromExcel(file);
+
+      if (importedWithoutId.length === 0) {
+        alert('El archivo no contiene registros válidos.');
+        return;
+      }
+
+      // Mapa de items existentes por nombre normalizado
+      const existingByName = new Map<string, ItemInventario>();
+      for (const item of items) {
+        existingByName.set(item.nombre.trim().toLowerCase(), item);
+      }
+
+      // Usar mapas para que, si en el archivo hay filas repetidas
+      // para el mismo nombre, se tome solo una (la última leída)
+      const createsByName = new Map<string, Omit<ItemInventario, 'id'>>();
+      const updatesById = new Map<string, Omit<ItemInventario, 'id'>>();
+
+      for (const imported of importedWithoutId) {
+        const nombreNormalizado = imported.nombre.trim().toLowerCase();
+        if (!nombreNormalizado) continue;
+
+        const existing = existingByName.get(nombreNormalizado);
+        if (existing) {
+          // Si el item ya existe, preparar actualización de sus datos
+          updatesById.set(existing.id, imported);
+        } else {
+          // Si no existe, preparar creación
+          createsByName.set(nombreNormalizado, imported);
+        }
+      }
+
+      const toAdd = Array.from(createsByName.values());
+      const toUpdate = Array.from(updatesById.entries()); // [id, data]
+
+      if (toAdd.length === 0 && toUpdate.length === 0) {
+        alert('No hay cambios para aplicar desde el archivo (todos los registros están vacíos o sin nombre).');
+        return;
+      }
+
+      let createdCount = 0;
+      let updatedCount = 0;
+      let errorCount = 0;
+
+      // Crear nuevos items
+      for (const itemData of toAdd) {
+        try {
+          await addItem(itemData);
+          createdCount += 1;
+        } catch {
+          errorCount += 1;
+        }
+      }
+
+      // Actualizar items existentes
+      for (const [id, data] of toUpdate) {
+        try {
+          await updateItem(id, data);
+          updatedCount += 1;
+        } catch {
+          errorCount += 1;
+        }
+      }
+
+      if (createdCount === 0 && updatedCount === 0) {
+        alert('No se pudo aplicar ningún cambio. Revisa que los datos sean válidos.');
+        return;
+      }
+
+      alert(
+        `Importación completada. ` +
+        `Nuevos: ${createdCount}. ` +
+        `Actualizados: ${updatedCount}.` +
+        (errorCount ? ` Errores: ${errorCount}.` : '')
+      );
+    } catch (error) {
+      console.error('Error al importar Excel:', error);
+      alert('Hubo un error al procesar el archivo de Excel.');
+    }
+  };
+
   // Mostrar login si no está autenticado
   if (checkingAuth) {
     return null;
@@ -457,6 +544,7 @@ function App() {
         editingItem={editingItem}
         filteredAndSearchedItems={filteredAndSearchedItems}
         onExportExcel={handleExportExcel}
+        onImportExcel={handleImportExcel}
         onLogout={handleLogout}
         error={error}
       />

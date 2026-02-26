@@ -75,3 +75,70 @@ export const exportToExcel = (items: ItemInventario[], filename: string = 'inven
   XLSX.writeFile(wb, nombreArchivo);
 };
 
+/**
+ * Importa items desde un archivo Excel con el mismo formato que exportToExcel.
+ * Devuelve una lista de items sin id, listos para agregarse a la base de datos.
+ */
+export const importFromExcel = async (file: File): Promise<Omit<ItemInventario, 'id'>[]> => {
+  const arrayBuffer = await file.arrayBuffer();
+  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+  const firstSheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[firstSheetName];
+
+  if (!worksheet) {
+    return [];
+  }
+
+  const rows = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet);
+
+  const items: Omit<ItemInventario, 'id'>[] = rows.map((row) => {
+    const getString = (key: string): string => {
+      const value = row[key];
+      return value == null ? '' : String(value).trim();
+    };
+
+    const estado = getString('Estado') as ItemInventario['estado'] | '';
+    const tipoUso = getString('Tipo de Uso') as ItemInventario['tipoUso'] | '';
+
+    const rawNombre = getString('Nombre');
+    const regexSufijoBaja = /\s+-\s*Baja$/i;
+    let nombreNormalizado = rawNombre;
+
+    if (estado === 'Baja') {
+      // Asegurar que el nombre termine en " - Baja" sin duplicar el sufijo
+      const base = rawNombre.replace(regexSufijoBaja, '');
+      nombreNormalizado = `${base} - Baja`;
+    } else {
+      // Para otros estados, eliminar el sufijo " - Baja" si viene en el Excel
+      nombreNormalizado = rawNombre.replace(regexSufijoBaja, '');
+    }
+
+    return {
+      nombre: nombreNormalizado,
+      categoria: getString('Categoría'),
+      marca: getString('Marca'),
+      modelo: getString('Modelo'),
+      numeroSerie: getString('Número de Serie'),
+      estado: (estado || 'Disponible') as ItemInventario['estado'],
+      sede: getString('Sede'),
+      ubicacion: getString('Ubicación'),
+      responsable: getString('Responsable'),
+      edificio: getString('Edificio') || undefined,
+      piso: getString('Piso') || undefined,
+      tipoUso: (tipoUso || 'Administrativo') as ItemInventario['tipoUso'],
+      procesador: getString('Procesador') || undefined,
+      ram: getString('RAM') || undefined,
+      discoDuro: getString('Disco Duro') || undefined,
+      horasNormales: getString('Horas Normales') || undefined,
+      horasEco: getString('Horas Eco') || undefined,
+      fechaAdquisicion: getString('Fecha de Adquisición'),
+      descripcion: getString('Descripción'),
+      observaciones: getString('Observaciones') || undefined,
+      fechaUltimoMantenimiento: getString('Último Mantenimiento') || undefined,
+      proximoMantenimiento: getString('Próximo Mantenimiento') || undefined
+    };
+  }).filter(item => item.nombre); // Solo filas con nombre
+
+  return items;
+};

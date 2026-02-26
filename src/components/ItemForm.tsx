@@ -384,6 +384,10 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       const nombreNormalizado = value.trim().toLowerCase();
       const nombreDuplicado = items.find(existingItem => {
         const existingNombreNormalizado = existingItem.nombre.trim().toLowerCase();
+        // Ignorar equipos dados de baja al validar duplicados
+        if (existingItem.estado === 'Baja') {
+          return false;
+        }
         // Si estamos editando, excluir el item actual de la validación
         if (item && existingItem.id === item.id) {
           return false;
@@ -449,6 +453,10 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       const nombreNormalizado = sanitizedData.nombre.trim().toLowerCase();
       const nombreDuplicado = items.find(existingItem => {
         const existingNombreNormalizado = existingItem.nombre.trim().toLowerCase();
+        // Ignorar equipos dados de baja al validar duplicados
+        if (existingItem.estado === 'Baja') {
+          return false;
+        }
         // Si estamos editando, excluir el item actual de la validación
         if (item && existingItem.id === item.id) {
           return false;
@@ -467,6 +475,17 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       const ubicacionLimpia = sanitizedData.ubicacion ? sanitizedData.ubicacion.replace(/\s+/g, '').toUpperCase() : 'SALA';
 
       sanitizedData.nombre = `PROY-${sedeSigla}-${ubicacionLimpia}${edificioLetra}`;
+    }
+
+    // Ajustar sufijo " - Baja" según el estado
+    const regexSufijoBaja = /\s+-\s*Baja$/i;
+    if (sanitizedData.estado === 'Baja') {
+      // Asegurar que el nombre termine en " - Baja" sin duplicar el sufijo
+      const nombreBase = sanitizedData.nombre.replace(regexSufijoBaja, '');
+      sanitizedData.nombre = `${nombreBase} - Baja`;
+    } else {
+      // Para cualquier otro estado (Ej: "En Uso"), quitar el sufijo " - Baja" si existe
+      sanitizedData.nombre = sanitizedData.nombre.replace(regexSufijoBaja, '');
     }
 
     const itemToSave: ItemInventario = {
