@@ -156,13 +156,13 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     const esObligatorio = campoConfig.obligatorio || false;
     const tipoCampo = campoConfig.tipo || 'text';
 
-    const baseClasses = `w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-md`;
+    const baseClasses = `w-full px-3 py-2.5 text-sm border border-slate-200 focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-xl bg-white transition-all`;
 
     switch (tipoCampo) {
       case 'number':
         return (
           <div key={campoNombre}>
-            <label htmlFor={campoNombre} className="block mb-1 text-sm text-gray-700">
+            <label htmlFor={campoNombre} className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
               {campoLabel} {esObligatorio && '*'}
             </label>
             <input
@@ -180,7 +180,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       case 'date':
         return (
           <div key={campoNombre}>
-            <label htmlFor={campoNombre} className="block mb-1 text-sm text-gray-700">
+            <label htmlFor={campoNombre} className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
               {campoLabel} {esObligatorio && '*'}
             </label>
             <input
@@ -198,7 +198,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       case 'textarea':
         return (
           <div key={campoNombre} className="md:col-span-2">
-            <label htmlFor={campoNombre} className="block mb-1 text-sm text-gray-700">
+            <label htmlFor={campoNombre} className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
               {campoLabel} {esObligatorio && '*'}
             </label>
             <textarea
@@ -217,7 +217,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         // Para select, necesitaríamos opciones. Por ahora lo dejamos como text
         return (
           <div key={campoNombre}>
-            <label htmlFor={campoNombre} className="block mb-1 text-sm text-gray-700">
+            <label htmlFor={campoNombre} className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
               {campoLabel} {esObligatorio && '*'}
             </label>
             <input
@@ -236,7 +236,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       default: // text
         return (
           <div key={campoNombre}>
-            <label htmlFor={campoNombre} className="block mb-1 text-sm text-gray-700">
+            <label htmlFor={campoNombre} className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
               {campoLabel} {esObligatorio && '*'}
             </label>
             <input
@@ -485,520 +485,445 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex justify-center items-end sm:items-center z-50 p-0 sm:p-4">
-      <div className="bg-white w-full sm:max-w-2xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl shadow-2xl">
-
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {item ? 'Editar Item' : 'Agregar Item'}
-          </h2>
+    <div className="fixed inset-0 bg-black/60 flex justify-center items-end sm:items-center z-[60] pb-16 sm:pb-0">
+      {/* Panel: bottom sheet en móvil, modal centrado en desktop */}
+      <div
+        className="bg-[#f8fafc] w-full sm:max-w-2xl flex flex-col rounded-t-3xl sm:rounded-2xl shadow-2xl"
+        style={{ maxHeight: 'calc(100dvh - 56px - 64px)', height: 'calc(100dvh - 56px - 64px)' }}
+      >
+        {/* ── HEADER FIJO ── */}
+        <div className="flex items-center justify-between px-5 py-4 bg-white rounded-t-3xl sm:rounded-t-2xl border-b border-slate-100 shrink-0">
+          {/* Pill drag handle solo en móvil */}
+          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-10 h-1 bg-slate-200 rounded-full sm:hidden" />
+          <div className="flex items-center gap-2.5">
+            <div className={`w-8 h-8 ${INSTITUTIONAL_COLORS.bgPrimary} rounded-xl flex items-center justify-center shadow-sm`}>
+              <span className="text-white text-sm font-black">{item ? '✎' : '+'}</span>
+            </div>
+            <h2 className="text-base font-black text-slate-800 tracking-tight">
+              {item ? 'Editar Activo' : 'Nuevo Activo'}
+            </h2>
+          </div>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600"
+            className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors text-lg font-bold"
           >
             ✕
           </button>
         </div>
 
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Renderizar secciones dinámicamente */}
-          {seccionesFormulario
-            .filter((s: SeccionFormulario) => s.visible && s.nombre !== 'Información de Adquisición' && s.nombre !== 'Mantenimiento' && s.nombre !== 'Descripción')
-            .sort((a: SeccionFormulario, b: SeccionFormulario) => a.orden - b.orden)
-            .map((seccion: SeccionFormulario) => {
-              const camposSeccion = getCamposOrdenados(seccion.nombre);
-              if (camposSeccion.length === 0) return null;
+        {/* ── CUERPO SCROLLEABLE ── */}
+        <div className="flex-1 overflow-y-auto">
+          <form id="item-form" onSubmit={handleSubmit} className="px-5 py-5 space-y-5">
 
-              // Renderizado especial para "Información General"
-              if (seccion.nombre === 'Información General') {
-                // Separar campos que van en grid vs campos que van solos
-                const camposGrid = ['categoria', 'estado', 'tipoUso'];
-                const camposEnGrid = camposSeccion.filter((c: CampoFormulario) => camposGrid.includes(c.nombre));
-                const camposSolo = camposSeccion.filter((c: CampoFormulario) => !camposGrid.includes(c.nombre));
+            {/* Renderizar secciones dinámicamente */}
+            {seccionesFormulario
+              .filter((s: SeccionFormulario) => s.visible && s.nombre !== 'Información de Adquisición' && s.nombre !== 'Mantenimiento' && s.nombre !== 'Descripción')
+              .sort((a: SeccionFormulario, b: SeccionFormulario) => a.orden - b.orden)
+              .map((seccion: SeccionFormulario) => {
+                const camposSeccion = getCamposOrdenados(seccion.nombre);
+                if (camposSeccion.length === 0) return null;
 
-                // Determinar si hay campos antes del grid
-                const primerCampoGrid = camposEnGrid.length > 0 ? camposEnGrid[0] : null;
-                const camposAntesDelGrid = primerCampoGrid
-                  ? camposSolo.filter((c: CampoFormulario) => c.orden < primerCampoGrid.orden)
-                  : camposSolo;
-                const camposDespuesDelGrid = primerCampoGrid
-                  ? camposSolo.filter((c: CampoFormulario) => c.orden > primerCampoGrid.orden)
-                  : [];
+                // Renderizado especial para "Información General"
+                if (seccion.nombre === 'Información General') {
+                  // Separar campos que van en grid vs campos que van solos
+                  const camposGrid = ['categoria', 'estado', 'tipoUso'];
+                  const camposEnGrid = camposSeccion.filter((c: CampoFormulario) => camposGrid.includes(c.nombre));
+                  const camposSolo = camposSeccion.filter((c: CampoFormulario) => !camposGrid.includes(c.nombre));
+
+                  // Determinar si hay campos antes del grid
+                  const primerCampoGrid = camposEnGrid.length > 0 ? camposEnGrid[0] : null;
+                  const camposAntesDelGrid = primerCampoGrid
+                    ? camposSolo.filter((c: CampoFormulario) => c.orden < primerCampoGrid.orden)
+                    : camposSolo;
+                  const camposDespuesDelGrid = primerCampoGrid
+                    ? camposSolo.filter((c: CampoFormulario) => c.orden > primerCampoGrid.orden)
+                    : [];
+
+                  return (
+                    <div key={seccion.nombre} className="space-y-4">
+                      <div className="flex items-center gap-2 pb-2 border-b-2 border-green-600">
+                        <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">
+                          {seccion.etiqueta || seccion.nombre}
+                        </h3>
+                      </div>
+
+                      {/* Campos antes del grid */}
+                      {camposAntesDelGrid.map((campoConfig: CampoFormulario) => {
+                        if (campoConfig.nombre === 'nombre') {
+                          const esProyector = formData.categoria.toLowerCase() === 'proyectores';
+                          return (
+                            <div key={campoConfig.nombre}>
+                              <label htmlFor="nombre" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                {getCampoLabel('nombre', 'Nombre del Equipo')} {!esProyector && isCampoObligatorio('nombre') && '*'}
+                                {esProyector && <span className="text-gray-500 text-xs ml-2">(No aplica para Proyectores)</span>}
+                              </label>
+                              <input
+                                type="text"
+                                id="nombre"
+                                name="nombre"
+                                value={formData.nombre}
+                                onChange={handleChange}
+                                required={!esProyector && isCampoObligatorio('nombre')}
+                                disabled={esProyector}
+                                placeholder={esProyector ? (() => {
+                                  const ed = formData.edificio ? formData.edificio.trim().charAt(0).toUpperCase() : '';
+                                  const ubicacion = formData.ubicacion.replace(/\s+/g, '').toUpperCase() || 'SALA';
+                                  return `Ej: PROY-${getSedeSigla(formData.sede)}-${ubicacion}${ed}`;
+                                })() : "Ej: PC Oficina 1"}
+                                className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-xl ${nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
+                                  } ${esProyector ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
+                              />
+                              {nombreError && !esProyector && (
+                                <p className="mt-1 text-sm text-red-600">{nombreError}</p>
+                              )}
+                            </div>
+                          );
+                        }
+                        return null;
+                      })}
+
+                      {/* Grid con categoria, estado y tipoUso */}
+                      {camposEnGrid.length > 0 && (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {camposEnGrid.map((campoConfig: CampoFormulario) => {
+                            if (campoConfig.nombre === 'categoria') {
+                              return (
+                                <div key={campoConfig.nombre}>
+                                  <label htmlFor="categoria" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                    {getCampoLabel('categoria', 'Categoría')} {isCampoObligatorio('categoria') && '*'}
+                                  </label>
+                                  <select
+                                    id="categoria"
+                                    name="categoria"
+                                    value={formData.categoria}
+                                    onChange={handleChange}
+                                    required={isCampoObligatorio('categoria')}
+                                    className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-xl`}
+                                  >
+                                    {categorias.length > 0 ? (
+                                      categorias.map(cat => (
+                                        <option key={cat} value={cat}>{cat}</option>
+                                      ))
+                                    ) : (
+                                      <option value="">Sin categorías</option>
+                                    )}
+                                  </select>
+                                </div>
+                              );
+                            }
+
+                            if (campoConfig.nombre === 'estado') {
+                              return (
+                                <div key={campoConfig.nombre}>
+                                  <label htmlFor="estado" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                    {getCampoLabel('estado', 'Estado')} {isCampoObligatorio('estado') && '*'}
+                                  </label>
+                                  <select
+                                    id="estado"
+                                    name="estado"
+                                    value={formData.estado}
+                                    onChange={handleChange}
+                                    required={isCampoObligatorio('estado')}
+                                    className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-xl`}
+                                  >
+                                    <option value="Disponible">Disponible</option>
+                                    <option value="En Uso">En Uso</option>
+                                    <option value="Mantenimiento">Mantenimiento</option>
+                                    <option value="Baja">Baja</option>
+                                  </select>
+                                </div>
+                              );
+                            }
+
+                            if (campoConfig.nombre === 'tipoUso') {
+                              return (
+                                <div key={campoConfig.nombre}>
+                                  <label htmlFor="tipoUso" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                    {getCampoLabel('tipoUso', 'Tipo de Uso')} {isCampoObligatorio('tipoUso') && '*'}
+                                  </label>
+                                  <select
+                                    id="tipoUso"
+                                    name="tipoUso"
+                                    value={formData.tipoUso}
+                                    onChange={handleChange}
+                                    required={isCampoObligatorio('tipoUso')}
+                                    className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-xl`}
+                                  >
+                                    <option value="Administrativo">Administrativo</option>
+                                    <option value="Alumnos">Alumnos</option>
+                                  </select>
+                                </div>
+                              );
+                            }
+
+                            return null;
+                          })}
+                        </div>
+                      )}
+
+                      {/* Campos después del grid */}
+                      {camposDespuesDelGrid.map((campoConfig: CampoFormulario) => {
+                        if (campoConfig.nombre === 'nombre') {
+                          const esProyector = formData.categoria.toLowerCase() === 'proyectores';
+                          return (
+                            <div key={campoConfig.nombre}>
+                              <label htmlFor="nombre" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                {getCampoLabel('nombre', 'Nombre del Equipo')} {!esProyector && isCampoObligatorio('nombre') && '*'}
+                                {esProyector && <span className="text-gray-500 text-xs ml-2">(No aplica para Proyectores)</span>}
+                              </label>
+                              <input
+                                type="text"
+                                id="nombre"
+                                name="nombre"
+                                value={formData.nombre}
+                                onChange={handleChange}
+                                required={!esProyector && isCampoObligatorio('nombre')}
+                                disabled={esProyector}
+                                placeholder={esProyector ? (() => {
+                                  const ed = formData.edificio ? formData.edificio.trim().charAt(0).toUpperCase() : '';
+                                  const ubicacion = formData.ubicacion.replace(/\s+/g, '').toUpperCase() || 'SALA';
+                                  return `Ej: PROY-${getSedeSigla(formData.sede)}-${ubicacion}${ed}`;
+                                })() : "Ej: PC Oficina 1"}
+                                className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-xl ${nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
+                                  } ${esProyector ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
+                              />
+                              {nombreError && !esProyector && (
+                                <p className="mt-1 text-sm text-red-600">{nombreError}</p>
+                              )}
+                            </div>
+                          );
+                        }
+                        return null;
+                      })}
+
+                      {/* Renderizar campos personalizados de esta sección */}
+                      {camposSeccion
+                        .filter((c: CampoFormulario) => !camposConocidos.includes(c.nombre))
+                        .map((campoConfig: CampoFormulario) => renderCampoGenerico(campoConfig))
+                        .filter(Boolean)}
+                    </div>
+                  );
+                }
+
+                // Renderizado genérico para otras secciones
+                // Verificar si es proyector y si es sección de especificaciones técnicas
+                const esProyector = formData.categoria.toLowerCase() === 'proyectores';
+                const esSeccionEspecificaciones = seccion.nombre.toLowerCase().includes('especificaciones') ||
+                  seccion.nombre.toLowerCase().includes('técnicas') ||
+                  seccion.nombre.toLowerCase().includes('tecnicas');
 
                 return (
                   <div key={seccion.nombre} className="space-y-4">
-                    <h3 className={`text-base font-semibold text-gray-800 border-b-2 ${INSTITUTIONAL_COLORS.borderPrimary} pb-2`}>
-                      {seccion.etiqueta || seccion.nombre}
-                    </h3>
+                    <div className="flex items-center gap-2 pb-2 border-b-2 border-green-600">
+                      <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">
+                        {seccion.nombre === 'Observaciones y Descripción' ? 'Observaciones' : (seccion.etiqueta || seccion.nombre)}
+                      </h3>
+                    </div>
 
-                    {/* Campos antes del grid */}
-                    {camposAntesDelGrid.map((campoConfig: CampoFormulario) => {
-                      if (campoConfig.nombre === 'nombre') {
-                        const esProyector = formData.categoria.toLowerCase() === 'proyectores';
-                        return (
-                          <div key={campoConfig.nombre}>
-                            <label htmlFor="nombre" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('nombre', 'Nombre del Equipo')} {!esProyector && isCampoObligatorio('nombre') && '*'}
-                              {esProyector && <span className="text-gray-500 text-xs ml-2">(No aplica para Proyectores)</span>}
-                            </label>
-                            <input
-                              type="text"
-                              id="nombre"
-                              name="nombre"
-                              value={formData.nombre}
-                              onChange={handleChange}
-                              required={!esProyector && isCampoObligatorio('nombre')}
-                              disabled={esProyector}
-                              placeholder={esProyector ? (() => {
-                                const ed = formData.edificio ? formData.edificio.trim().charAt(0).toUpperCase() : '';
-                                const ubicacion = formData.ubicacion.replace(/\s+/g, '').toUpperCase() || 'SALA';
-                                return `Ej: PROY-${getSedeSigla(formData.sede)}-${ubicacion}${ed}`;
-                              })() : "Ej: PC Oficina 1"}
-                              className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-md ${nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
-                                } ${esProyector ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
-                            />
-                            {nombreError && !esProyector && (
-                              <p className="mt-1 text-sm text-red-600">{nombreError}</p>
-                            )}
-                          </div>
-                        );
-                      }
-                      return null;
-                    })}
-
-                    {/* Grid con categoria, estado y tipoUso */}
-                    {camposEnGrid.length > 0 && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {camposEnGrid.map((campoConfig: CampoFormulario) => {
-                          if (campoConfig.nombre === 'categoria') {
-                            return (
-                              <div key={campoConfig.nombre}>
-                                <label htmlFor="categoria" className="block mb-1 text-sm text-gray-700">
-                                  {getCampoLabel('categoria', 'Categoría')} {isCampoObligatorio('categoria') && '*'}
-                                </label>
-                                <select
-                                  id="categoria"
-                                  name="categoria"
-                                  value={formData.categoria}
-                                  onChange={handleChange}
-                                  required={isCampoObligatorio('categoria')}
-                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-md`}
-                                >
-                                  {categorias.length > 0 ? (
-                                    categorias.map(cat => (
-                                      <option key={cat} value={cat}>{cat}</option>
-                                    ))
-                                  ) : (
-                                    <option value="">Sin categorías</option>
-                                  )}
-                                </select>
-                              </div>
-                            );
-                          }
-
-                          if (campoConfig.nombre === 'estado') {
-                            return (
-                              <div key={campoConfig.nombre}>
-                                <label htmlFor="estado" className="block mb-1 text-sm text-gray-700">
-                                  {getCampoLabel('estado', 'Estado')} {isCampoObligatorio('estado') && '*'}
-                                </label>
-                                <select
-                                  id="estado"
-                                  name="estado"
-                                  value={formData.estado}
-                                  onChange={handleChange}
-                                  required={isCampoObligatorio('estado')}
-                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-md`}
-                                >
-                                  <option value="Disponible">Disponible</option>
-                                  <option value="En Uso">En Uso</option>
-                                  <option value="Mantenimiento">Mantenimiento</option>
-                                  <option value="Baja">Baja</option>
-                                </select>
-                              </div>
-                            );
-                          }
-
-                          if (campoConfig.nombre === 'tipoUso') {
-                            return (
-                              <div key={campoConfig.nombre}>
-                                <label htmlFor="tipoUso" className="block mb-1 text-sm text-gray-700">
-                                  {getCampoLabel('tipoUso', 'Tipo de Uso')} {isCampoObligatorio('tipoUso') && '*'}
-                                </label>
-                                <select
-                                  id="tipoUso"
-                                  name="tipoUso"
-                                  value={formData.tipoUso}
-                                  onChange={handleChange}
-                                  required={isCampoObligatorio('tipoUso')}
-                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-md`}
-                                >
-                                  <option value="Administrativo">Administrativo</option>
-                                  <option value="Alumnos">Alumnos</option>
-                                </select>
-                              </div>
-                            );
-                          }
-
-                          return null;
-                        })}
-                      </div>
-                    )}
-
-                    {/* Campos después del grid */}
-                    {camposDespuesDelGrid.map((campoConfig: CampoFormulario) => {
-                      if (campoConfig.nombre === 'nombre') {
-                        const esProyector = formData.categoria.toLowerCase() === 'proyectores';
-                        return (
-                          <div key={campoConfig.nombre}>
-                            <label htmlFor="nombre" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('nombre', 'Nombre del Equipo')} {!esProyector && isCampoObligatorio('nombre') && '*'}
-                              {esProyector && <span className="text-gray-500 text-xs ml-2">(No aplica para Proyectores)</span>}
-                            </label>
-                            <input
-                              type="text"
-                              id="nombre"
-                              name="nombre"
-                              value={formData.nombre}
-                              onChange={handleChange}
-                              required={!esProyector && isCampoObligatorio('nombre')}
-                              disabled={esProyector}
-                              placeholder={esProyector ? (() => {
-                                const ed = formData.edificio ? formData.edificio.trim().charAt(0).toUpperCase() : '';
-                                const ubicacion = formData.ubicacion.replace(/\s+/g, '').toUpperCase() || 'SALA';
-                                return `Ej: PROY-${getSedeSigla(formData.sede)}-${ubicacion}${ed}`;
-                              })() : "Ej: PC Oficina 1"}
-                              className={`w-full px-3 py-2 border focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent rounded-md ${nombreError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
-                                } ${esProyector ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
-                            />
-                            {nombreError && !esProyector && (
-                              <p className="mt-1 text-sm text-red-600">{nombreError}</p>
-                            )}
-                          </div>
-                        );
-                      }
-                      return null;
-                    })}
-
-                    {/* Renderizar campos personalizados de esta sección */}
-                    {camposSeccion
-                      .filter((c: CampoFormulario) => !camposConocidos.includes(c.nombre))
-                      .map((campoConfig: CampoFormulario) => renderCampoGenerico(campoConfig))
-                      .filter(Boolean)}
-                  </div>
-                );
-              }
-
-              // Renderizado genérico para otras secciones
-              // Verificar si es proyector y si es sección de especificaciones técnicas
-              const esProyector = formData.categoria.toLowerCase() === 'proyectores';
-              const esSeccionEspecificaciones = seccion.nombre.toLowerCase().includes('especificaciones') ||
-                seccion.nombre.toLowerCase().includes('técnicas') ||
-                seccion.nombre.toLowerCase().includes('tecnicas');
-
-              return (
-                <div key={seccion.nombre} className="space-y-4">
-                  <h3 className="text-base font-semibold text-gray-800 border-b-2 border-green-500 pb-2">
-                    {seccion.nombre === 'Observaciones y Descripción' ? 'Observaciones' : (seccion.etiqueta || seccion.nombre)}
-                  </h3>
-
-                  {/* Renderizar todos los campos de la sección */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {camposSeccion.map((campoConfig: CampoFormulario) => {
-                      // Renderizar campos conocidos con su lógica especial
-                      if (campoConfig.nombre === 'sede') {
-                        return (
-                          <div key={campoConfig.nombre}>
-                            <label htmlFor="sede" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('sede', 'Sede')} {isCampoObligatorio('sede') && '*'}
-                            </label>
-                            <select
-                              id="sede"
-                              name="sede"
-                              value={formData.sede}
-                              onChange={handleChange}
-                              required={isCampoObligatorio('sede')}
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
-                            >
-                              {sedes.length > 0 ? (
-                                sedes.map(sede => (
-                                  <option key={sede} value={sede}>{sede}</option>
-                                ))
-                              ) : (
-                                <option value="">Sin sedes disponibles</option>
-                              )}
-                            </select>
-                          </div>
-                        );
-                      }
-
-                      if (campoConfig.nombre === 'ubicacion') {
-                        return (
-                          <div key={campoConfig.nombre}>
-                            <label htmlFor="ubicacion" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('ubicacion', 'Ubicación')} {isCampoObligatorio('ubicacion') && '*'}
-                            </label>
-                            <input
-                              type="text"
-                              id="ubicacion"
-                              name="ubicacion"
-                              value={formData.ubicacion}
-                              onChange={handleChange}
-                              required={isCampoObligatorio('ubicacion')}
-                              placeholder="Ej: Oficina 101"
-                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
-                            />
-                          </div>
-                        );
-                      }
-
-                      if (campoConfig.nombre === 'piso') {
-                        return (
-                          <div key={campoConfig.nombre}>
-                            <label htmlFor="piso" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('piso', 'Piso')} {isCampoObligatorio('piso') && '*'}
-                            </label>
-                            <select
-                              id="piso"
-                              name="piso"
-                              value={formData.piso}
-                              onChange={handleChange}
-                              required={isCampoObligatorio('piso')}
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
-                            >
-                              <option value="">Seleccionar Piso</option>
-                              <option value="1">1</option>
-                              <option value="2">2</option>
-                              <option value="3">3</option>
-                              <option value="4">4</option>
-                              <option value="5">5</option>
-                            </select>
-                          </div>
-                        );
-                      }
-
-                      if (campoConfig.nombre === 'edificio') {
-                        return (
-                          <div key={campoConfig.nombre}>
-                            <label htmlFor="edificio" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('edificio', 'Edificio')} {isCampoObligatorio('edificio') && '*'}
-                            </label>
-                            <select
-                              id="edificio"
-                              name="edificio"
-                              value={formData.edificio}
-                              onChange={handleChange}
-                              required={isCampoObligatorio('edificio')}
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
-                            >
-                              <option value="">Seleccionar Edificio</option>
-                              <option value="A">A</option>
-                              <option value="B">B</option>
-                              <option value="C">C</option>
-                            </select>
-                          </div>
-                        );
-                      }
-
-                      if (campoConfig.nombre === 'responsable') {
-                        return (
-                          <>
-                            <div key={campoConfig.nombre} className="md:col-span-2">
-                              <label htmlFor="responsable" className="block mb-1 text-sm text-gray-700">
-                                {getCampoLabel('responsable', 'Responsable')} {isCampoObligatorio('responsable') && '*'}
-                              </label>
-                              <input
-                                type="text"
-                                id="responsable"
-                                name="responsable"
-                                value={formData.responsable}
-                                onChange={handleChange}
-                                required={isCampoObligatorio('responsable')}
-                                placeholder="Ej: Juan Pérez"
-                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
-                              />
-                            </div>
-                            {/* Campo Encargado - Siempre visible después de Responsable */}
-                            <div key="encargado" className="md:col-span-2">
-                              <label htmlFor="encargado" className="block mb-1 text-sm text-gray-700">
-                                Encargado (quien creó el item)
-                                {isAdmin && <span className="text-gray-500 text-xs ml-2">(Editable para administradores)</span>}
-                              </label>
-                              {isAdmin ? (
-                                <select
-                                  id="encargado"
-                                  name="encargado"
-                                  value={formData.encargado || ''}
-                                  onChange={handleChange}
-                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md bg-white`}
-                                >
-                                  <option value="">Seleccione un usuario</option>
-                                  {usuarios
-                                    .filter((usuario) => usuario.isActive)
-                                    .map((usuario) => {
-                                      const displayText = usuario.displayName
-                                        ? `${usuario.displayName} (${usuario.email})`
-                                        : usuario.email;
-                                      return (
-                                        <option key={usuario.email} value={displayText}>
-                                          {displayText}
-                                        </option>
-                                      );
-                                    })}
-                                </select>
-                              ) : (
-                                <>
-                                  <input
-                                    type="text"
-                                    id="encargado"
-                                    name="encargado"
-                                    value={formData.encargado || ''}
-                                    readOnly
-                                    disabled
-                                    className="w-full px-3 py-2 border border-gray-300 bg-gray-100 text-gray-600 rounded-md cursor-not-allowed"
-                                    placeholder="Se establece automáticamente al crear el item"
-                                  />
-                                  <p className="mt-1 text-xs text-gray-500">Este campo se establece automáticamente con el nombre y correo del usuario que crea el item</p>
-                                </>
-                              )}
-                            </div>
-                          </>
-                        );
-                      }
-
-                      if (campoConfig.nombre === 'encargado') {
-                        // Ya se renderiza después de responsable, no renderizar aquí
-                        return null;
-                      }
-
-                      if (campoConfig.nombre === 'marca') {
-                        return (
-                          <div key={campoConfig.nombre}>
-                            <label htmlFor="marca" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('marca', 'Marca')} {isCampoObligatorio('marca') && '*'}
-                            </label>
-                            {esProyector ? (
-                              <select
-                                id="marca"
-                                name="marca"
-                                value={formData.marca}
-                                onChange={handleChange}
-                                required={isCampoObligatorio('marca')}
-                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-md`}
-                              >
-                                <option value="">Seleccione una marca</option>
-                                <option value="Epson">Epson</option>
-                                <option value="Viewsonic">Viewsonic</option>
-                              </select>
-                            ) : (
-                              <input
-                                type="text"
-                                id="marca"
-                                name="marca"
-                                value={formData.marca}
-                                onChange={handleChange}
-                                required={isCampoObligatorio('marca')}
-                                placeholder="Ej: Dell, HP, Lenovo"
-                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
-                              />
-                            )}
-                          </div>
-                        );
-                      }
-
-                      if (campoConfig.nombre === 'modelo') {
-                        const modelsForBrand = formData.marca === 'Epson'
-                          ? ['X05+', 'E20', 'EB-L260F']
-                          : formData.marca === 'Viewsonic'
-                            ? ['PA503W']
-                            : [];
-
-                        return (
-                          <div key={campoConfig.nombre}>
-                            <label htmlFor="modelo" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('modelo', 'Modelo')} {isCampoObligatorio('modelo') && '*'}
-                            </label>
-                            {esProyector && modelsForBrand.length > 0 ? (
-                              <select
-                                id="modelo"
-                                name="modelo"
-                                value={formData.modelo}
-                                onChange={handleChange}
-                                required={isCampoObligatorio('modelo')}
-                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-md`}
-                              >
-                                <option value="">Seleccione un modelo</option>
-                                {modelsForBrand.map(model => (
-                                  <option key={model} value={model}>{model}</option>
-                                ))}
-                              </select>
-                            ) : (
-                              <input
-                                type="text"
-                                id="modelo"
-                                name="modelo"
-                                value={formData.modelo}
-                                onChange={handleChange}
-                                required={isCampoObligatorio('modelo')}
-                                placeholder={esProyector ? "Primero seleccione una marca" : "Ej: OptiPlex 7090"}
-                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
-                              />
-                            )}
-                          </div>
-                        );
-                      }
-
-                      if (campoConfig.nombre === 'numeroSerie') {
-                        return (
-                          <div key={campoConfig.nombre}>
-                            <label htmlFor="numeroSerie" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('numeroSerie', 'Número de Serie')} {isCampoObligatorio('numeroSerie') && '*'}
-                            </label>
-                            <input
-                              type="text"
-                              id="numeroSerie"
-                              name="numeroSerie"
-                              value={formData.numeroSerie}
-                              onChange={handleChange}
-                              required={isCampoObligatorio('numeroSerie')}
-                              placeholder="Ej: SN123456789"
-                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
-                            />
-                          </div>
-                        );
-                      }
-
-                      // Para Proyectores, mostrar campos específicos en Especificaciones Técnicas
-                      if (esProyector && esSeccionEspecificaciones) {
-                        // Para proyectores, ocultar procesador, ram, discoDuro
-                        if (campoConfig.nombre === 'procesador' || campoConfig.nombre === 'ram' || campoConfig.nombre === 'discoDuro') {
-                          return null;
-                        }
-
-                        // Renderizar marca en especificaciones técnicas para proyectores
-                        if (campoConfig.nombre === 'marca') {
+                    {/* Renderizar todos los campos de la sección */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {camposSeccion.map((campoConfig: CampoFormulario) => {
+                        // Renderizar campos conocidos con su lógica especial
+                        if (campoConfig.nombre === 'sede') {
                           return (
-                            <div key="marca-especificaciones">
-                              <label htmlFor="marca-especificaciones" className="block mb-1 text-sm text-gray-700">
-                                Marca {isCampoObligatorio('marca') && '*'}
+                            <div key={campoConfig.nombre}>
+                              <label htmlFor="sede" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                {getCampoLabel('sede', 'Sede')} {isCampoObligatorio('sede') && '*'}
                               </label>
                               <select
-                                id="marca-especificaciones"
-                                name="marca"
-                                value={formData.marca}
+                                id="sede"
+                                name="sede"
+                                value={formData.sede}
                                 onChange={handleChange}
-                                required={isCampoObligatorio('marca')}
-                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-md`}
+                                required={isCampoObligatorio('sede')}
+                                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-xl"
                               >
-                                <option value="">Seleccione una marca</option>
-                                <option value="Epson">Epson</option>
-                                <option value="Viewsonic">Viewsonic</option>
+                                {sedes.length > 0 ? (
+                                  sedes.map(sede => (
+                                    <option key={sede} value={sede}>{sede}</option>
+                                  ))
+                                ) : (
+                                  <option value="">Sin sedes disponibles</option>
+                                )}
                               </select>
                             </div>
                           );
                         }
+
+                        if (campoConfig.nombre === 'ubicacion') {
+                          return (
+                            <div key={campoConfig.nombre}>
+                              <label htmlFor="ubicacion" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                {getCampoLabel('ubicacion', 'Ubicación')} {isCampoObligatorio('ubicacion') && '*'}
+                              </label>
+                              <input
+                                type="text"
+                                id="ubicacion"
+                                name="ubicacion"
+                                value={formData.ubicacion}
+                                onChange={handleChange}
+                                required={isCampoObligatorio('ubicacion')}
+                                placeholder="Ej: Oficina 101"
+                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-xl`}
+                              />
+                            </div>
+                          );
+                        }
+
+                        if (campoConfig.nombre === 'piso') {
+                          return (
+                            <div key={campoConfig.nombre}>
+                              <label htmlFor="piso" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                {getCampoLabel('piso', 'Piso')} {isCampoObligatorio('piso') && '*'}
+                              </label>
+                              <select
+                                id="piso"
+                                name="piso"
+                                value={formData.piso}
+                                onChange={handleChange}
+                                required={isCampoObligatorio('piso')}
+                                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-xl"
+                              >
+                                <option value="">Seleccionar Piso</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                              </select>
+                            </div>
+                          );
+                        }
+
+                        if (campoConfig.nombre === 'edificio') {
+                          return (
+                            <div key={campoConfig.nombre}>
+                              <label htmlFor="edificio" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                {getCampoLabel('edificio', 'Edificio')} {isCampoObligatorio('edificio') && '*'}
+                              </label>
+                              <select
+                                id="edificio"
+                                name="edificio"
+                                value={formData.edificio}
+                                onChange={handleChange}
+                                required={isCampoObligatorio('edificio')}
+                                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-xl"
+                              >
+                                <option value="">Seleccionar Edificio</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                              </select>
+                            </div>
+                          );
+                        }
+
+                        if (campoConfig.nombre === 'responsable') {
+                          return (
+                            <>
+                              <div key={campoConfig.nombre} className="md:col-span-2">
+                                <label htmlFor="responsable" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                  {getCampoLabel('responsable', 'Responsable')} {isCampoObligatorio('responsable') && '*'}
+                                </label>
+                                <input
+                                  type="text"
+                                  id="responsable"
+                                  name="responsable"
+                                  value={formData.responsable}
+                                  onChange={handleChange}
+                                  required={isCampoObligatorio('responsable')}
+                                  placeholder="Ej: Juan Pérez"
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-xl`}
+                                />
+                              </div>
+                              {/* Campo Encargado - Siempre visible después de Responsable */}
+                              <div key="encargado" className="md:col-span-2">
+                                <label htmlFor="encargado" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                  Encargado (quien creó el item)
+                                  {isAdmin && <span className="text-gray-500 text-xs ml-2">(Editable para administradores)</span>}
+                                </label>
+                                {isAdmin ? (
+                                  <select
+                                    id="encargado"
+                                    name="encargado"
+                                    value={formData.encargado || ''}
+                                    onChange={handleChange}
+                                    className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-xl bg-white`}
+                                  >
+                                    <option value="">Seleccione un usuario</option>
+                                    {usuarios
+                                      .filter((usuario) => usuario.isActive)
+                                      .map((usuario) => {
+                                        const displayText = usuario.displayName
+                                          ? `${usuario.displayName} (${usuario.email})`
+                                          : usuario.email;
+                                        return (
+                                          <option key={usuario.email} value={displayText}>
+                                            {displayText}
+                                          </option>
+                                        );
+                                      })}
+                                  </select>
+                                ) : (
+                                  <>
+                                    <input
+                                      type="text"
+                                      id="encargado"
+                                      name="encargado"
+                                      value={formData.encargado || ''}
+                                      readOnly
+                                      disabled
+                                      className="w-full px-3 py-2 border border-gray-300 bg-gray-100 text-gray-600 rounded-xl cursor-not-allowed"
+                                      placeholder="Se establece automáticamente al crear el item"
+                                    />
+                                    <p className="mt-1 text-xs text-gray-500">Este campo se establece automáticamente con el nombre y correo del usuario que crea el item</p>
+                                  </>
+                                )}
+                              </div>
+                            </>
+                          );
+                        }
+
+                        if (campoConfig.nombre === 'encargado') {
+                          // Ya se renderiza después de responsable, no renderizar aquí
+                          return null;
+                        }
+
+                        if (campoConfig.nombre === 'marca') {
+                          return (
+                            <div key={campoConfig.nombre}>
+                              <label htmlFor="marca" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                {getCampoLabel('marca', 'Marca')} {isCampoObligatorio('marca') && '*'}
+                              </label>
+                              {esProyector ? (
+                                <select
+                                  id="marca"
+                                  name="marca"
+                                  value={formData.marca}
+                                  onChange={handleChange}
+                                  required={isCampoObligatorio('marca')}
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-xl`}
+                                >
+                                  <option value="">Seleccione una marca</option>
+                                  <option value="Epson">Epson</option>
+                                  <option value="Viewsonic">Viewsonic</option>
+                                </select>
+                              ) : (
+                                <input
+                                  type="text"
+                                  id="marca"
+                                  name="marca"
+                                  value={formData.marca}
+                                  onChange={handleChange}
+                                  required={isCampoObligatorio('marca')}
+                                  placeholder="Ej: Dell, HP, Lenovo"
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-xl`}
+                                />
+                              )}
+                            </div>
+                          );
+                        }
+
                         if (campoConfig.nombre === 'modelo') {
                           const modelsForBrand = formData.marca === 'Epson'
                             ? ['X05+', 'E20', 'EB-L260F']
@@ -1007,18 +932,18 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               : [];
 
                           return (
-                            <div key="modelo-especificaciones">
-                              <label htmlFor="modelo-especificaciones" className="block mb-1 text-sm text-gray-700">
-                                Modelo {isCampoObligatorio('modelo') && '*'}
+                            <div key={campoConfig.nombre}>
+                              <label htmlFor="modelo" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                {getCampoLabel('modelo', 'Modelo')} {isCampoObligatorio('modelo') && '*'}
                               </label>
-                              {modelsForBrand.length > 0 ? (
+                              {esProyector && modelsForBrand.length > 0 ? (
                                 <select
-                                  id="modelo-especificaciones"
+                                  id="modelo"
                                   name="modelo"
                                   value={formData.modelo}
                                   onChange={handleChange}
                                   required={isCampoObligatorio('modelo')}
-                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-md`}
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-xl`}
                                 >
                                   <option value="">Seleccione un modelo</option>
                                   {modelsForBrand.map(model => (
@@ -1028,257 +953,351 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               ) : (
                                 <input
                                   type="text"
-                                  id="modelo-especificaciones"
+                                  id="modelo"
                                   name="modelo"
                                   value={formData.modelo}
                                   onChange={handleChange}
                                   required={isCampoObligatorio('modelo')}
-                                  placeholder="Primero seleccione una marca"
-                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                                  placeholder={esProyector ? "Primero seleccione una marca" : "Ej: OptiPlex 7090"}
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-xl`}
                                 />
                               )}
                             </div>
                           );
                         }
 
-                        // Renderizar numeroSerie en especificaciones técnicas para proyectores
                         if (campoConfig.nombre === 'numeroSerie') {
                           return (
-                            <div key="numeroSerie-especificaciones">
-                              <label htmlFor="numeroSerie-especificaciones" className="block mb-1 text-sm text-gray-700">
-                                Número de Serie {isCampoObligatorio('numeroSerie') && '*'}
+                            <div key={campoConfig.nombre}>
+                              <label htmlFor="numeroSerie" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                {getCampoLabel('numeroSerie', 'Número de Serie')} {isCampoObligatorio('numeroSerie') && '*'}
                               </label>
                               <input
                                 type="text"
-                                id="numeroSerie-especificaciones"
+                                id="numeroSerie"
                                 name="numeroSerie"
                                 value={formData.numeroSerie}
                                 onChange={handleChange}
                                 required={isCampoObligatorio('numeroSerie')}
                                 placeholder="Ej: SN123456789"
-                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-xl`}
                               />
                             </div>
                           );
                         }
 
-                        // Renderizar horasNormales
-                        if (campoConfig.nombre === 'horasNormales' || (campoConfig.nombre === 'procesador' && esProyector)) {
-                          return (
-                            <div key="horasNormales">
-                              <label htmlFor="horasNormales" className="block mb-1 text-sm text-gray-700">
-                                Horas normales {isCampoObligatorio('horasNormales') && '*'}
+                        // Para Proyectores, mostrar campos específicos en Especificaciones Técnicas
+                        if (esProyector && esSeccionEspecificaciones) {
+                          // Para proyectores, ocultar procesador, ram, discoDuro
+                          if (campoConfig.nombre === 'procesador' || campoConfig.nombre === 'ram' || campoConfig.nombre === 'discoDuro') {
+                            return null;
+                          }
+
+                          // Renderizar marca en especificaciones técnicas para proyectores
+                          if (campoConfig.nombre === 'marca') {
+                            return (
+                              <div key="marca-especificaciones">
+                                <label htmlFor="marca-especificaciones" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                  Marca {isCampoObligatorio('marca') && '*'}
+                                </label>
+                                <select
+                                  id="marca-especificaciones"
+                                  name="marca"
+                                  value={formData.marca}
+                                  onChange={handleChange}
+                                  required={isCampoObligatorio('marca')}
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-xl`}
+                                >
+                                  <option value="">Seleccione una marca</option>
+                                  <option value="Epson">Epson</option>
+                                  <option value="Viewsonic">Viewsonic</option>
+                                </select>
+                              </div>
+                            );
+                          }
+                          if (campoConfig.nombre === 'modelo') {
+                            const modelsForBrand = formData.marca === 'Epson'
+                              ? ['X05+', 'E20', 'EB-L260F']
+                              : formData.marca === 'Viewsonic'
+                                ? ['PA503W']
+                                : [];
+
+                            return (
+                              <div key="modelo-especificaciones">
+                                <label htmlFor="modelo-especificaciones" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                  Modelo {isCampoObligatorio('modelo') && '*'}
+                                </label>
+                                {modelsForBrand.length > 0 ? (
+                                  <select
+                                    id="modelo-especificaciones"
+                                    name="modelo"
+                                    value={formData.modelo}
+                                    onChange={handleChange}
+                                    required={isCampoObligatorio('modelo')}
+                                    className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-xl`}
+                                  >
+                                    <option value="">Seleccione un modelo</option>
+                                    {modelsForBrand.map(model => (
+                                      <option key={model} value={model}>{model}</option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <input
+                                    type="text"
+                                    id="modelo-especificaciones"
+                                    name="modelo"
+                                    value={formData.modelo}
+                                    onChange={handleChange}
+                                    required={isCampoObligatorio('modelo')}
+                                    placeholder="Primero seleccione una marca"
+                                    className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-xl`}
+                                  />
+                                )}
+                              </div>
+                            );
+                          }
+
+                          // Renderizar numeroSerie en especificaciones técnicas para proyectores
+                          if (campoConfig.nombre === 'numeroSerie') {
+                            return (
+                              <div key="numeroSerie-especificaciones">
+                                <label htmlFor="numeroSerie-especificaciones" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                  Número de Serie {isCampoObligatorio('numeroSerie') && '*'}
+                                </label>
+                                <input
+                                  type="text"
+                                  id="numeroSerie-especificaciones"
+                                  name="numeroSerie"
+                                  value={formData.numeroSerie}
+                                  onChange={handleChange}
+                                  required={isCampoObligatorio('numeroSerie')}
+                                  placeholder="Ej: SN123456789"
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-xl`}
+                                />
+                              </div>
+                            );
+                          }
+
+                          // Renderizar horasNormales
+                          if (campoConfig.nombre === 'horasNormales' || (campoConfig.nombre === 'procesador' && esProyector)) {
+                            return (
+                              <div key="horasNormales">
+                                <label htmlFor="horasNormales" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                  Horas normales {isCampoObligatorio('horasNormales') && '*'}
+                                </label>
+                                <input
+                                  type="text"
+                                  id="horasNormales"
+                                  name="horasNormales"
+                                  value={formData.horasNormales || ''}
+                                  onChange={handleChange}
+                                  required={isCampoObligatorio('horasNormales')}
+                                  placeholder="Ej: 1000h"
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-xl`}
+                                />
+                              </div>
+                            );
+                          }
+
+                          // Renderizar horasEco
+                          if (campoConfig.nombre === 'horasEco' || (campoConfig.nombre === 'ram' && esProyector)) {
+                            return (
+                              <div key="horasEco">
+                                <label htmlFor="horasEco" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                  Horas eco {isCampoObligatorio('horasEco') && '*'}
+                                </label>
+                                <input
+                                  type="text"
+                                  id="horasEco"
+                                  name="horasEco"
+                                  value={formData.horasEco || ''}
+                                  onChange={handleChange}
+                                  required={isCampoObligatorio('horasEco')}
+                                  placeholder="Ej: 500h"
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-xl`}
+                                />
+                              </div>
+                            );
+                          }
+                        }
+
+                        // Para otras categorías o secciones, mostrar campos normales
+                        if (!esProyector || !esSeccionEspecificaciones) {
+                          if (campoConfig.nombre === 'procesador') {
+                            return (
+                              <div key={campoConfig.nombre}>
+                                <label htmlFor="procesador" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                  {getCampoLabel('procesador', 'Procesador')} {isCampoObligatorio('procesador') && '*'}
+                                </label>
+                                <input
+                                  type="text"
+                                  id="procesador"
+                                  name="procesador"
+                                  value={formData.procesador}
+                                  onChange={handleChange}
+                                  required={isCampoObligatorio('procesador')}
+                                  placeholder="Ej: Intel Core i5-10400"
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-xl`}
+                                />
+                              </div>
+                            );
+                          }
+
+                          if (campoConfig.nombre === 'ram') {
+                            return (
+                              <div key={campoConfig.nombre}>
+                                <label htmlFor="ram" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                  {getCampoLabel('ram', 'RAM')} {isCampoObligatorio('ram') && '*'}
+                                </label>
+                                <select
+                                  id="ram"
+                                  name="ram"
+                                  value={formData.ram}
+                                  onChange={handleChange}
+                                  required={isCampoObligatorio('ram')}
+                                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-xl"
+                                >
+                                  <option value="">Seleccionar RAM</option>
+                                  <option value="8GB">8GB</option>
+                                  <option value="16GB">16GB</option>
+                                  <option value="20GB">20GB</option>
+                                  <option value="32GB">32GB</option>
+                                </select>
+                              </div>
+                            );
+                          }
+
+                          if (campoConfig.nombre === 'discoDuro') {
+                            return (
+                              <div key={campoConfig.nombre}>
+                                <label htmlFor="discoDuro" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                  {getCampoLabel('discoDuro', 'Disco Duro')} {isCampoObligatorio('discoDuro') && '*'}
+                                </label>
+                                <select
+                                  id="discoDuro"
+                                  name="discoDuro"
+                                  value={formData.discoDuro}
+                                  onChange={handleChange}
+                                  required={isCampoObligatorio('discoDuro')}
+                                  className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-xl"
+                                >
+                                  <option value="">Seleccionar Disco Duro</option>
+                                  <option value="256GB">256GB</option>
+                                  <option value="512GB">500GB</option>
+                                  <option value="1TB">1TB</option>
+                                  <option value="1.5TB">1.5 TB</option>
+                                </select>
+                              </div>
+                            );
+                          }
+                        }
+
+
+                        // Para campos personalizados, usar renderCampoGenerico
+                        return renderCampoGenerico(campoConfig);
+                      })}
+
+                      {/* Para Proyectores, agregar campos adicionales al final de Especificaciones Técnicas */}
+                      {esProyector && esSeccionEspecificaciones && (
+                        <>
+                          {/* Mostrar marca si no está ya en la sección */}
+                          {!camposSeccion.find(c => c.nombre === 'marca') && (
+                            <div key="marca-proyector">
+                              <label htmlFor="marca-proyector" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                Marca {isCampoObligatorio('marca') && '*'}
                               </label>
                               <input
                                 type="text"
-                                id="horasNormales"
-                                name="horasNormales"
-                                value={formData.horasNormales || ''}
+                                id="marca-proyector"
+                                name="marca"
+                                value={formData.marca}
                                 onChange={handleChange}
-                                required={isCampoObligatorio('horasNormales')}
-                                placeholder="Ej: 1000h"
-                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                                required={isCampoObligatorio('marca')}
+                                placeholder="Ej: Epson, BenQ, Optoma"
+                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-xl`}
                               />
                             </div>
-                          );
-                        }
+                          )}
 
-                        // Renderizar horasEco
-                        if (campoConfig.nombre === 'horasEco' || (campoConfig.nombre === 'ram' && esProyector)) {
-                          return (
-                            <div key="horasEco">
-                              <label htmlFor="horasEco" className="block mb-1 text-sm text-gray-700">
-                                Horas eco {isCampoObligatorio('horasEco') && '*'}
+                          {/* Mostrar numeroSerie si no está ya en la sección */}
+                          {!camposSeccion.find(c => c.nombre === 'numeroSerie') && (
+                            <div key="numeroSerie-proyector">
+                              <label htmlFor="numeroSerie-proyector" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                Número de Serie {isCampoObligatorio('numeroSerie') && '*'}
                               </label>
                               <input
                                 type="text"
-                                id="horasEco"
-                                name="horasEco"
-                                value={formData.horasEco || ''}
+                                id="numeroSerie-proyector"
+                                name="numeroSerie"
+                                value={formData.numeroSerie}
                                 onChange={handleChange}
-                                required={isCampoObligatorio('horasEco')}
-                                placeholder="Ej: 500h"
-                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                                required={isCampoObligatorio('numeroSerie')}
+                                placeholder="Ej: SN123456789"
+                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-xl`}
                               />
                             </div>
-                          );
-                        }
-                      }
+                          )}
 
-                      // Para otras categorías o secciones, mostrar campos normales
-                      if (!esProyector || !esSeccionEspecificaciones) {
-                        if (campoConfig.nombre === 'procesador') {
-                          return (
-                            <div key={campoConfig.nombre}>
-                              <label htmlFor="procesador" className="block mb-1 text-sm text-gray-700">
-                                {getCampoLabel('procesador', 'Procesador')} {isCampoObligatorio('procesador') && '*'}
-                              </label>
-                              <input
-                                type="text"
-                                id="procesador"
-                                name="procesador"
-                                value={formData.procesador}
-                                onChange={handleChange}
-                                required={isCampoObligatorio('procesador')}
-                                placeholder="Ej: Intel Core i5-10400"
-                                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
-                              />
-                            </div>
-                          );
-                        }
-
-                        if (campoConfig.nombre === 'ram') {
-                          return (
-                            <div key={campoConfig.nombre}>
-                              <label htmlFor="ram" className="block mb-1 text-sm text-gray-700">
-                                {getCampoLabel('ram', 'RAM')} {isCampoObligatorio('ram') && '*'}
-                              </label>
-                              <select
-                                id="ram"
-                                name="ram"
-                                value={formData.ram}
-                                onChange={handleChange}
-                                required={isCampoObligatorio('ram')}
-                                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
-                              >
-                                <option value="">Seleccionar RAM</option>
-                                <option value="8GB">8GB</option>
-                                <option value="16GB">16GB</option>
-                                <option value="20GB">20GB</option>
-                                <option value="32GB">32GB</option>
-                              </select>
-                            </div>
-                          );
-                        }
-
-                        if (campoConfig.nombre === 'discoDuro') {
-                          return (
-                            <div key={campoConfig.nombre}>
-                              <label htmlFor="discoDuro" className="block mb-1 text-sm text-gray-700">
-                                {getCampoLabel('discoDuro', 'Disco Duro')} {isCampoObligatorio('discoDuro') && '*'}
-                              </label>
-                              <select
-                                id="discoDuro"
-                                name="discoDuro"
-                                value={formData.discoDuro}
-                                onChange={handleChange}
-                                required={isCampoObligatorio('discoDuro')}
-                                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-md"
-                              >
-                                <option value="">Seleccionar Disco Duro</option>
-                                <option value="256GB">256GB</option>
-                                <option value="512GB">500GB</option>
-                                <option value="1TB">1TB</option>
-                                <option value="1.5TB">1.5 TB</option>
-                              </select>
-                            </div>
-                          );
-                        }
-                      }
-
-
-                      // Para campos personalizados, usar renderCampoGenerico
-                      return renderCampoGenerico(campoConfig);
-                    })}
-
-                    {/* Para Proyectores, agregar campos adicionales al final de Especificaciones Técnicas */}
-                    {esProyector && esSeccionEspecificaciones && (
-                      <>
-                        {/* Mostrar marca si no está ya en la sección */}
-                        {!camposSeccion.find(c => c.nombre === 'marca') && (
-                          <div key="marca-proyector">
-                            <label htmlFor="marca-proyector" className="block mb-1 text-sm text-gray-700">
-                              Marca {isCampoObligatorio('marca') && '*'}
+                          {/* Mostrar horasNormales */}
+                          <div key="horasNormales-proyector">
+                            <label htmlFor="horasNormales-proyector" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                              Horas normales {isCampoObligatorio('horasNormales') && '*'}
                             </label>
                             <input
                               type="text"
-                              id="marca-proyector"
-                              name="marca"
-                              value={formData.marca}
+                              id="horasNormales-proyector"
+                              name="horasNormales"
+                              value={formData.horasNormales || ''}
                               onChange={handleChange}
-                              required={isCampoObligatorio('marca')}
-                              placeholder="Ej: Epson, BenQ, Optoma"
-                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                              required={isCampoObligatorio('horasNormales')}
+                              placeholder="Ej: 1000h"
+                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-xl`}
                             />
                           </div>
-                        )}
 
-                        {/* Mostrar numeroSerie si no está ya en la sección */}
-                        {!camposSeccion.find(c => c.nombre === 'numeroSerie') && (
-                          <div key="numeroSerie-proyector">
-                            <label htmlFor="numeroSerie-proyector" className="block mb-1 text-sm text-gray-700">
-                              Número de Serie {isCampoObligatorio('numeroSerie') && '*'}
+                          {/* Mostrar horasEco */}
+                          <div key="horasEco-proyector">
+                            <label htmlFor="horasEco-proyector" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                              Horas eco {isCampoObligatorio('horasEco') && '*'}
                             </label>
                             <input
                               type="text"
-                              id="numeroSerie-proyector"
-                              name="numeroSerie"
-                              value={formData.numeroSerie}
+                              id="horasEco-proyector"
+                              name="horasEco"
+                              value={formData.horasEco || ''}
                               onChange={handleChange}
-                              required={isCampoObligatorio('numeroSerie')}
-                              placeholder="Ej: SN123456789"
-                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
+                              required={isCampoObligatorio('horasEco')}
+                              placeholder="Ej: 500h"
+                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-xl`}
                             />
                           </div>
-                        )}
-
-                        {/* Mostrar horasNormales */}
-                        <div key="horasNormales-proyector">
-                          <label htmlFor="horasNormales-proyector" className="block mb-1 text-sm text-gray-700">
-                            Horas normales {isCampoObligatorio('horasNormales') && '*'}
-                          </label>
-                          <input
-                            type="text"
-                            id="horasNormales-proyector"
-                            name="horasNormales"
-                            value={formData.horasNormales || ''}
-                            onChange={handleChange}
-                            required={isCampoObligatorio('horasNormales')}
-                            placeholder="Ej: 1000h"
-                            className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
-                          />
-                        </div>
-
-                        {/* Mostrar horasEco */}
-                        <div key="horasEco-proyector">
-                          <label htmlFor="horasEco-proyector" className="block mb-1 text-sm text-gray-700">
-                            Horas eco {isCampoObligatorio('horasEco') && '*'}
-                          </label>
-                          <input
-                            type="text"
-                            id="horasEco-proyector"
-                            name="horasEco"
-                            value={formData.horasEco || ''}
-                            onChange={handleChange}
-                            required={isCampoObligatorio('horasEco')}
-                            placeholder="Ej: 500h"
-                            className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-md`}
-                          />
-                        </div>
-                      </>
-                    )}
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
-          {/* Botones */}
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex-1 px-4 py-2 bg-gray-300 text-gray-800 hover:bg-gray-400 rounded-md transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className={`flex-1 px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors`}
-            >
-              {item ? 'Actualizar' : 'Guardar'}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
+
+        {/* ── FOOTER FIJO CON BOTONES ── */}
+        <div className="flex gap-3 px-5 py-4 border-t border-slate-100 bg-white shrink-0">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-2xl transition-all font-bold text-sm active:scale-95"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="item-form"
+            className={`flex-2 flex-1 px-4 py-3 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-2xl transition-all font-black text-sm shadow-md shadow-green-100 active:scale-95`}
+          >
+            {item ? 'Actualizar Activo' : 'Guardar Activo'}
+          </button>
+        </div>
       </div>
     </div>
   );
