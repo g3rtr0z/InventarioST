@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { INSTITUTIONAL_COLORS } from '../constants/colors';
 import ItemList from './ItemList';
 import ItemForm from './ItemForm';
@@ -20,9 +20,6 @@ import {
   FaChartBar,
   FaUsers,
   FaFileAlt,
-  FaBars,
-  FaChevronDown,
-  FaChevronRight,
   FaSignOutAlt,
   FaFileExport,
   FaPlus,
@@ -42,10 +39,13 @@ import {
   FaCheckCircle,
   FaTimesCircle,
   FaArrowRight,
-  FaFileImport,
   FaFilter,
   FaThLarge,
-  FaList
+  FaList,
+  FaExclamationTriangle,
+  FaChartPie,
+  FaTag,
+  FaBuilding
 } from 'react-icons/fa';
 import { getUniqueEncargados } from '../utils/userUtils';
 
@@ -146,7 +146,6 @@ export default function AdminPanel({
   editingItem,
   filteredAndSearchedItems,
   onExportExcel,
-  onImportExcel,
   onLogout,
   error
 }: AdminPanelProps) {
@@ -159,30 +158,17 @@ export default function AdminPanel({
 
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false); // Iniciar contraído
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({
-    gestion: false,
-    reportes: false
-  });
+
+
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   );
-  const sidebarTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const handleImportButtonClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    onImportExcel(file);
-    // Permitir volver a seleccionar el mismo archivo
-    e.target.value = '';
-  };
+
+
+
+
 
   // Estados para paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -219,12 +205,7 @@ export default function AdminPanel({
   const [editandoSeccion, setEditandoSeccion] = useState<{ nombre: string; nuevoNombre: string } | null>(null);
   const [mostrarModalCampoFormulario, setMostrarModalCampoFormulario] = useState(false);
 
-  const toggleDropdown = (dropdown: string) => {
-    setOpenDropdowns(prev => ({
-      ...prev,
-      [dropdown]: !prev[dropdown]
-    }));
-  };
+
 
   // Detectar cambios de tamaño de ventana para responsive
   useEffect(() => {
@@ -873,447 +854,322 @@ export default function AdminPanel({
     enUso: items.filter(i => i.estado === 'En Uso').length,
     mantenimiento: items.filter(i => i.estado === 'Mantenimiento').length,
     baja: items.filter(i => i.estado === 'Baja').length,
-    porCategoria: categorias.reduce((acc, cat) => {
-      acc[cat] = items.filter(i => i.categoria === cat).length;
+    marcasUnicas: new Set(items.map(i => i.marca).filter(Boolean)).size,
+    modelosUnicos: new Set(items.map(i => i.modelo).filter(Boolean)).size,
+    sedesConActivos: new Set(items.map(i => i.sede).filter(Boolean)).size,
+    porCategoria: items.reduce((acc, i) => {
+      acc[i.categoria] = (acc[i.categoria] || 0) + 1;
       return acc;
     }, {} as Record<string, number>),
-    porSede: sedes.reduce((acc, sede) => {
-      acc[sede] = items.filter(i => i.sede === sede).length;
+    porSede: items.reduce((acc, i) => {
+      acc[i.sede] = (acc[i.sede] || 0) + 1;
       return acc;
     }, {} as Record<string, number>)
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 w-full overflow-x-hidden">
-      <div className="flex flex-col h-screen w-full">
-        {/* Header */}
-        <header className={`${INSTITUTIONAL_COLORS.bgPrimary} border-b border-black/10 sticky top-0 z-30 w-full`}>
-          <div className="flex justify-between items-center h-16 pr-4 sm:pr-6">
-            <div className="flex items-center flex-1 min-w-0">
-              {/* Botón móvil - solo visible en pantallas pequeñas */}
-              <div className="md:hidden w-14 flex justify-center flex-shrink-0 pl-2">
-                <button
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="text-white/80 hover:text-white p-1.5 rounded-md transition-colors"
-                  title="Toggle Sidebar"
-                >
-                  <FaBars className="text-xl" />
-                </button>
-              </div>
-              {/* Logo centrado en el mismo w-16 que los iconos del sidebar - solo desktop */}
-              <div className="hidden md:flex w-16 justify-center items-center flex-shrink-0">
-                <img
-                  src="/assets/logopag-lL0w0gLE.png"
-                  alt="Logo Institucional"
-                  className="h-7 sm:h-8 w-auto object-contain brightness-0 invert opacity-95"
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                {/* Logo en móvil (sin el contenedor w-16) */}
-                <img
-                  src="/assets/logopag-lL0w0gLE.png"
-                  alt="Logo Institucional"
-                  className="md:hidden h-7 w-auto object-contain brightness-0 invert opacity-95"
-                />
-                <div className="hidden sm:block w-px h-5 bg-white/20 mx-1.5"></div>
-                <h2 className="text-base sm:text-lg font-medium text-white tracking-tight">
-                  Inventario <span className="text-white/70 font-normal">| Admin</span>
-                </h2>
-              </div>
-            </div>
+  const navItems = [
+    { id: 'dashboard', label: 'Panel', icon: FaChartBar, adminOnly: false },
+    { id: 'inventario', label: 'Activos', icon: FaBox, adminOnly: false },
+    { id: 'usuarios', label: 'Usuarios', icon: FaUsers, adminOnly: true },
+    { id: 'reportes', label: 'Reportes', icon: FaFileAlt, adminOnly: false },
+    { id: 'configuracion', label: 'Config', icon: FaCog, adminOnly: true },
+  ].filter(item => !item.adminOnly || isAdmin);
 
-            <div className="flex items-center gap-2 sm:gap-3">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              <button
-                onClick={handleImportButtonClick}
-                className="px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white bg-black/10 hover:bg-black/20 rounded-md transition-colors flex items-center gap-2"
-              >
-                <FaFileImport className="text-sm" />
-                <span className="hidden sm:inline">Importar</span>
-              </button>
-              <button
-                onClick={onExportExcel}
-                className="px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white bg-black/10 hover:bg-black/20 rounded-md transition-colors flex items-center gap-2"
-              >
-                <FaFileExport className="text-sm" />
-                <span className="hidden sm:inline">Exportar</span>
-              </button>
-              <div className="w-px h-4 bg-white/20 mx-1 hidden sm:block"></div>
+  return (
+    <div className="flex h-screen bg-[#f8fafc] text-gray-900 font-sans overflow-hidden">
+
+      {/* ── SIDEBAR DESKTOP (oculto en móvil) ── */}
+      <aside
+        className={`hidden md:flex fixed inset-y-0 left-0 z-50 transition-all duration-300 transform bg-white border-r border-slate-200 flex-col ${sidebarOpen ? 'w-64' : 'w-20'
+          }`}
+      >
+        {/* Logo Area */}
+        <div className="h-20 flex items-center px-6">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 ${INSTITUTIONAL_COLORS.bgPrimary} rounded-xl flex items-center justify-center shadow-lg shadow-green-100`}>
+              <FaBox className="text-white text-lg" />
+            </div>
+            {sidebarOpen && (
+              <div className="flex flex-col">
+                <span className="font-bold text-slate-800 text-base leading-tight tracking-tight">Inventario ST</span>
+                <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Univ. Santo Tomás</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Navigation Menu */}
+        <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar">
+          {[
+            { id: 'dashboard', label: 'Panel de Control', icon: FaChartBar, adminOnly: false },
+            { id: 'inventario', label: 'Catálogo de Activos', icon: FaBox, adminOnly: false },
+            { id: 'usuarios', label: 'Asignaciones', icon: FaUsers, adminOnly: true },
+            { id: 'reportes', label: 'Reportes', icon: FaFileAlt, adminOnly: false },
+            { id: 'configuracion', label: 'Configuración', icon: FaCog, adminOnly: true },
+          ].filter(item => !item.adminOnly || isAdmin).map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveSection(item.id as any)}
+              className={`w-full flex items-center transition-all duration-200 rounded-xl group ${sidebarOpen ? 'px-4 py-3 gap-3' : 'px-2 py-3 justify-center'
+                } ${activeSection === item.id
+                  ? 'bg-green-50 text-green-800 font-semibold'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              title={!sidebarOpen ? item.label : ''}
+            >
+              <item.icon className={`text-xl ${activeSection === item.id ? 'text-green-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+              {sidebarOpen && <span className="text-sm">{item.label}</span>}
+            </button>
+          ))}
+        </nav>
+
+        {/* User Profile at Bottom */}
+        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+          <div className={`flex items-center bg-white p-2 rounded-2xl border border-slate-100 shadow-sm ${sidebarOpen ? 'gap-3' : 'justify-center'}`}>
+            <div className={`w-10 h-10 rounded-xl ${INSTITUTIONAL_COLORS.bgPrimary} flex items-center justify-center text-white font-bold shadow-sm select-none`}>
+              {currentUserName ? currentUserName.charAt(0).toUpperCase() : 'A'}
+            </div>
+            {sidebarOpen && (
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-slate-800 truncate leading-none mb-1">{currentUserName || 'Usuario Admin'}</p>
+                <p className="text-[10px] text-slate-400 truncate font-medium">Departamento de IT</p>
+              </div>
+            )}
+            {sidebarOpen && (
               <button
                 onClick={onLogout}
-                className="p-2 sm:px-3 sm:py-1.5 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors flex items-center gap-2"
+                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Cerrar sesión"
               >
                 <FaSignOutAlt className="text-sm" />
-                <span className="hidden sm:inline">Salir</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className={`flex-1 flex flex-col transition-all duration-300 ${isMobile ? 'ml-0' : sidebarOpen ? 'ml-64' : 'ml-20'
+        }`}>
+
+        {/* ── TOP HEADER MÓVIL ── */}
+        {isMobile && (
+          <header className="h-14 bg-white border-b border-slate-200 flex items-center px-4 justify-between shrink-0 z-10">
+            <div className="flex items-center gap-2">
+              <div className={`w-7 h-7 ${INSTITUTIONAL_COLORS.bgPrimary} rounded-lg flex items-center justify-center shadow-sm`}>
+                <FaBox className="text-white text-xs" />
+              </div>
+              <span className="font-black text-slate-800 text-sm tracking-tight">Inventario ST</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-xl px-2.5 py-1">
+                <div className={`w-5 h-5 rounded-lg ${INSTITUTIONAL_COLORS.bgPrimary} flex items-center justify-center text-white text-[9px] font-black`}>
+                  {currentUserName ? currentUserName.charAt(0).toUpperCase() : 'A'}
+                </div>
+                <span className="text-[10px] font-bold text-slate-600 max-w-[80px] truncate">{currentUserName || 'Admin'}</span>
+              </div>
+              <button
+                onClick={onLogout}
+                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Cerrar sesión"
+              >
+                <FaSignOutAlt className="text-sm" />
               </button>
             </div>
-          </div>
-        </header>
+          </header>
+        )}
 
-        <div className="flex flex-1 overflow-hidden relative w-full">
-          {/* Overlay para móvil */}
-          {sidebarOpen && (
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-              onClick={() => setSidebarOpen(false)}
-            />
+        {/* Scrollable Content Container */}
+        <div className="flex-1 overflow-y-auto px-4 py-6 md:px-10 lg:px-12 pb-24 md:pb-8">
+          {error && (
+            <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-xl flex items-center gap-3 animate-slideIn">
+              <FaExclamationTriangle className="text-red-500" />
+              <p className="text-sm text-red-700 font-medium">{error}</p>
+            </div>
           )}
 
-          {/* Sidebar de navegación - En móvil siempre fixed, en desktop normal */}
-          <div
-            className={`${sidebarOpen
-              ? 'w-64 md:relative z-50 md:z-auto'
-              : 'md:w-16'
-              } bg-white border-r border-gray-200 flex flex-col transition-all duration-200 ease-in-out overflow-hidden h-full`}
-            style={isMobile ? {
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              bottom: 0,
-              height: '100vh',
-              width: '256px',
-              transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
-              transition: 'transform 200ms ease-in-out'
-            } : {}}
-            onMouseEnter={() => {
-              if (typeof window !== 'undefined' && window.innerWidth >= 768) {
-                if (sidebarTimeoutRef.current) clearTimeout(sidebarTimeoutRef.current);
-                setSidebarOpen(true);
-              }
-            }}
-            onMouseLeave={() => {
-              if (typeof window !== 'undefined' && window.innerWidth >= 768) {
-                sidebarTimeoutRef.current = setTimeout(() => {
-                  setSidebarOpen(false);
-                }, 300);
-              }
-            }}
-          >
-            <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
-              {/* Sección Principal */}
+          {/* Header Area */}
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-8 gap-6">
+            <div className="space-y-1">
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+                {activeSection === 'inventario' ? 'Vista General del Inventario' :
+                  activeSection === 'dashboard' ? 'Panel de Control' :
+                    activeSection === 'usuarios' ? 'Asignaciones y Usuarios' :
+                      activeSection === 'reportes' ? 'Reportes del Sistema' :
+                        'Configuración'}
+              </h1>
+              <p className="text-slate-500 text-sm font-medium">
+                Monitorea y gestiona todos los activos de TI institucionales desde un solo lugar.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
               <button
-                onClick={() => {
-                  setActiveSection('inventario');
-                  if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                    setTimeout(() => setSidebarOpen(false), 100);
-                  }
-                }}
-                onMouseEnter={() => setHoveredItem('inventario')}
-                onMouseLeave={() => setHoveredItem(null)}
-                className={`w-full ${sidebarOpen ? 'px-3 py-2.5 text-left' : 'px-2 py-2.5 justify-center'} rounded-md transition-colors relative group ${activeSection === 'inventario'
-                  ? 'bg-green-50 text-green-800 font-medium border border-green-100'
-                  : 'bg-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                title={!sidebarOpen ? 'Inventario' : ''}
+                onClick={onExportExcel}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white text-slate-700 font-bold text-sm rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-all active:scale-95"
               >
-                <div className={`flex items-center ${sidebarOpen ? 'gap-3' : 'justify-center'}`}>
-                  <FaBox className={`text-lg transition-colors ${activeSection === 'inventario' ? 'text-green-700' : 'text-gray-400 group-hover:text-gray-600'}`} />
-                  {sidebarOpen && <span>Inventario</span>}
-                </div>
-                {/* Tooltip cuando está contraído */}
-                {!sidebarOpen && hoveredItem === 'inventario' && (
-                  <div className="absolute left-full ml-3 px-2.5 py-1 bg-gray-900 text-white text-xs font-medium rounded shadow-sm whitespace-nowrap z-50 border border-white/10">
-                    Inventario
-                  </div>
-                )}
+                <FaFileExport className="text-slate-400" />
+                <span>Exportar CSV</span>
               </button>
-
               <button
-                onClick={() => {
-                  setActiveSection('dashboard');
-                  if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                    setTimeout(() => setSidebarOpen(false), 100);
-                  }
-                }}
-                onMouseEnter={() => setHoveredItem('dashboard')}
-                onMouseLeave={() => setHoveredItem(null)}
-                className={`w-full ${sidebarOpen ? 'px-3 py-2.5 text-left' : 'px-2 py-2.5 justify-center'} rounded-md transition-colors relative group ${activeSection === 'dashboard'
-                  ? 'bg-green-50 text-green-800 font-medium border border-green-100'
-                  : 'bg-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                title={!sidebarOpen ? 'Dashboard' : ''}
+                onClick={onAddItem}
+                className={`flex items-center gap-2 px-6 py-2.5 ${INSTITUTIONAL_COLORS.bgPrimary} text-white font-bold text-sm rounded-xl shadow-lg shadow-green-100 hover:${INSTITUTIONAL_COLORS.bgPrimaryHover} transition-all active:scale-95`}
               >
-                <div className={`flex items-center ${sidebarOpen ? 'gap-3' : 'justify-center'}`}>
-                  <FaChartBar className={`text-lg transition-colors ${activeSection === 'dashboard' ? 'text-green-700' : 'text-gray-400 group-hover:text-gray-600'}`} />
-                  {sidebarOpen && <span>Dashboard</span>}
-                </div>
-                {/* Tooltip cuando está contraído */}
-                {!sidebarOpen && hoveredItem === 'dashboard' && (
-                  <div className="absolute left-full ml-3 px-2.5 py-1 bg-gray-900 text-white text-xs font-medium rounded shadow-sm whitespace-nowrap z-50 border border-white/10">
-                    Dashboard
-                  </div>
-                )}
+                <FaPlus className="text-sm" />
+                <span>Nuevo Activo</span>
               </button>
-
-              {/* Dropdown: Gestión - Solo para administradores */}
-              {isAdmin && (
-                <div className="pt-2">
-                  <div className={`px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider ${!sidebarOpen && 'hidden'}`}>
-                    Administración
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (!sidebarOpen) {
-                        setSidebarOpen(true);
-                        setOpenDropdowns({ ...openDropdowns, gestion: true });
-                      } else {
-                        toggleDropdown('gestion');
-                      }
-                    }}
-                    onMouseEnter={() => setHoveredItem('gestion')}
-                    onMouseLeave={() => setHoveredItem(null)}
-                    className={`w-full ${sidebarOpen ? 'px-3 py-2.5 text-left' : 'px-2 py-2.5 justify-center'} rounded-md transition-colors relative group bg-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900`}
-                    title={!sidebarOpen ? 'Gestión' : ''}
-                  >
-                    <div className={`flex items-center ${sidebarOpen ? 'gap-3 justify-between' : 'justify-center'}`}>
-                      <div className={`flex items-center ${sidebarOpen ? 'gap-3' : ''}`}>
-                        <FaUsers className="text-lg text-gray-400 group-hover:text-gray-600 transition-colors" />
-                        {sidebarOpen && <span>Gestión</span>}
-                      </div>
-                      {sidebarOpen && (
-                        openDropdowns.gestion ? (
-                          <FaChevronDown className="text-gray-400 text-[10px]" />
-                        ) : (
-                          <FaChevronRight className="text-gray-400 text-[10px]" />
-                        )
-                      )}
-                    </div>
-                    {/* Tooltip cuando está contraído */}
-                    {!sidebarOpen && hoveredItem === 'gestion' && (
-                      <div className="absolute left-full ml-3 px-2.5 py-1 bg-gray-900 text-white text-xs font-medium rounded shadow-sm whitespace-nowrap z-50 border border-white/10">
-                        Gestión
-                      </div>
-                    )}
-                  </button>
-
-                  {openDropdowns.gestion && sidebarOpen && (
-                    <div className="ml-7 mt-1 space-y-1 relative before:content-[''] before:absolute before:left-[-12px] before:top-0 before:bottom-0 before:w-px before:bg-gray-200">
-                      <button
-                        onClick={() => {
-                          setActiveSection('usuarios');
-                          if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                            setTimeout(() => setSidebarOpen(false), 100);
-                          }
-                        }}
-                        className={`w-full text-left px-3 py-2 rounded-md transition-colors text-sm ${activeSection === 'usuarios'
-                          ? 'text-green-800 font-medium bg-green-50'
-                          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-                          }`}
-                      >
-                        Usuarios
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setActiveSection('categorias');
-                          if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                            setTimeout(() => setSidebarOpen(false), 100);
-                          }
-                        }}
-                        className={`w-full text-left px-3 py-2 rounded-md transition-colors text-sm ${activeSection === 'categorias'
-                          ? 'text-green-800 font-medium bg-green-50'
-                          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-                          }`}
-                      >
-                        Categorías
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setActiveSection('sedes');
-                          if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                            setTimeout(() => setSidebarOpen(false), 100);
-                          }
-                        }}
-                        className={`w-full text-left px-3 py-2 rounded-md transition-colors text-sm ${activeSection === 'sedes'
-                          ? 'text-green-800 font-medium bg-green-50'
-                          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-                          }`}
-                      >
-                        Sedes
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Dropdown: Reportes */}
-              <div className="pt-2">
-                <button
-                  onClick={() => {
-                    if (!sidebarOpen) {
-                      setSidebarOpen(true);
-                      setOpenDropdowns({ ...openDropdowns, configuracion: true });
-                    } else {
-                      toggleDropdown('configuracion');
-                    }
-                  }}
-                  onMouseEnter={() => setHoveredItem('reportes')}
-                  onMouseLeave={() => setHoveredItem(null)}
-                  className={`w-full ${sidebarOpen ? 'px-3 py-2.5 text-left' : 'px-2 py-2.5 justify-center'} rounded-md transition-colors relative group bg-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900`}
-                  title={!sidebarOpen ? 'Reportes' : ''}
-                >
-                  <div className={`flex items-center ${sidebarOpen ? 'gap-3 justify-between' : 'justify-center'}`}>
-                    <div className={`flex items-center ${sidebarOpen ? 'gap-3' : ''}`}>
-                      <FaFileAlt className="text-lg text-gray-400 group-hover:text-gray-600 transition-colors" />
-                      {sidebarOpen && <span>Reportes</span>}
-                    </div>
-                    {sidebarOpen && (
-                      openDropdowns.configuracion ? (
-                        <FaChevronDown className="text-gray-400 text-[10px]" />
-                      ) : (
-                        <FaChevronRight className="text-gray-400 text-[10px]" />
-                      )
-                    )}
-                  </div>
-                  {/* Tooltip cuando está contraído */}
-                  {!sidebarOpen && hoveredItem === 'reportes' && (
-                    <div className="absolute left-full ml-3 px-2.5 py-1 bg-gray-900 text-white text-xs font-medium rounded shadow-sm whitespace-nowrap z-50 border border-white/10">
-                      Reportes
-                    </div>
-                  )}
-                </button>
-
-                {openDropdowns.configuracion && sidebarOpen && (
-                  <div className="ml-7 mt-1 space-y-1 relative before:content-[''] before:absolute before:left-[-12px] before:top-0 before:bottom-0 before:w-px before:bg-gray-200">
-                    <button
-                      onClick={() => {
-                        setActiveSection('reportes');
-                        if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                          setTimeout(() => setSidebarOpen(false), 100);
-                        }
-                      }}
-                      className={`w-full text-left px-3 py-2 rounded-md transition-colors text-sm ${activeSection === 'reportes'
-                        ? 'text-green-800 font-medium bg-green-50'
-                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-                        }`}
-                    >
-                      Reportes
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Configuración */}
-              <div className="pt-2">
-                <button
-                  onClick={() => {
-                    if (!sidebarOpen) {
-                      setSidebarOpen(true);
-                    } else {
-                      setActiveSection('configuracion');
-                    }
-                    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                      setTimeout(() => setSidebarOpen(false), 100);
-                    }
-                  }}
-                  onMouseEnter={() => setHoveredItem('configuracion')}
-                  onMouseLeave={() => setHoveredItem(null)}
-                  className={`w-full ${sidebarOpen ? 'px-3 py-2.5 text-left' : 'px-2 py-2.5 justify-center'} rounded-md transition-colors relative group ${activeSection === 'configuracion'
-                    ? 'bg-green-50 text-green-800 font-medium border border-green-100'
-                    : 'bg-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }`}
-                  title={!sidebarOpen ? 'Configuración' : ''}
-                >
-                  <div className={`flex items-center ${sidebarOpen ? 'gap-3' : 'justify-center'}`}>
-                    <FaCog className={`text-lg transition-colors ${activeSection === 'configuracion' ? 'text-green-700' : 'text-gray-400 group-hover:text-gray-600'}`} />
-                    {sidebarOpen && <span>Configuración</span>}
-                  </div>
-                  {/* Tooltip cuando está contraído */}
-                  {!sidebarOpen && hoveredItem === 'configuracion' && (
-                    <div className="absolute left-full ml-3 px-2.5 py-1 bg-gray-900 text-white text-xs font-medium rounded shadow-sm whitespace-nowrap z-50 border border-white/10">
-                      Configuración
-                    </div>
-                  )}
-                </button>
-              </div>
-            </nav>
-
-            {/* Footer del sidebar */}
-            <div className={`p-4 border-t border-gray-200 bg-gray-50`}>
-              {sidebarOpen ? (
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0 pr-2">
-                    <div className="text-sm font-medium text-gray-900 truncate">{currentUserEmail}</div>
-                    <div className="text-xs text-gray-500 mt-0.5 font-medium flex items-center gap-1.5">
-                      <div className={`w-1.5 h-1.5 rounded-full bg-green-500`}></div>
-                      Administrador
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex justify-center">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors" title={currentUserEmail}>
-                    <FaUserShield className="text-sm" />
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Contenido principal */}
-          <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-gray-50 w-full">
-            <div className="max-w-[1200px] mx-auto">
-              {/* Mensaje de error */}
-              {error && (
-                <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
-                  <p className="text-sm text-red-700 font-medium">{error}</p>
+          {/* Stats Summary Area */}
+          {(activeSection === 'inventario' || activeSection === 'dashboard') && (() => {
+            const pctEnUso = estadisticas.total > 0 ? Math.round((estadisticas.enUso / estadisticas.total) * 100) : 0;
+            const bajasYMant = estadisticas.baja + estadisticas.mantenimiento;
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {/* Card 1 - Total */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4">
+                    <span className="bg-green-100 text-green-700 text-[10px] font-black px-2 py-1 rounded-full">
+                      {new Set(items.map(i => i.categoria).filter(Boolean)).size} categorías
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-600">
+                      <FaBox className="text-xl" />
+                    </div>
+                    <div>
+                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Total Activos</p>
+                      <p className="text-2xl font-black text-slate-900">{estadisticas.total.toLocaleString()}</p>
+                    </div>
+                  </div>
                 </div>
-              )}
-              {activeSection === 'inventario' && (
-                <div className="space-y-6">
-                  {/* Barra de búsqueda y controles - Diseño Institucional ST */}
-                  <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-lg">
-                    {/* Row principal: búsqueda + botones */}
-                    {/* Toolbar compacto de búsqueda y acciones */}
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center">
-                      {/* Búsqueda Minimalista */}
-                      <div className="flex-1 relative group">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                          <FaSearch className="text-gray-400 text-sm group-focus-within:text-green-700 transition-colors" />
-                        </div>
-                        <input
-                          type="text"
-                          placeholder="Buscar por nombre, serie, marca..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full pl-10 pr-4 py-4 text-base bg-transparent border-none focus:outline-none focus:ring-0 placeholder-gray-400 text-gray-700 font-medium"
-                        />
+
+                {/* Card 2 - Mantenimiento */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4">
+                    <span className={`text-[10px] font-black px-2 py-1 rounded-full ${estadisticas.mantenimiento > 0 ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                      {estadisticas.mantenimiento > 0 ? `${estadisticas.mantenimiento} activo${estadisticas.mantenimiento !== 1 ? 's' : ''}` : 'Sin pendientes'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600">
+                      <FaCog className="text-xl" />
+                    </div>
+                    <div>
+                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Mantenimiento Pendiente</p>
+                      <p className="text-2xl font-black text-slate-900">{estadisticas.mantenimiento}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 3 - En Uso */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4">
+                    <span className="bg-green-100 text-green-700 text-[10px] font-black px-2 py-1 rounded-full">
+                      {pctEnUso}% Utilización
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-600">
+                      <FaUserShield className="text-xl" />
+                    </div>
+                    <div>
+                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Equipos Asignados</p>
+                      <p className="text-2xl font-black text-slate-900">{estadisticas.enUso.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 4 - Bajas/Sin uso */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4">
+                    <span className={`text-[10px] font-black px-2 py-1 rounded-full ${bajasYMant > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                      }`}>
+                      {bajasYMant > 0 ? 'Requiere Acción' : 'Sin alertas'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
+                      <FaExclamationTriangle className="text-xl" />
+                    </div>
+                    <div>
+                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Bajas + Mantenimiento</p>
+                      <p className="text-2xl font-black text-slate-900">{bajasYMant}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Stats Summary Area - Ends here */}
+
+          {/* Section Content */}
+          <div className="mt-8">
+            {error && (
+              <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
+                <p className="text-sm text-red-700 font-medium">{error}</p>
+              </div>
+            )}
+            {activeSection === 'inventario' && (
+              <div className="space-y-6">
+                {/* Barra de búsqueda y controles - Diseño Institucional ST */}
+                <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-lg">
+                  {/* Row principal: búsqueda + botones */}
+                  {/* Toolbar compacto de búsqueda y acciones */}
+                  <div className="flex flex-col md:flex-row items-stretch md:items-center">
+                    {/* Búsqueda Minimalista */}
+                    <div className="flex-1 relative group">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                        <FaSearch className="text-gray-400 text-base group-focus-within:text-green-700 transition-colors" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Buscar por nombre, serie, marca..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-4 text-base bg-transparent border-none focus:outline-none focus:ring-0 placeholder-gray-400 text-gray-700 font-medium"
+                      />
+                    </div>
+
+                    {/* Botones de acción compactos */}
+                    <div className="flex items-center justify-between md:justify-end gap-2 px-4 py-2 border-t md:border-t-0 md:border-l border-gray-100 w-full md:w-auto">
+                      <div className="flex bg-gray-50 p-1 rounded-lg">
+                        <button
+                          onClick={() => setViewMode('cards')}
+                          type="button"
+                          className={`p-1.5 rounded-md transition-all ${viewMode === 'cards' ? `bg-white text-green-700 shadow-sm` : 'text-gray-400 hover:text-gray-600'}`}
+                          title="Vista Cuadrícula"
+                        >
+                          <FaThLarge className="text-sm" />
+                        </button>
+                        <button
+                          onClick={() => setViewMode('table')}
+                          type="button"
+                          className={`p-1.5 rounded-md transition-all ${viewMode === 'table' ? `bg-white text-green-700 shadow-sm` : 'text-gray-400 hover:text-gray-600'}`}
+                          title="Vista Tabla"
+                        >
+                          <FaList className="text-sm" />
+                        </button>
                       </div>
 
-                      {/* Botones de acción compactos */}
-                      <div className="flex items-center gap-2 px-4 py-2 border-t md:border-t-0 md:border-l border-gray-100">
-                        <div className="flex bg-gray-50 p-1 rounded-lg">
-                          <button
-                            onClick={() => setViewMode('cards')}
-                            type="button"
-                            className={`p-1.5 rounded-md transition-all ${viewMode === 'cards' ? `bg-white text-green-700 shadow-sm` : 'text-gray-400 hover:text-gray-600'}`}
-                            title="Vista Cuadrícula"
-                          >
-                            <FaThLarge className="text-xs" />
-                          </button>
-                          <button
-                            onClick={() => setViewMode('table')}
-                            type="button"
-                            className={`p-1.5 rounded-md transition-all ${viewMode === 'table' ? `bg-white text-green-700 shadow-sm` : 'text-gray-400 hover:text-gray-600'}`}
-                            title="Vista Tabla"
-                          >
-                            <FaList className="text-xs" />
-                          </button>
-                        </div>
-
+                      <div className="flex items-center gap-2">
                         <button
-                          onClick={() => setShowFilterPanel(!showFilterPanel)}
+                          onClick={() => {
+                            setShowFilterPanel(!showFilterPanel);
+                            if (!showFilterPanel) {
+                              // Scroll suave al panel de filtros al abrir en móvil
+                              setTimeout(() => {
+                                window.scrollTo({ top: 100, behavior: 'smooth' });
+                              }, 100);
+                            }
+                          }}
                           type="button"
                           className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold transition-all ${showFilterPanel || (filterEstado !== 'Todos' || filterCategoria !== 'Todas' || filterSede !== 'Todas' || filterMarca !== 'Todas' || filterPiso !== 'Todos' || filterEdificio !== 'Todos' || filterEncargado !== 'Todos') ? 'bg-green-50 text-green-700 border border-green-100' : 'text-gray-600 hover:bg-gray-50'}`}
                         >
-                          <FaFilter className="text-xs" />
+                          <FaFilter className="text-sm" />
                           <span className="hidden sm:inline">FILTROS</span>
                           {(filterEstado !== 'Todos' || filterCategoria !== 'Todas' || filterSede !== 'Todas' || filterMarca !== 'Todas' || filterPiso !== 'Todos' || filterEdificio !== 'Todos' || filterEncargado !== 'Todos') && (
                             <span className="w-4 h-4 flex items-center justify-center bg-green-600 text-white text-[8px] rounded-full">
@@ -1327,1374 +1183,415 @@ export default function AdminPanel({
                           type="button"
                           className={`flex items-center gap-2 px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-lg shadow-sm transition-all text-sm font-bold`}
                         >
-                          <FaPlus className="text-[10px]" />
+                          <FaPlus className="text-xs" />
                           <span className="hidden lg:inline uppercase">Nuevo</span>
                         </button>
                       </div>
                     </div>
-
-                    {/* Panel de filtros Minimalista */}
-                    {showFilterPanel && (
-                      <div className="px-6 py-6 bg-gray-50/50 border-t border-gray-100 animate-fadeIn">
-                        {(() => {
-                          const marcasUnicas = [...new Set(items.map(i => i.marca).filter(Boolean))].sort();
-                          const pisosUnicos = [...new Set(items.map(i => i.piso).filter(Boolean))].sort();
-                          const edificiosUnicos = [...new Set(items.map(i => i.edificio).filter(Boolean))].sort();
-                          const encargadosUnicos = getUniqueEncargados(items);
-
-                          const selectClass = (active: boolean) =>
-                            `w-full pl-3 pr-7 py-2 text-sm font-semibold rounded-lg border transition-all appearance-none cursor-pointer focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} ${active ? `bg-green-50 text-green-800 border-green-200 ring-1 ring-green-100` : 'bg-white text-gray-600 border-gray-100 hover:border-gray-200 hover:bg-gray-50'}`;
-
-                          return (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                              {/* Categoría */}
-                              <div className="space-y-1.5">
-                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Categoría</label>
-                                <select value={filterCategoria} onChange={e => setFilterCategoria(e.target.value)} className={selectClass(filterCategoria !== 'Todas')}>
-                                  <option value="Todas">Todas las categorías</option>
-                                  {categorias.map(c => <option key={c} value={c}>{c}</option>)}
-                                </select>
-                              </div>
-
-                              {/* Marca */}
-                              <div className="space-y-1.5">
-                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Marca</label>
-                                <select value={filterMarca} onChange={e => setFilterMarca(e.target.value)} className={selectClass(filterMarca !== 'Todas')}>
-                                  <option value="Todas">Todas las marcas</option>
-                                  {marcasUnicas.map(m => <option key={m} value={m}>{m}</option>)}
-                                </select>
-                              </div>
-
-                              {/* Estado */}
-                              <div className="space-y-1.5">
-                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Estado</label>
-                                <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className={selectClass(filterEstado !== 'Todos')}>
-                                  <option value="Todos">Todos los estados</option>
-                                  <option value="Disponible">Disponible</option>
-                                  <option value="En Uso">En Uso</option>
-                                  <option value="Mantenimiento">Mantenimiento</option>
-                                  <option value="Baja">Baja</option>
-                                </select>
-                              </div>
-
-                              {/* Sede */}
-                              <div className="space-y-1.5">
-                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Sede</label>
-                                <select value={filterSede} onChange={e => setFilterSede(e.target.value)} className={selectClass(filterSede !== 'Todas')}>
-                                  <option value="Todas">Todas las sedes</option>
-                                  {sedes.map(s => <option key={s} value={s}>{s}</option>)}
-                                </select>
-                              </div>
-
-                              {/* Encargado */}
-                              <div className="space-y-1.5">
-                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Encargado ST</label>
-                                <select value={filterEncargado} onChange={e => setFilterEncargado(e.target.value)} className={selectClass(filterEncargado !== 'Todos')}>
-                                  <option value="Todos">Todos los encargados</option>
-                                  {encargadosUnicos.map(e => <option key={e} value={e}>{e}</option>)}
-                                </select>
-                              </div>
-
-                              {/* Piso/Edif */}
-                              <div className="space-y-1.5">
-                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Piso / Edificio</label>
-                                <div className="grid grid-cols-2 gap-2">
-                                  <select value={filterPiso} onChange={e => setFilterPiso(e.target.value)} className={selectClass(filterPiso !== 'Todos')}>
-                                    <option value="Todos">Piso</option>
-                                    {pisosUnicos.map(p => <option key={p} value={p}>{p}</option>)}
-                                  </select>
-                                  <select value={filterEdificio} onChange={e => setFilterEdificio(e.target.value)} className={selectClass(filterEdificio !== 'Todos')}>
-                                    <option value="Todos">Edif.</option>
-                                    {edificiosUnicos.map(e => <option key={e} value={e}>{e}</option>)}
-                                  </select>
-                                </div>
-                              </div>
-
-                              {/* Hardware Compacto */}
-                              <div className="space-y-1.5 lg:col-span-2">
-                                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Hardware / Uso / Proyector</label>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                  <select value={filterProcesador} onChange={e => setFilterProcesador(e.target.value)} className={selectClass(filterProcesador !== 'Todos')}>
-                                    <option value="Todos">Proc.</option>
-                                    {[...new Set(items.map(i => i.procesador).filter(Boolean))].sort().map(p => <option key={p} value={p}>{p}</option>)}
-                                  </select>
-                                  <select value={filterRam} onChange={e => setFilterRam(e.target.value)} className={selectClass(filterRam !== 'Todas')}>
-                                    <option value="Todas">RAM</option>
-                                    {[...new Set(items.map(i => i.ram).filter(Boolean))].sort().map(r => <option key={r} value={r}>{r}</option>)}
-                                  </select>
-                                  <select value={filterDiscoDuro} onChange={e => setFilterDiscoDuro(e.target.value)} className={selectClass(filterDiscoDuro !== 'Todos')}>
-                                    <option value="Todos">Disco</option>
-                                    {[...new Set(items.map(i => i.discoDuro).filter(Boolean))].sort().map(d => <option key={d} value={d}>{d}</option>)}
-                                  </select>
-                                  <select value={filterTipoUso} onChange={e => setFilterTipoUso(e.target.value)} className={selectClass(filterTipoUso !== 'Todos')}>
-                                    <option value="Todos">Uso</option>
-                                    <option value="Administrativo">Adm.</option>
-                                    <option value="Alumnos">Alu.</option>
-                                  </select>
-                                </div>
-                                <div className="mt-2">
-                                  <select value={filterHorasProyector} onChange={e => setFilterHorasProyector(e.target.value)} className={selectClass(filterHorasProyector !== 'Todas')}>
-                                    <option value="Todas">Lámpara Proyector (Todas)</option>
-                                    <option value="Estado Normal">Estado Normal</option>
-                                    <option value="Crítico (>2000 hrs)">Estado Crítico</option>
-                                  </select>
-                                </div>
-                              </div>
-
-                              {/* Acciones */}
-                              <div className="sm:col-span-2 lg:col-span-4 flex items-end justify-end pt-2">
-                                <button
-                                  onClick={() => {
-                                    setFilterEstado('Todos');
-                                    setFilterCategoria('Todas');
-                                    setFilterSede('Todas');
-                                    setFilterTipoUso('Todos');
-                                    setFilterMarca('Todas');
-                                    setFilterPiso('Todos');
-                                    setFilterEdificio('Todos');
-                                    setFilterProcesador('Todos');
-                                    setFilterRam('Todas');
-                                    setFilterDiscoDuro('Todos');
-                                    setFilterEncargado('Todos');
-                                    setFilterHorasProyector('Todas');
-                                    setSearchTerm('');
-                                  }}
-                                  className="w-full sm:w-auto py-1.5 px-6 text-[10px] font-black text-gray-400 hover:text-red-700 hover:bg-red-50 border border-gray-100 rounded-lg transition-all uppercase tracking-widest"
-                                >
-                                  Limpiar todo
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
                   </div>
 
-                  {/* Controles de ordenamiento y paginación */}
-                  {sortedItems.length > 0 && (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        {/* Ordenamiento */}
-                        <div className="flex items-center gap-3">
-                          <label className="text-sm font-medium text-gray-700">Ordenar por:</label>
-                          <select
-                            value={sortBy}
-                            onChange={(e) => {
-                              setSortBy(e.target.value as 'nombre' | 'categoria' | 'estado' | 'ubicacion');
-                              setCurrentPage(1);
-                            }}
-                            className={`px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
-                          >
-                            <option value="nombre">Nombre</option>
-                            <option value="categoria">Categoría</option>
-                            <option value="estado">Estado</option>
-                            <option value="ubicacion">Ubicación</option>
-                          </select>
-                          <button
-                            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                            className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                            title={sortOrder === 'asc' ? 'Orden ascendente' : 'Orden descendente'}
-                          >
-                            {sortOrder === 'asc' ? <FaArrowUp /> : <FaArrowDown />}
-                          </button>
-                        </div>
-
-                        {/* Información de paginación */}
-                        <div className="flex items-center gap-4">
-                          <div className="text-sm text-gray-600">
-                            Mostrando <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(endIndex, sortedItems.length)}</span> de <span className="font-medium">{sortedItems.length}</span> items
-                          </div>
-                          <select
-                            value={itemsPerPage}
-                            onChange={(e) => {
-                              setItemsPerPage(Number(e.target.value));
-                              setCurrentPage(1);
-                            }}
-                            className="px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent bg-white"
-                          >
-                            <option value="6">6 por página</option>
-                            <option value="12">12 por página</option>
-                            <option value="24">24 por página</option>
-                            <option value="48">48 por página</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* Paginación */}
-                      {totalPages > 1 && (
-                        <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-gray-200">
-                          <button
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentPage === 1}
-                            className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Anterior
-                          </button>
-
-                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                            let pageNum;
-                            if (totalPages <= 5) {
-                              pageNum = i + 1;
-                            } else if (currentPage <= 3) {
-                              pageNum = i + 1;
-                            } else if (currentPage >= totalPages - 2) {
-                              pageNum = totalPages - 4 + i;
-                            } else {
-                              pageNum = currentPage - 2 + i;
-                            }
-
-                            return (
-                              <button
-                                key={pageNum}
-                                onClick={() => setCurrentPage(pageNum)}
-                                className={`px-3 py-1.5 text-sm border rounded-md transition-colors ${currentPage === pageNum
-                                  ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white ${INSTITUTIONAL_COLORS.borderPrimary}`
-                                  : 'border-gray-300 hover:bg-gray-50'
-                                  }`}
-                              >
-                                {pageNum}
-                              </button>
-                            );
-                          })}
-
-                          <button
-                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                            disabled={currentPage === totalPages}
-                            className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Siguiente
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Lista de items */}
-                  <ItemList
-                    items={paginatedItems}
-                    onEdit={onEditItem}
-                    onDelete={onDeleteItem}
-                    searchTerm=""
-                    viewMode={viewMode}
-                  />
-                </div>
-              )}
-
-              {activeSection === 'dashboard' && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-4">Resumen General</h3>
-
-                    {/* Tarjetas de estadísticas */}
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                      <div className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200">
-                        <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{estadisticas.total}</div>
-                        <div className="text-xs sm:text-sm text-gray-600 font-medium">Total Items</div>
-                      </div>
-                      <div className={`bg-green-50 rounded-lg p-3 sm:p-4 border ${INSTITUTIONAL_COLORS.borderPrimary}`}>
-                        <div className={`text-2xl sm:text-3xl font-bold ${INSTITUTIONAL_COLORS.textPrimary} mb-1`}>{estadisticas.disponible}</div>
-                        <div className="text-xs sm:text-sm text-gray-600 font-medium">Disponibles</div>
-                      </div>
-                      <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-200">
-                        <div className="text-2xl sm:text-3xl font-bold text-blue-700 mb-1">{estadisticas.enUso}</div>
-                        <div className="text-xs sm:text-sm text-gray-600 font-medium">En Uso</div>
-                      </div>
-                      <div className="bg-yellow-50 rounded-lg p-3 sm:p-4 border border-yellow-200">
-                        <div className="text-2xl sm:text-3xl font-bold text-yellow-700 mb-1">{estadisticas.mantenimiento}</div>
-                        <div className="text-xs sm:text-sm text-gray-600 font-medium">Mantenimiento</div>
-                      </div>
-                      <div className="bg-red-50 rounded-lg p-3 sm:p-4 border border-red-200">
-                        <div className="text-2xl sm:text-3xl font-bold text-red-700 mb-1">{estadisticas.baja}</div>
-                        <div className="text-xs sm:text-sm text-gray-600 font-medium">Baja</div>
-                      </div>
-                    </div>
-
-                    {/* Distribución por categoría */}
-                    <div className="bg-white rounded-lg p-6 border border-gray-200 mb-6">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-4">Distribución por Categoría</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {Object.entries(estadisticas.porCategoria).map(([categoria, count]) => (
-                          <div key={categoria} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                            <div className="text-lg font-bold text-gray-900">{count}</div>
-                            <div className="text-sm text-gray-600 truncate">{categoria}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Distribución por sede */}
-                    <div className="bg-white rounded-lg p-6 border border-gray-200">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-4">Distribución por Sede</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {Object.entries(estadisticas.porSede).map(([sede, count]) => (
-                          <div key={sede} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                            <div className="text-lg font-bold text-gray-900">{count}</div>
-                            <div className="text-sm text-gray-600 truncate">{sede}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeSection === 'usuarios' && isAdmin && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">Gestión de Usuarios</h3>
-
-                  {errorUsers && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
-                      {errorUsers}
-                    </div>
-                  )}
-
-                  {/* Botón para abrir modal de nuevo usuario */}
-                  <div className="mb-4 flex justify-end">
-                    <button
-                      onClick={() => {
-                        setMostrarFormularioUsuario(true);
-                        setErrorUsers(null);
-                        setNuevoUsuario({
-                          email: '',
-                          password: '',
-                          displayName: '',
-                          role: 'usuario'
-                        });
-                      }}
-                      className="px-4 py-2 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium flex items-center gap-2"
-                    >
-                      <FaPlus />
-                      Agregar Usuario
-                    </button>
-                  </div>
-
-                  {/* Búsqueda */}
-                  <div className="mb-4">
-                    <input
-                      type="text"
-                      placeholder="Buscar por email o nombre..."
-                      value={searchTermUsers}
-                      onChange={(e) => setSearchTermUsers(e.target.value)}
-                      className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
-                    />
-                  </div>
-
-                  {/* Contador de usuarios */}
-                  <div className="mb-4">
-                    <div className="text-sm text-gray-600">
-                      Total de usuarios: <span className="font-semibold">{filteredUsers.length}</span>
-                    </div>
-                  </div>
-
-                  {/* Lista de usuarios */}
-                  {loadingUsers && users.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      Cargando usuarios...
-                    </div>
-                  ) : filteredUsers.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      No se encontraron usuarios
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {filteredUsers.map((user) => (
-                        <div
-                          key={user.email}
-                          className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors bg-white"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <div>
-                                  <div className="font-semibold text-gray-900">
-                                    {user.displayName || 'Sin nombre'}
-                                    {user.email === currentUserEmail && (
-                                      <span className="ml-2 text-xs text-blue-600 font-normal">(Tú)</span>
-                                    )}
-                                  </div>
-                                  <div className="text-sm text-gray-600">{user.email}</div>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                <span className={`text-xs font-semibold px-2 py-1 rounded border ${getRoleBadgeColor(user.role)} flex items-center gap-1`}>
-                                  {user.role === 'administrador' ? (
-                                    <>
-                                      <FaCrown /> Administrador
-                                    </>
-                                  ) : (
-                                    <>
-                                      <FaUser /> Usuario
-                                    </>
-                                  )}
-                                </span>
-                                <span className={`text-xs font-semibold px-2 py-1 rounded border ${getStatusBadgeColor(user.isActive)} flex items-center gap-1`}>
-                                  {user.isActive ? (
-                                    <>
-                                      <FaCheckCircle /> Activo
-                                    </>
-                                  ) : (
-                                    <>
-                                      <FaTimesCircle /> Inactivo
-                                    </>
-                                  )}
-                                </span>
-                                {user.createdAt && (
-                                  <span className="text-xs text-gray-500">
-                                    Creado: {new Date(user.createdAt).toLocaleString('es-MX', {
-                                      year: 'numeric',
-                                      month: '2-digit',
-                                      day: '2-digit',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                  </span>
-                                )}
-                                {user.lastLogin && (
-                                  <span className="text-xs text-gray-500">
-                                    Último acceso: {new Date(user.lastLogin).toLocaleString('es-MX', {
-                                      year: 'numeric',
-                                      month: '2-digit',
-                                      day: '2-digit',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="flex flex-col gap-2 ml-4">
-                              {/* Cambiar rol */}
-                              <select
-                                value={user.role}
-                                onChange={(e) => handleRoleChange(user.email, e.target.value as UserRole)}
-                                disabled={user.email === currentUserEmail}
-                                className={`px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 ${user.email === currentUserEmail ? 'bg-gray-100 cursor-not-allowed opacity-50' : 'bg-white'
-                                  }`}
-                                title={user.email === currentUserEmail ? 'No puedes cambiar tu propio rol' : ''}
-                              >
-                                <option value="usuario">Usuario</option>
-                                <option value="administrador">Administrador</option>
-                              </select>
-
-                              {/* Activar/Desactivar */}
-                              <button
-                                onClick={() => handleToggleStatus(user.email, user.isActive)}
-                                disabled={user.email === currentUserEmail}
-                                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${user.isActive
-                                  ? 'bg-yellow-500 text-white hover:bg-yellow-600'
-                                  : `${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900`
-                                  } ${user.email === currentUserEmail ? 'opacity-50 cursor-not-allowed' : ''
-                                  }`}
-                                title={user.email === currentUserEmail ? 'No puedes desactivarte a ti mismo' : ''}
-                              >
-                                {user.isActive ? 'Desactivar' : 'Activar'}
-                              </button>
-
-                              {/* Eliminar usuario */}
-                              <button
-                                onClick={() => handleEliminarUsuario(user.email)}
-                                disabled={user.email === currentUserEmail}
-                                className={`px-3 py-1.5 text-sm rounded-md transition-colors bg-red-600 text-white hover:bg-red-700 flex items-center gap-2 ${user.email === currentUserEmail ? 'opacity-50 cursor-not-allowed' : ''
-                                  }`}
-                                title={user.email === currentUserEmail ? 'No puedes eliminarte a ti mismo' : 'Eliminar permanentemente'}
-                              >
-                                <FaTrash />
-                                Eliminar
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeSection === 'categorias' && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">Gestión de Categorías</h3>
-
-                  <div className="bg-white rounded-lg p-6 border border-gray-200">
-                    {/* Agregar nueva categoría */}
-                    <div className="mb-6">
-                      <label className="block mb-2 text-sm font-medium text-gray-700">
-                        Agregar Nueva Categoría
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={nuevaCategoria}
-                          onChange={(e) => setNuevaCategoria(e.target.value)}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              handleAgregarCategoria();
-                            }
-                          }}
-                          placeholder="Nombre de la categoría"
-                          className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
-                        />
-                        <button
-                          onClick={handleAgregarCategoria}
-                          className={`px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
-                          disabled={!nuevaCategoria.trim()}
-                        >
-                          + Agregar
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Lista de categorías */}
-                    <div>
-                      <label className="block mb-3 text-sm font-medium text-gray-700">
-                        Categorías ({categorias.length})
-                      </label>
-                      {categorias.length === 0 ? (
-                        <p className="text-gray-500 text-sm text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
-                          No hay categorías
-                        </p>
-                      ) : (
-                        <div className="space-y-2 max-h-96 overflow-y-auto">
-                          {categorias.map((categoria, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
-                            >
-                              <span className="text-gray-900 font-medium">{categoria}</span>
-                              <button
-                                onClick={() => handleEliminarCategoria(categoria)}
-                                className="text-red-500 hover:text-red-700 px-3 py-1 rounded-md hover:bg-red-50 transition-colors"
-                                title="Eliminar"
-                              >
-                                ✕ Eliminar
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeSection === 'sedes' && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">Gestión de Sedes</h3>
-
-                  <div className="bg-white rounded-lg p-6 border border-gray-200">
-                    {/* Agregar nueva sede */}
-                    <div className="mb-6">
-                      <label className="block mb-2 text-sm font-medium text-gray-700">
-                        Agregar Nueva Sede
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={nuevaSede}
-                          onChange={(e) => setNuevaSede(e.target.value)}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              handleAgregarSede();
-                            }
-                          }}
-                          placeholder="Nombre de la sede"
-                          className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
-                        />
-                        <button
-                          onClick={handleAgregarSede}
-                          className={`px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors font-medium`}
-                          disabled={!nuevaSede.trim()}
-                        >
-                          + Agregar
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Lista de sedes */}
-                    <div>
-                      <label className="block mb-3 text-sm font-medium text-gray-700">
-                        Sedes ({sedes.length})
-                      </label>
-                      {sedes.length === 0 ? (
-                        <p className="text-gray-500 text-sm text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
-                          No hay sedes
-                        </p>
-                      ) : (
-                        <div className="space-y-2 max-h-96 overflow-y-auto">
-                          {sedes.map((sede, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
-                            >
-                              <span className="text-gray-900 font-medium">{sede}</span>
-                              <button
-                                onClick={() => handleEliminarSede(sede)}
-                                className="text-red-500 hover:text-red-700 px-3 py-1 rounded-md hover:bg-red-50 transition-colors"
-                                title="Eliminar"
-                              >
-                                ✕ Eliminar
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeSection === 'reportes' && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">Reportes y Análisis</h3>
-                  <div className="bg-white rounded-lg p-6 border border-gray-200">
-                    <p className="text-gray-600 mb-4">Funcionalidades de reportes avanzados próximamente:</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <div className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                          <FaChartBar /> Reportes por Período
-                        </div>
-                        <div className="text-sm text-gray-600">Items agregados/modificados en un rango de fechas</div>
-                      </div>
-                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <div className="text-lg font-semibold text-gray-900 mb-2">🔧 Mantenimientos</div>
-                        <div className="text-sm text-gray-600">Items que requieren mantenimiento próximamente</div>
-                      </div>
-                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <div className="text-lg font-semibold text-gray-900 mb-2">📅 Garantías</div>
-                        <div className="text-sm text-gray-600">Items con garantías próximas a vencer</div>
-                      </div>
-                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <div className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                          <FaUser /> Por Responsable
-                        </div>
-                        <div className="text-sm text-gray-600">Distribución de items por responsable</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeSection === 'configuracion' && (
-                <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">Configuración del Sistema</h3>
-
-                  {/* Tabs de subsecciones */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-1">
-                    <div className="flex gap-1 flex-wrap">
-                      <button
-                        onClick={() => setConfigSubsection('formulario')}
-                        className={`flex-1 min-w-[100px] px-4 py-2 text-sm font-medium rounded-md transition-colors ${configSubsection === 'formulario'
-                          ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white`
-                          : 'text-gray-700 hover:bg-gray-100'
-                          }`}
-                      >
-                        Formulario
-                      </button>
-                      <button
-                        onClick={() => setConfigSubsection('secciones')}
-                        className={`flex-1 min-w-[100px] px-4 py-2 text-sm font-medium rounded-md transition-colors ${configSubsection === 'secciones'
-                          ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white`
-                          : 'text-gray-700 hover:bg-gray-100'
-                          }`}
-                      >
-                        Secciones
-                      </button>
-                      <button
-                        onClick={() => setConfigSubsection('estados')}
-                        className={`flex-1 min-w-[100px] px-4 py-2 text-sm font-medium rounded-md transition-colors ${configSubsection === 'estados'
-                          ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white`
-                          : 'text-gray-700 hover:bg-gray-100'
-                          }`}
-                      >
-                        Estados
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Gestión de Secciones del Formulario */}
-                  {configSubsection === 'secciones' && configuracion && (
-                    <div className="bg-white rounded-lg p-6 border border-gray-200">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-4">Gestión de Secciones del Formulario</h4>
-                      <p className="text-sm text-gray-600 mb-6">
-                        Administra las secciones del formulario de items. Puedes agregar, editar, eliminar y reordenar secciones.
-                      </p>
-
-                      {/* Agregar nueva sección */}
-                      <div className={`mb-6 p-4 bg-green-50 rounded-lg border ${INSTITUTIONAL_COLORS.borderPrimary}`}>
-                        <h5 className="text-base font-semibold text-gray-800 mb-3">Agregar Nueva Sección</h5>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={nuevaSeccion}
-                            onChange={(e) => setNuevaSeccion(e.target.value)}
-                            onKeyPress={(e) => {
-                              if (e.key === 'Enter') {
-                                handleAgregarSeccion();
-                              }
-                            }}
-                            placeholder="Nombre de la sección (ej: Información Adicional)"
-                            className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent text-sm`}
-                          />
-                          <button
-                            onClick={handleAgregarSeccion}
-                            className={`px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium`}
-                          >
-                            Agregar
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Lista de secciones */}
-                      <div className="space-y-2">
-                        <h5 className="text-sm font-semibold text-gray-700 mb-3">Secciones Configuradas</h5>
-                        {configuracion.seccionesFormulario
-                          .sort((a: SeccionFormulario, b: SeccionFormulario) => a.orden - b.orden)
-                          .map((seccion: SeccionFormulario, index: number) => {
-                            const puedeSubir = index > 0;
-                            const puedeBajar = index < configuracion.seccionesFormulario.length - 1;
-                            const camposEnSeccion = configuracion.formulario.filter((c: CampoFormulario) => c.seccion === seccion.nombre).length;
-                            const estaEditando = editandoSeccion?.nombre === seccion.nombre;
-
-                            return (
-                              <div key={seccion.nombre} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                                <div className="flex items-center gap-2 flex-1">
-                                  <button
-                                    onClick={() => handleToggleSeccionVisible(seccion.nombre)}
-                                    className={`p-2 rounded-md transition-colors ${seccion.visible
-                                      ? 'text-green-800 hover:bg-green-50'
-                                      : 'text-gray-400 hover:bg-gray-100'
-                                      }`}
-                                    title={seccion.visible ? 'Ocultar sección' : 'Mostrar sección'}
-                                  >
-                                    {seccion.visible ? <FaEye /> : <FaEyeSlash />}
-                                  </button>
-                                  <div className="flex-1">
-                                    {estaEditando ? (
-                                      <div className="flex items-center gap-2">
-                                        <input
-                                          type="text"
-                                          value={editandoSeccion.nuevoNombre}
-                                          onChange={(e) => setEditandoSeccion({ ...editandoSeccion, nuevoNombre: e.target.value })}
-                                          onKeyPress={(e) => {
-                                            if (e.key === 'Enter') {
-                                              handleEditarSeccion(seccion.nombre, editandoSeccion.nuevoNombre);
-                                            } else if (e.key === 'Escape') {
-                                              setEditandoSeccion(null);
-                                            }
-                                          }}
-                                          className={`flex-1 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent text-sm`}
-                                          autoFocus
-                                        />
-                                        <button
-                                          onClick={() => handleEditarSeccion(seccion.nombre, editandoSeccion.nuevoNombre)}
-                                          className={`px-2 py-1 ${INSTITUTIONAL_COLORS.textPrimary} hover:bg-green-50 rounded-md transition-colors`}
-                                          title="Guardar"
-                                        >
-                                          <FaCheck />
-                                        </button>
-                                        <button
-                                          onClick={() => setEditandoSeccion(null)}
-                                          className="px-2 py-1 text-red-700 hover:bg-red-50 rounded-md transition-colors"
-                                          title="Cancelar"
-                                        >
-                                          <FaTimes />
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      <div>
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-medium text-gray-900">{seccion.nombre}</span>
-                                          {!seccion.visible && (
-                                            <span className="text-xs text-gray-400">(Oculta)</span>
-                                          )}
-                                          <span className="text-xs text-gray-500">({camposEnSeccion} campo{camposEnSeccion !== 1 ? 's' : ''})</span>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                                {!estaEditando && (
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      onClick={() => setEditandoSeccion({ nombre: seccion.nombre, nuevoNombre: seccion.nombre })}
-                                      className={`px-3 py-1 text-xs ${INSTITUTIONAL_COLORS.textPrimary} hover:bg-green-50 rounded-md transition-colors`}
-                                      title="Editar nombre"
-                                    >
-                                      <FaEdit />
-                                    </button>
-                                    <div className="flex flex-col gap-1">
-                                      <button
-                                        onClick={() => handleMoverSeccion(seccion.nombre, 'arriba')}
-                                        disabled={!puedeSubir}
-                                        className={`p-1 rounded transition-colors ${puedeSubir
-                                          ? 'text-gray-600 hover:bg-gray-100'
-                                          : 'text-gray-300 cursor-not-allowed'
-                                          }`}
-                                        title="Mover arriba"
-                                      >
-                                        <FaArrowUp className="text-xs" />
-                                      </button>
-                                      <button
-                                        onClick={() => handleMoverSeccion(seccion.nombre, 'abajo')}
-                                        disabled={!puedeBajar}
-                                        className={`p-1 rounded transition-colors ${puedeBajar
-                                          ? 'text-gray-600 hover:bg-gray-100'
-                                          : 'text-gray-300 cursor-not-allowed'
-                                          }`}
-                                        title="Mover abajo"
-                                      >
-                                        <FaArrowDown className="text-xs" />
-                                      </button>
-                                    </div>
-                                    <button
-                                      onClick={() => handleEliminarSeccion(seccion.nombre)}
-                                      className="px-3 py-1 text-xs text-red-700 hover:bg-red-50 rounded-md transition-colors"
-                                      title="Eliminar sección"
-                                    >
-                                      <FaTrash />
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Personalización de Estados */}
-                  {configSubsection === 'estados' && configuracion && (
-                    <div className="bg-white rounded-lg p-6 border border-gray-200">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-4">Personalización de Estados</h4>
-
-                      {/* Agregar nuevo estado */}
-                      <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <label className="block mb-2 text-sm font-medium text-gray-700">
-                          Agregar Nuevo Estado
-                        </label>
-                        <div className="space-y-3">
-                          <input
-                            type="text"
-                            value={nuevoEstado.nombre}
-                            onChange={(e) => setNuevoEstado({ ...nuevoEstado, nombre: e.target.value })}
-                            placeholder="Nombre del estado"
-                            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
-                          />
-                          <div className="flex gap-3">
-                            <select
-                              value={nuevoEstado.color}
-                              onChange={(e) => setNuevoEstado({ ...nuevoEstado, color: e.target.value })}
-                              className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
-                            >
-                              <option value="bg-green-100 text-green-800">Verde</option>
-                              <option value="bg-blue-100 text-blue-800">Azul</option>
-                              <option value="bg-yellow-100 text-yellow-800">Amarillo</option>
-                              <option value="bg-red-100 text-red-800">Rojo</option>
-                              <option value="bg-purple-100 text-purple-800">Morado</option>
-                              <option value="bg-gray-100 text-gray-800">Gris</option>
-                            </select>
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={nuevoEstado.requerido}
-                                onChange={(e) => setNuevoEstado({ ...nuevoEstado, requerido: e.target.checked })}
-                                className="rounded"
-                              />
-                              <span className="text-sm text-gray-700">Requerido</span>
-                            </label>
-                          </div>
-                          <button
-                            onClick={handleAgregarEstado}
-                            className={`w-full px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium`}
-                          >
-                            Agregar Estado
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Lista de estados */}
-                      <div className="space-y-2">
-                        <h5 className="text-sm font-semibold text-gray-700 mb-3">Estados Configurados</h5>
-                        {configuracion.estados.map((estado: EstadoPersonalizado, index: number) => (
-                          <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                            <span className={`px-3 py-1 rounded-md text-sm font-medium ${estado.color}`}>
-                              {estado.nombre}
-                            </span>
-                            {estado.requerido && (
-                              <span className="text-xs text-gray-500">(Requerido)</span>
-                            )}
-                            <div className="ml-auto flex gap-2">
-                              <button
-                                onClick={() => handleEliminarEstado(estado.nombre)}
-                                className="px-3 py-1 text-sm text-red-700 hover:bg-red-50 rounded-md transition-colors"
-                                title="Eliminar estado"
-                              >
-                                <FaTrash />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Configuración del Formulario */}
-                  {configSubsection === 'formulario' && configuracion && (
-                    <div className="bg-white rounded-lg p-6 border border-gray-200">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-4">Configuración del Formulario de Items</h4>
-                      <p className="text-sm text-gray-600 mb-6">
-                        Configura qué campos se muestran en el formulario de agregar/editar items, su orden y si son obligatorios.
-                      </p>
-
-                      {/* Botón para abrir modal de nuevo campo */}
-                      <div className="mb-6 flex justify-end">
-                        <button
-                          onClick={() => {
-                            setMostrarModalCampoFormulario(true);
-                            setNuevoCampoFormulario({
-                              nombre: '',
-                              seccion: 'Información General',
-                              etiqueta: '',
-                              obligatorio: false,
-                              tipo: 'text'
-                            });
-                          }}
-                          className="px-4 py-2 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium flex items-center gap-2"
-                        >
-                          <FaPlus />
-                          Agregar Campo Personalizado
-                        </button>
-                      </div>
-
-                      {configuracion.seccionesFormulario
-                        .filter((s: SeccionFormulario) => s.visible)
-                        .sort((a: SeccionFormulario, b: SeccionFormulario) => a.orden - b.orden)
-                        .map((seccion: SeccionFormulario) => {
-                          const camposSeccion = configuracion.formulario
-                            .filter((c: CampoFormulario) => c.seccion === seccion.nombre)
-                            .sort((a: CampoFormulario, b: CampoFormulario) => a.orden - b.orden);
-
-                          if (camposSeccion.length === 0) return null;
-
-                          return (
-                            <div key={seccion.nombre} className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                              <h5 className="text-base font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-300">
-                                {seccion.nombre}
-                              </h5>
-                              <div className="space-y-2">
-                                {camposSeccion.map((campo: CampoFormulario, index: number) => {
-                                  const puedeSubir = index > 0;
-                                  const puedeBajar = index < camposSeccion.length - 1;
-
-                                  return (
-                                    <div key={campo.nombre} className="flex items-center gap-3 p-3 bg-white rounded-md border border-gray-200">
-                                      <div className="flex items-center gap-2 flex-1">
-                                        <button
-                                          onClick={() => handleToggleCampoVisible(campo.nombre)}
-                                          className={`p-2 rounded-md transition-colors ${campo.visible
-                                            ? 'text-green-800 hover:bg-green-50'
-                                            : 'text-gray-400 hover:bg-gray-100'
-                                            }`}
-                                          title={campo.visible ? 'Ocultar campo' : 'Mostrar campo'}
-                                        >
-                                          {campo.visible ? <FaEye /> : <FaEyeSlash />}
-                                        </button>
-                                        <div className="flex-1">
-                                          <div className="flex items-center gap-2">
-                                            <span className="font-medium text-gray-900">
-                                              {campo.etiqueta || campo.nombre}
-                                            </span>
-                                            {campo.obligatorio && (
-                                              <span className="text-xs text-red-600 font-semibold">*</span>
-                                            )}
-                                            {!campo.visible && (
-                                              <span className="text-xs text-gray-400">(Oculto)</span>
-                                            )}
-                                          </div>
-                                          <span className="text-xs text-gray-500">{campo.nombre}</span>
-                                        </div>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <button
-                                          onClick={() => handleToggleCampoObligatorio(campo.nombre)}
-                                          className={`px-3 py-1 text-xs rounded-md transition-colors ${campo.obligatorio
-                                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                            }`}
-                                          title={campo.obligatorio ? 'Marcar como opcional' : 'Marcar como obligatorio'}
-                                        >
-                                          {campo.obligatorio ? 'Obligatorio' : 'Opcional'}
-                                        </button>
-                                        <div className="flex flex-col gap-1">
-                                          <button
-                                            onClick={() => handleMoverCampo(campo.nombre, 'arriba')}
-                                            disabled={!puedeSubir}
-                                            className={`p-1 rounded transition-colors ${puedeSubir
-                                              ? 'text-gray-600 hover:bg-gray-100'
-                                              : 'text-gray-300 cursor-not-allowed'
-                                              }`}
-                                            title="Mover arriba"
-                                          >
-                                            <FaArrowUp className="text-xs" />
-                                          </button>
-                                          <button
-                                            onClick={() => handleMoverCampo(campo.nombre, 'abajo')}
-                                            disabled={!puedeBajar}
-                                            className={`p-1 rounded transition-colors ${puedeBajar
-                                              ? 'text-gray-600 hover:bg-gray-100'
-                                              : 'text-gray-300 cursor-not-allowed'
-                                              }`}
-                                            title="Mover abajo"
-                                          >
-                                            <FaArrowDown className="text-xs" />
-                                          </button>
-                                        </div>
-                                        <button
-                                          onClick={() => handleEliminarCampoFormulario(campo.nombre)}
-                                          className="px-3 py-1 text-xs text-red-700 hover:bg-red-50 rounded-md transition-colors"
-                                          title="Eliminar campo del formulario"
-                                        >
-                                          <FaTrash />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          );
-                        })}
-
-                      {/* Sección para restaurar campos eliminados */}
+                  {/* Panel de filtros Minimalista */}
+                  {showFilterPanel && (
+                    <div className="px-6 py-6 bg-gray-50/50 border-t border-gray-100 animate-fadeIn">
                       {(() => {
-                        // Definir todos los campos posibles del formulario
-                        const todosLosCampos: Array<{ nombre: string; seccion: string; etiqueta: string; orden: number; obligatorio: boolean }> = [
-                          // Información General
-                          { nombre: 'nombre', seccion: 'Información General', etiqueta: 'Nombre del Equipo', orden: 1, obligatorio: true },
-                          { nombre: 'categoria', seccion: 'Información General', etiqueta: 'Categoría', orden: 2, obligatorio: true },
-                          { nombre: 'estado', seccion: 'Información General', etiqueta: 'Estado', orden: 3, obligatorio: true },
-                          { nombre: 'tipoUso', seccion: 'Información General', etiqueta: 'Tipo de Uso', orden: 4, obligatorio: true },
-                          // Ubicación y Responsabilidad
-                          { nombre: 'sede', seccion: 'Ubicación y Responsabilidad', etiqueta: 'Sede', orden: 1, obligatorio: true },
-                          { nombre: 'ubicacion', seccion: 'Ubicación y Responsabilidad', etiqueta: 'Ubicación', orden: 2, obligatorio: true },
-                          { nombre: 'piso', seccion: 'Ubicación y Responsabilidad', etiqueta: 'Piso', orden: 3, obligatorio: false },
-                          { nombre: 'edificio', seccion: 'Ubicación y Responsabilidad', etiqueta: 'Edificio', orden: 4, obligatorio: false },
-                          { nombre: 'responsable', seccion: 'Ubicación y Responsabilidad', etiqueta: 'Responsable', orden: 5, obligatorio: true },
-                          // Especificaciones Técnicas
-                          { nombre: 'marca', seccion: 'Especificaciones Técnicas', etiqueta: 'Marca', orden: 1, obligatorio: true },
-                          { nombre: 'modelo', seccion: 'Especificaciones Técnicas', etiqueta: 'Modelo', orden: 2, obligatorio: true },
-                          { nombre: 'numeroSerie', seccion: 'Especificaciones Técnicas', etiqueta: 'Número de Serie', orden: 3, obligatorio: true },
-                          { nombre: 'procesador', seccion: 'Especificaciones Técnicas', etiqueta: 'Procesador', orden: 4, obligatorio: false },
-                          { nombre: 'ram', seccion: 'Especificaciones Técnicas', etiqueta: 'RAM', orden: 5, obligatorio: false },
-                          { nombre: 'discoDuro', seccion: 'Especificaciones Técnicas', etiqueta: 'Disco Duro', orden: 6, obligatorio: false },
-                          // Observaciones
-                          { nombre: 'observaciones', seccion: 'Observaciones', etiqueta: 'Observaciones', orden: 1, obligatorio: false }
-                        ];
+                        const marcasUnicas = [...new Set(items.map(i => i.marca).filter(Boolean))].sort();
+                        const pisosUnicos = [...new Set(items.map(i => i.piso).filter(Boolean))].sort();
+                        const edificiosUnicos = [...new Set(items.map(i => i.edificio).filter(Boolean))].sort();
+                        const encargadosUnicos = getUniqueEncargados(items);
 
-                        // Encontrar campos que no están en la configuración actual
-                        const camposActuales = configuracion.formulario.map((c: CampoFormulario) => c.nombre);
-                        const camposEliminados = todosLosCampos.filter(
-                          campo => !camposActuales.includes(campo.nombre)
-                        );
-
-                        if (camposEliminados.length === 0) return null;
+                        const selectClass = (active: boolean) =>
+                          `w-full pl-3 pr-7 py-2 text-sm font-semibold rounded-lg border transition-all appearance-none cursor-pointer focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} ${active ? `bg-green-50 text-green-800 border-green-200 ring-1 ring-green-100` : 'bg-white text-gray-600 border-gray-100 hover:border-gray-200 hover:bg-gray-50'}`;
 
                         return (
-                          <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                            <h5 className="text-base font-semibold text-gray-800 mb-3 pb-2 border-b border-yellow-300">
-                              Campos Eliminados (Click para restaurar)
-                            </h5>
-                            <div className="space-y-2">
-                              {camposEliminados.map((campo) => {
-                                const maxOrdenSeccion = configuracion.formulario
-                                  .filter((c: CampoFormulario) => c.seccion === campo.seccion)
-                                  .reduce((max: number, c: CampoFormulario) => Math.max(max, c.orden), 0);
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {/* Categoría */}
+                            <div className="space-y-1.5">
+                              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Categoría</label>
+                              <select value={filterCategoria} onChange={e => setFilterCategoria(e.target.value)} className={selectClass(filterCategoria !== 'Todas')}>
+                                <option value="Todas">Todas las categorías</option>
+                                {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                            </div>
 
-                                return (
-                                  <button
-                                    key={campo.nombre}
-                                    onClick={() => handleRestaurarCampo(
-                                      campo.nombre,
-                                      campo.seccion,
-                                      campo.etiqueta,
-                                      maxOrdenSeccion + 1,
-                                      campo.obligatorio
-                                    )}
-                                    className="w-full text-left p-3 bg-white rounded-md border border-yellow-300 hover:bg-yellow-100 transition-colors"
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <span className="font-medium text-gray-900">{campo.etiqueta}</span>
-                                        <span className="text-xs text-gray-500 ml-2">({campo.nombre})</span>
-                                        <span className="text-xs text-gray-400 ml-2">- {campo.seccion}</span>
-                                      </div>
-                                      <span className="text-xs text-green-700 font-medium flex items-center gap-1">
-                                        Restaurar <FaArrowRight />
-                                      </span>
-                                    </div>
-                                  </button>
-                                );
-                              })}
+                            {/* Marca */}
+                            <div className="space-y-1.5">
+                              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Marca</label>
+                              <select value={filterMarca} onChange={e => setFilterMarca(e.target.value)} className={selectClass(filterMarca !== 'Todas')}>
+                                <option value="Todas">Todas las marcas</option>
+                                {marcasUnicas.map(m => <option key={m} value={m}>{m}</option>)}
+                              </select>
+                            </div>
+
+                            {/* Estado */}
+                            <div className="space-y-1.5">
+                              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Estado</label>
+                              <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className={selectClass(filterEstado !== 'Todos')}>
+                                <option value="Todos">Todos los estados</option>
+                                <option value="Disponible">Disponible</option>
+                                <option value="En Uso">En Uso</option>
+                                <option value="Mantenimiento">Mantenimiento</option>
+                                <option value="Baja">Baja</option>
+                              </select>
+                            </div>
+
+                            {/* Sede */}
+                            <div className="space-y-1.5">
+                              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Sede</label>
+                              <select value={filterSede} onChange={e => setFilterSede(e.target.value)} className={selectClass(filterSede !== 'Todas')}>
+                                <option value="Todas">Todas las sedes</option>
+                                {sedes.map(s => <option key={s} value={s}>{s}</option>)}
+                              </select>
+                            </div>
+
+                            {/* Encargado */}
+                            <div className="space-y-1.5">
+                              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Encargado ST</label>
+                              <select value={filterEncargado} onChange={e => setFilterEncargado(e.target.value)} className={selectClass(filterEncargado !== 'Todos')}>
+                                <option value="Todos">Todos los encargados</option>
+                                {encargadosUnicos.map(e => <option key={e} value={e}>{e}</option>)}
+                              </select>
+                            </div>
+
+                            {/* Piso/Edif */}
+                            <div className="space-y-1.5">
+                              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Piso / Edificio</label>
+                              <div className="grid grid-cols-2 gap-2">
+                                <select value={filterPiso} onChange={e => setFilterPiso(e.target.value)} className={selectClass(filterPiso !== 'Todos')}>
+                                  <option value="Todos">Piso</option>
+                                  {pisosUnicos.map(p => <option key={p} value={p}>{p}</option>)}
+                                </select>
+                                <select value={filterEdificio} onChange={e => setFilterEdificio(e.target.value)} className={selectClass(filterEdificio !== 'Todos')}>
+                                  <option value="Todos">Edif.</option>
+                                  {edificiosUnicos.map(e => <option key={e} value={e}>{e}</option>)}
+                                </select>
+                              </div>
+                            </div>
+
+                            {/* Hardware Compacto */}
+                            <div className="space-y-1.5 lg:col-span-2">
+                              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Hardware / Uso / Proyector</label>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <select value={filterProcesador} onChange={e => setFilterProcesador(e.target.value)} className={selectClass(filterProcesador !== 'Todos')}>
+                                  <option value="Todos">Proc.</option>
+                                  {[...new Set(items.map(i => i.procesador).filter(Boolean))].sort().map(p => <option key={p} value={p}>{p}</option>)}
+                                </select>
+                                <select value={filterRam} onChange={e => setFilterRam(e.target.value)} className={selectClass(filterRam !== 'Todas')}>
+                                  <option value="Todas">RAM</option>
+                                  {[...new Set(items.map(i => i.ram).filter(Boolean))].sort().map(r => <option key={r} value={r}>{r}</option>)}
+                                </select>
+                                <select value={filterDiscoDuro} onChange={e => setFilterDiscoDuro(e.target.value)} className={selectClass(filterDiscoDuro !== 'Todos')}>
+                                  <option value="Todos">Disco</option>
+                                  {[...new Set(items.map(i => i.discoDuro).filter(Boolean))].sort().map(d => <option key={d} value={d}>{d}</option>)}
+                                </select>
+                                <select value={filterTipoUso} onChange={e => setFilterTipoUso(e.target.value)} className={selectClass(filterTipoUso !== 'Todos')}>
+                                  <option value="Todos">Uso</option>
+                                  <option value="Administrativo">Adm.</option>
+                                  <option value="Alumnos">Alu.</option>
+                                </select>
+                              </div>
+                              <div className="mt-2">
+                                <select value={filterHorasProyector} onChange={e => setFilterHorasProyector(e.target.value)} className={selectClass(filterHorasProyector !== 'Todas')}>
+                                  <option value="Todas">Lámpara Proyector (Todas)</option>
+                                  <option value="Estado Normal">Estado Normal</option>
+                                  <option value="Crítico (>2000 hrs)">Estado Crítico</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            {/* Acciones */}
+                            <div className="sm:col-span-2 lg:col-span-4 flex items-end justify-end pt-2">
+                              <button
+                                onClick={() => {
+                                  setFilterEstado('Todos');
+                                  setFilterCategoria('Todas');
+                                  setFilterSede('Todas');
+                                  setFilterTipoUso('Todos');
+                                  setFilterMarca('Todas');
+                                  setFilterPiso('Todos');
+                                  setFilterEdificio('Todos');
+                                  setFilterProcesador('Todos');
+                                  setFilterRam('Todas');
+                                  setFilterDiscoDuro('Todos');
+                                  setFilterEncargado('Todos');
+                                  setFilterHorasProyector('Todas');
+                                  setSearchTerm('');
+                                }}
+                                className="w-full sm:w-auto py-1.5 px-6 text-[10px] font-black text-gray-400 hover:text-red-700 hover:bg-red-50 border border-gray-100 rounded-lg transition-all uppercase tracking-widest"
+                              >
+                                Limpiar todo
+                              </button>
                             </div>
                           </div>
                         );
                       })()}
                     </div>
                   )}
+                </div>
 
-                  {loadingConfig && (
-                    <div className="text-center py-8 text-gray-500">
-                      Cargando configuración...
+                {/* Controles de ordenamiento y paginación */}
+                {sortedItems.length > 0 && (
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    {/* Barra superior: ordenar + info + items por página */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-3 border-b border-slate-100">
+                      {/* Ordenamiento */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ordenar</span>
+                        <div className="flex bg-slate-50 rounded-xl p-0.5 border border-slate-100">
+                          {(['nombre', 'categoria', 'estado', 'ubicacion'] as const).map(opt => (
+                            <button
+                              key={opt}
+                              onClick={() => { setSortBy(opt); setCurrentPage(1); }}
+                              className={`px-3 py-1 text-[11px] font-bold rounded-lg transition-all capitalize ${sortBy === opt
+                                ? 'bg-white text-green-700 shadow-sm'
+                                : 'text-slate-400 hover:text-slate-600'
+                                }`}
+                            >
+                              {opt === 'nombre' ? 'Nombre' : opt === 'categoria' ? 'Categ.' : opt === 'estado' ? 'Estado' : 'Ubic.'}
+                            </button>
+                          ))}
+                        </div>
+                        <button
+                          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                          className={`p-1.5 rounded-lg border transition-all ${sortOrder === 'asc'
+                            ? 'bg-green-50 text-green-700 border-green-100'
+                            : 'bg-slate-50 text-slate-500 border-slate-100 hover:border-slate-200'
+                            }`}
+                          title={sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
+                        >
+                          {sortOrder === 'asc' ? <FaArrowUp className="text-xs" /> : <FaArrowDown className="text-xs" />}
+                        </button>
+                      </div>
+
+                      {/* Info + items por página */}
+                      <div className="flex items-center gap-3">
+                        <span className="text-[11px] font-semibold text-slate-400">
+                          <span className="text-slate-700 font-black">{startIndex + 1}–{Math.min(endIndex, sortedItems.length)}</span>
+                          {' '}de{' '}
+                          <span className="text-slate-700 font-black">{sortedItems.length}</span>
+                          {' '}activos
+                        </span>
+                        <div className="flex bg-slate-50 rounded-xl p-0.5 border border-slate-100">
+                          {[6, 12, 24, 48].map(n => (
+                            <button
+                              key={n}
+                              onClick={() => { setItemsPerPage(n); setCurrentPage(1); }}
+                              className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${itemsPerPage === n
+                                ? 'bg-white text-green-700 shadow-sm'
+                                : 'text-slate-400 hover:text-slate-600'
+                                }`}
+                            >
+                              {n}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
 
-        {/* Modal de formulario */}
-        {showForm && (
-          <ItemForm
-            item={editingItem}
-            categorias={categorias}
-            sedes={sedes}
-            items={items}
-            onSave={onSaveItem}
-            onCancel={onCancelForm}
-            currentUserEmail={currentUserEmail}
-            currentUserName={currentUserName}
-            isAdmin={isAdmin}
-            usuarios={users}
-          />
-        )}
+                    {/* Paginación */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-center gap-1.5 px-5 py-3">
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                          disabled={currentPage === 1}
+                          className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-bold text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <FaArrowUp className="rotate-[-90deg] text-[9px]" /> Ant.
+                        </button>
 
-        {/* Modal para agregar nuevo campo personalizado */}
-        {mostrarModalCampoFormulario && configuracion && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-                <h3 className="text-xl font-semibold text-gray-900">Agregar Nuevo Campo Personalizado</h3>
-                <button
-                  onClick={() => {
-                    setMostrarModalCampoFormulario(false);
-                    setNuevoCampoFormulario({
-                      nombre: '',
-                      seccion: 'Información General',
-                      etiqueta: '',
-                      obligatorio: false,
-                      tipo: 'text'
-                    });
-                  }}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                  title="Cerrar"
-                >
-                  <FaTimes className="text-xl" />
-                </button>
+                        <div className="flex gap-1">
+                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            let pageNum: number;
+                            if (totalPages <= 5) pageNum = i + 1;
+                            else if (currentPage <= 3) pageNum = i + 1;
+                            else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                            else pageNum = currentPage - 2 + i;
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => setCurrentPage(pageNum)}
+                                className={`w-8 h-8 text-[11px] font-black rounded-lg transition-all ${currentPage === pageNum
+                                  ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white shadow-md shadow-green-100`
+                                  : 'text-slate-500 border border-slate-200 hover:bg-slate-50'
+                                  }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                          disabled={currentPage === totalPages}
+                          className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-bold text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          Sig. <FaArrowUp className="rotate-90 text-[9px]" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Lista de items */}
+                <ItemList
+                  items={paginatedItems}
+                  onEdit={onEditItem}
+                  onDelete={onDeleteItem}
+                  searchTerm=""
+                  viewMode={viewMode}
+                />
               </div>
+            )}
 
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-700">
-                      Nombre del Campo (técnico) *
-                    </label>
-                    <input
-                      type="text"
-                      value={nuevoCampoFormulario.nombre}
-                      onChange={(e) => setNuevoCampoFormulario({ ...nuevoCampoFormulario, nombre: e.target.value })}
-                      placeholder="Ej: precio, proveedor, numeroFactura"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Se convertirá a minúsculas y sin espacios</p>
-                  </div>
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-700">
-                      Etiqueta (lo que verá el usuario) *
-                    </label>
-                    <input
-                      type="text"
-                      value={nuevoCampoFormulario.etiqueta}
-                      onChange={(e) => setNuevoCampoFormulario({ ...nuevoCampoFormulario, etiqueta: e.target.value })}
-                      placeholder="Ej: Precio, Proveedor, Número de Factura"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
-                    />
+            {activeSection === 'dashboard' && (
+              <div className="space-y-8 animate-fadeIn">
+                {/* Cabecera de Resumen Rápido */}
+                <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-8">
+                    <div className="flex-1 space-y-4">
+                      <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                        <FaChartPie className="text-green-600" /> Resumen de Estado
+                      </h3>
+                      <div className="flex h-12 w-full rounded-2xl overflow-hidden shadow-inner bg-slate-100 p-1">
+                        <div
+                          className="bg-green-600 h-full transition-all duration-1000 flex items-center justify-center text-[10px] text-white font-bold first:rounded-l-xl"
+                          style={{ width: `${(estadisticas.disponible / estadisticas.total) * 100}%` }}
+                          title={`Disponible: ${estadisticas.disponible}`}
+                        >
+                          {estadisticas.disponible > 0 && `${Math.round((estadisticas.disponible / estadisticas.total) * 100)}%`}
+                        </div>
+                        <div
+                          className="bg-green-800 h-full transition-all duration-1000 flex items-center justify-center text-[10px] text-white font-bold"
+                          style={{ width: `${(estadisticas.enUso / estadisticas.total) * 100}%` }}
+                          title={`En Uso: ${estadisticas.enUso}`}
+                        >
+                          {estadisticas.enUso > 0 && `${Math.round((estadisticas.enUso / estadisticas.total) * 100)}%`}
+                        </div>
+                        <div
+                          className="bg-yellow-500 h-full transition-all duration-1000 flex items-center justify-center text-[10px] text-white font-bold"
+                          style={{ width: `${(estadisticas.mantenimiento / estadisticas.total) * 100}%` }}
+                          title={`Mantenimiento: ${estadisticas.mantenimiento}`}
+                        >
+                          {estadisticas.mantenimiento > 0 && `${Math.round((estadisticas.mantenimiento / estadisticas.total) * 100)}%`}
+                        </div>
+                        <div
+                          className="bg-red-500 h-full transition-all duration-1000 flex items-center justify-center text-[10px] text-white font-bold last:rounded-r-xl"
+                          style={{ width: `${(estadisticas.baja / estadisticas.total) * 100}%` }}
+                          title={`Baja: ${estadisticas.baja}`}
+                        >
+                          {estadisticas.baja > 0 && `${Math.round((estadisticas.baja / estadisticas.total) * 100)}%`}
+                        </div>
+                      </div>
+                      <div className="flex gap-4 flex-wrap">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
+                          <span className="w-2.5 h-2.5 rounded-full bg-green-600"></span> Dispo. ({estadisticas.disponible})
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
+                          <span className="w-2.5 h-2.5 rounded-full bg-green-800"></span> Uso ({estadisticas.enUso})
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
+                          <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span> Mant. ({estadisticas.mantenimiento})
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
+                          <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span> Baja ({estadisticas.baja})
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col items-center justify-center min-w-[100px]">
+                        <span className="text-2xl font-black text-slate-800">{estadisticas.total}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Activos</span>
+                      </div>
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col items-center justify-center min-w-[100px]">
+                        <span className="text-2xl font-black text-slate-800">{estadisticas.marcasUnicas}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Marcas</span>
+                      </div>
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col items-center justify-center min-w-[100px]">
+                        <span className="text-2xl font-black text-slate-800">{estadisticas.modelosUnicos}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Modelos</span>
+                      </div>
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col items-center justify-center min-w-[100px]">
+                        <span className="text-2xl font-black text-slate-800">{estadisticas.sedesConActivos}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sedes</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-700">
-                      Sección
-                    </label>
-                    <select
-                      value={nuevoCampoFormulario.seccion}
-                      onChange={(e) => setNuevoCampoFormulario({ ...nuevoCampoFormulario, seccion: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
-                    >
-                      {configuracion?.seccionesFormulario
-                        ?.filter((s: SeccionFormulario) => s.visible)
-                        .sort((a: SeccionFormulario, b: SeccionFormulario) => a.orden - b.orden)
-                        .map((seccion: SeccionFormulario) => (
-                          <option key={seccion.nombre} value={seccion.nombre}>{seccion.nombre}</option>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Categorías Compactas */}
+                  <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm relative overflow-hidden">
+                    <div className="flex items-center justify-between mb-6">
+                      <h4 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                        <FaTag className="text-green-600" /> Por Categoría
+                      </h4>
+                      <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full uppercase">Top Distribución</span>
+                    </div>
+                    <div className="space-y-4">
+                      {Object.entries(estadisticas.porCategoria)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([categoria, count]) => (
+                          <div key={categoria} className="group">
+                            <div className="flex justify-between items-center mb-1.5 px-1">
+                              <span className="text-sm font-bold text-slate-700 group-hover:text-green-700 transition-colors uppercase tracking-tight">{categoria}</span>
+                              <span className="text-xs font-black text-slate-900 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100">{count}</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                              <div
+                                className={`h-full ${INSTITUTIONAL_COLORS.bgPrimary} rounded-full transition-all duration-700 delay-300 opacity-80 group-hover:opacity-100`}
+                                style={{ width: `${(count / estadisticas.total) * 100}%` }}
+                              />
+                            </div>
+                          </div>
                         ))}
-                    </select>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-700">
-                      Tipo de Campo
-                    </label>
-                    <select
-                      value={nuevoCampoFormulario.tipo}
-                      onChange={(e) => setNuevoCampoFormulario({ ...nuevoCampoFormulario, tipo: e.target.value as 'text' | 'number' | 'date' | 'select' | 'textarea' })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
-                    >
-                      <option value="text">Texto</option>
-                      <option value="number">Número</option>
-                      <option value="date">Fecha</option>
-                      <option value="textarea">Área de Texto</option>
-                      <option value="select">Selector</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={nuevoCampoFormulario.obligatorio}
-                      onChange={(e) => setNuevoCampoFormulario({ ...nuevoCampoFormulario, obligatorio: e.target.checked })}
-                      className="rounded"
-                    />
-                    <span className="text-sm text-gray-700">Campo obligatorio</span>
-                  </label>
-                </div>
 
-                <div className="flex gap-3 pt-4 border-t border-gray-200">
-                  <button
-                    onClick={handleAgregarCampoFormulario}
-                    disabled={!nuevoCampoFormulario.nombre.trim() || !nuevoCampoFormulario.etiqueta.trim()}
-                    className="flex-1 px-4 py-2 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Agregar Campo
-                  </button>
-                  <button
-                    onClick={() => {
-                      setMostrarModalCampoFormulario(false);
-                      setNuevoCampoFormulario({
-                        nombre: '',
-                        seccion: 'Información General',
-                        etiqueta: '',
-                        obligatorio: false,
-                        tipo: 'text'
-                      });
-                    }}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 hover:bg-gray-400 rounded-md transition-colors text-sm font-medium"
-                  >
-                    Cancelar
-                  </button>
+                  {/* Sedes Compactas */}
+                  <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+                    <div className="flex items-center justify-between mb-6">
+                      <h4 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                        <FaBuilding className="text-green-600" /> Presencia en Sedes
+                      </h4>
+                      <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full uppercase font-mono">Resumen Geográfico</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {Object.entries(estadisticas.porSede)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([sede, count]) => (
+                          <div key={sede} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-green-200 transition-all group overflow-hidden relative">
+                            <div className="absolute -right-2 -bottom-2 opacity-5 text-4xl group-hover:scale-110 transition-transform">
+                              <FaBuilding />
+                            </div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 truncate">{sede}</p>
+                            <div className="flex items-end gap-2">
+                              <p className="text-2xl font-black text-slate-800 tracking-tight">{count}</p>
+                              <p className="text-[10px] font-bold text-green-600 mb-1.5">{Math.round((count / estadisticas.total) * 100)}% del total</p>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        {/* Modal para agregar nuevo usuario */}
-        {mostrarFormularioUsuario && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-                <h3 className="text-xl font-semibold text-gray-900">Agregar Nuevo Usuario</h3>
-                <button
-                  onClick={() => {
-                    setMostrarFormularioUsuario(false);
-                    setErrorUsers(null);
-                    setNuevoUsuario({
-                      email: '',
-                      password: '',
-                      displayName: '',
-                      role: 'usuario'
-                    });
-                  }}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                  title="Cerrar"
-                >
-                  <FaTimes className="text-xl" />
-                </button>
-              </div>
+            {activeSection === 'usuarios' && isAdmin && (
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Gestión de Usuarios</h3>
 
-              <div className="p-6 space-y-4">
                 {errorUsers && (
-                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
                     {errorUsers}
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-700">
-                      Email *
-                    </label>
-                    <input
-                      type="email"
-                      value={nuevoUsuario.email}
-                      onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, email: e.target.value })}
-                      placeholder="usuario@ejemplo.com"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-700">
-                      Contraseña *
-                    </label>
-                    <input
-                      type="password"
-                      value={nuevoUsuario.password}
-                      onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, password: e.target.value })}
-                      placeholder="Mínimo 6 caracteres"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-700">
-                      Nombre Completo
-                    </label>
-                    <input
-                      type="text"
-                      value={nuevoUsuario.displayName}
-                      onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, displayName: e.target.value })}
-                      placeholder="Nombre del usuario"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-700">
-                      Rol *
-                    </label>
-                    <select
-                      value={nuevoUsuario.role}
-                      onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, role: e.target.value as UserRole })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
-                    >
-                      <option value="usuario">Usuario</option>
-                      <option value="administrador">Administrador</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-4 border-t border-gray-200">
-                  <button
-                    onClick={handleAgregarUsuario}
-                    disabled={loadingUsers || !nuevoUsuario.email.trim() || !nuevoUsuario.password.trim()}
-                    className="flex-1 px-4 py-2 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loadingUsers ? 'Creando...' : 'Crear Usuario'}
-                  </button>
+                {/* Botón para abrir modal de nuevo usuario */}
+                <div className="mb-4 flex justify-end">
                   <button
                     onClick={() => {
-                      setMostrarFormularioUsuario(false);
+                      setMostrarFormularioUsuario(true);
                       setErrorUsers(null);
                       setNuevoUsuario({
                         email: '',
@@ -2703,16 +1600,1084 @@ export default function AdminPanel({
                         role: 'usuario'
                       });
                     }}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 hover:bg-gray-400 rounded-md transition-colors text-sm font-medium"
+                    className="px-4 py-2 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium flex items-center gap-2"
                   >
-                    Cancelar
+                    <FaPlus />
+                    Agregar Usuario
                   </button>
                 </div>
+
+                {/* Búsqueda */}
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    placeholder="Buscar por email o nombre..."
+                    value={searchTermUsers}
+                    onChange={(e) => setSearchTermUsers(e.target.value)}
+                    className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
+                  />
+                </div>
+
+                {/* Contador de usuarios */}
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600">
+                    Total de usuarios: <span className="font-semibold">{filteredUsers.length}</span>
+                  </div>
+                </div>
+
+                {/* Lista de usuarios */}
+                {loadingUsers && users.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    Cargando usuarios...
+                  </div>
+                ) : filteredUsers.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No se encontraron usuarios
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredUsers.map((user) => (
+                      <div
+                        key={user.email}
+                        className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors bg-white"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div>
+                                <div className="font-semibold text-gray-900">
+                                  {user.displayName || 'Sin nombre'}
+                                  {user.email === currentUserEmail && (
+                                    <span className="ml-2 text-xs text-blue-600 font-normal">(Tú)</span>
+                                  )}
+                                </div>
+                                <div className="text-sm text-gray-600">{user.email}</div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                              <span className={`text-xs font-semibold px-2 py-1 rounded border ${getRoleBadgeColor(user.role)} flex items-center gap-1`}>
+                                {user.role === 'administrador' ? (
+                                  <>
+                                    <FaCrown /> Administrador
+                                  </>
+                                ) : (
+                                  <>
+                                    <FaUser /> Usuario
+                                  </>
+                                )}
+                              </span>
+                              <span className={`text-xs font-semibold px-2 py-1 rounded border ${getStatusBadgeColor(user.isActive)} flex items-center gap-1`}>
+                                {user.isActive ? (
+                                  <>
+                                    <FaCheckCircle /> Activo
+                                  </>
+                                ) : (
+                                  <>
+                                    <FaTimesCircle /> Inactivo
+                                  </>
+                                )}
+                              </span>
+                              {user.createdAt && (
+                                <span className="text-xs text-gray-500">
+                                  Creado: {new Date(user.createdAt).toLocaleString('es-MX', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              )}
+                              {user.lastLogin && (
+                                <span className="text-xs text-gray-500">
+                                  Último acceso: {new Date(user.lastLogin).toLocaleString('es-MX', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-2 ml-4">
+                            {/* Cambiar rol */}
+                            <select
+                              value={user.role}
+                              onChange={(e) => handleRoleChange(user.email, e.target.value as UserRole)}
+                              disabled={user.email === currentUserEmail}
+                              className={`px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 ${user.email === currentUserEmail ? 'bg-gray-100 cursor-not-allowed opacity-50' : 'bg-white'
+                                }`}
+                              title={user.email === currentUserEmail ? 'No puedes cambiar tu propio rol' : ''}
+                            >
+                              <option value="usuario">Usuario</option>
+                              <option value="administrador">Administrador</option>
+                            </select>
+
+                            {/* Activar/Desactivar */}
+                            <button
+                              onClick={() => handleToggleStatus(user.email, user.isActive)}
+                              disabled={user.email === currentUserEmail}
+                              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${user.isActive
+                                ? 'bg-yellow-500 text-white hover:bg-yellow-600'
+                                : `${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900`
+                                } ${user.email === currentUserEmail ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                              title={user.email === currentUserEmail ? 'No puedes desactivarte a ti mismo' : ''}
+                            >
+                              {user.isActive ? 'Desactivar' : 'Activar'}
+                            </button>
+
+                            {/* Eliminar usuario */}
+                            <button
+                              onClick={() => handleEliminarUsuario(user.email)}
+                              disabled={user.email === currentUserEmail}
+                              className={`px-3 py-1.5 text-sm rounded-md transition-colors bg-red-600 text-white hover:bg-red-700 flex items-center gap-2 ${user.email === currentUserEmail ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                              title={user.email === currentUserEmail ? 'No puedes eliminarte a ti mismo' : 'Eliminar permanentemente'}
+                            >
+                              <FaTrash />
+                              Eliminar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
+            )}
+
+            {activeSection === 'categorias' && (
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Gestión de Categorías</h3>
+
+                <div className="bg-white rounded-lg p-6 border border-gray-200">
+                  {/* Agregar nueva categoría */}
+                  <div className="mb-6">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">
+                      Agregar Nueva Categoría
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={nuevaCategoria}
+                        onChange={(e) => setNuevaCategoria(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAgregarCategoria();
+                          }
+                        }}
+                        placeholder="Nombre de la categoría"
+                        className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
+                      />
+                      <button
+                        onClick={handleAgregarCategoria}
+                        className={`px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
+                        disabled={!nuevaCategoria.trim()}
+                      >
+                        + Agregar
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Lista de categorías */}
+                  <div>
+                    <label className="block mb-3 text-sm font-medium text-gray-700">
+                      Categorías ({categorias.length})
+                    </label>
+                    {categorias.length === 0 ? (
+                      <p className="text-gray-500 text-sm text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                        No hay categorías
+                      </p>
+                    ) : (
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {categorias.map((categoria, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                          >
+                            <span className="text-gray-900 font-medium">{categoria}</span>
+                            <button
+                              onClick={() => handleEliminarCategoria(categoria)}
+                              className="text-red-500 hover:text-red-700 px-3 py-1 rounded-md hover:bg-red-50 transition-colors"
+                              title="Eliminar"
+                            >
+                              ✕ Eliminar
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeSection === 'sedes' && (
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Gestión de Sedes</h3>
+
+                <div className="bg-white rounded-lg p-6 border border-gray-200">
+                  {/* Agregar nueva sede */}
+                  <div className="mb-6">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">
+                      Agregar Nueva Sede
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={nuevaSede}
+                        onChange={(e) => setNuevaSede(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAgregarSede();
+                          }
+                        }}
+                        placeholder="Nombre de la sede"
+                        className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
+                      />
+                      <button
+                        onClick={handleAgregarSede}
+                        className={`px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors font-medium`}
+                        disabled={!nuevaSede.trim()}
+                      >
+                        + Agregar
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Lista de sedes */}
+                  <div>
+                    <label className="block mb-3 text-sm font-medium text-gray-700">
+                      Sedes ({sedes.length})
+                    </label>
+                    {sedes.length === 0 ? (
+                      <p className="text-gray-500 text-sm text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                        No hay sedes
+                      </p>
+                    ) : (
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {sedes.map((sede, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                          >
+                            <span className="text-gray-900 font-medium">{sede}</span>
+                            <button
+                              onClick={() => handleEliminarSede(sede)}
+                              className="text-red-500 hover:text-red-700 px-3 py-1 rounded-md hover:bg-red-50 transition-colors"
+                              title="Eliminar"
+                            >
+                              ✕ Eliminar
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeSection === 'reportes' && (
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Reportes y Análisis</h3>
+                <div className="bg-white rounded-lg p-6 border border-gray-200">
+                  <p className="text-gray-600 mb-4">Funcionalidades de reportes avanzados próximamente:</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                        <FaChartBar /> Reportes por Período
+                      </div>
+                      <div className="text-sm text-gray-600">Items agregados/modificados en un rango de fechas</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="text-lg font-semibold text-gray-900 mb-2">🔧 Mantenimientos</div>
+                      <div className="text-sm text-gray-600">Items que requieren mantenimiento próximamente</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="text-lg font-semibold text-gray-900 mb-2">📅 Garantías</div>
+                      <div className="text-sm text-gray-600">Items con garantías próximas a vencer</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                        <FaUser /> Por Responsable
+                      </div>
+                      <div className="text-sm text-gray-600">Distribución de items por responsable</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeSection === 'configuracion' && (
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Configuración del Sistema</h3>
+
+                {/* Tabs de subsecciones */}
+                <div className="bg-white rounded-lg border border-gray-200 p-1">
+                  <div className="flex gap-1 flex-wrap">
+                    <button
+                      onClick={() => setConfigSubsection('formulario')}
+                      className={`flex-1 min-w-[100px] px-4 py-2 text-sm font-medium rounded-md transition-colors ${configSubsection === 'formulario'
+                        ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white`
+                        : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                    >
+                      Formulario
+                    </button>
+                    <button
+                      onClick={() => setConfigSubsection('secciones')}
+                      className={`flex-1 min-w-[100px] px-4 py-2 text-sm font-medium rounded-md transition-colors ${configSubsection === 'secciones'
+                        ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white`
+                        : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                    >
+                      Secciones
+                    </button>
+                    <button
+                      onClick={() => setConfigSubsection('estados')}
+                      className={`flex-1 min-w-[100px] px-4 py-2 text-sm font-medium rounded-md transition-colors ${configSubsection === 'estados'
+                        ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white`
+                        : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                    >
+                      Estados
+                    </button>
+                  </div>
+                </div>
+
+                {/* Gestión de Secciones del Formulario */}
+                {configSubsection === 'secciones' && configuracion && (
+                  <div className="bg-white rounded-lg p-6 border border-gray-200">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Gestión de Secciones del Formulario</h4>
+                    <p className="text-sm text-gray-600 mb-6">
+                      Administra las secciones del formulario de items. Puedes agregar, editar, eliminar y reordenar secciones.
+                    </p>
+
+                    {/* Agregar nueva sección */}
+                    <div className={`mb-6 p-4 bg-green-50 rounded-lg border ${INSTITUTIONAL_COLORS.borderPrimary}`}>
+                      <h5 className="text-base font-semibold text-gray-800 mb-3">Agregar Nueva Sección</h5>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={nuevaSeccion}
+                          onChange={(e) => setNuevaSeccion(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              handleAgregarSeccion();
+                            }
+                          }}
+                          placeholder="Nombre de la sección (ej: Información Adicional)"
+                          className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent text-sm`}
+                        />
+                        <button
+                          onClick={handleAgregarSeccion}
+                          className={`px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium`}
+                        >
+                          Agregar
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Lista de secciones */}
+                    <div className="space-y-2">
+                      <h5 className="text-sm font-semibold text-gray-700 mb-3">Secciones Configuradas</h5>
+                      {configuracion.seccionesFormulario
+                        .sort((a: SeccionFormulario, b: SeccionFormulario) => a.orden - b.orden)
+                        .map((seccion: SeccionFormulario, index: number) => {
+                          const puedeSubir = index > 0;
+                          const puedeBajar = index < configuracion.seccionesFormulario.length - 1;
+                          const camposEnSeccion = configuracion.formulario.filter((c: CampoFormulario) => c.seccion === seccion.nombre).length;
+                          const estaEditando = editandoSeccion?.nombre === seccion.nombre;
+
+                          return (
+                            <div key={seccion.nombre} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                              <div className="flex items-center gap-2 flex-1">
+                                <button
+                                  onClick={() => handleToggleSeccionVisible(seccion.nombre)}
+                                  className={`p-2 rounded-md transition-colors ${seccion.visible
+                                    ? 'text-green-800 hover:bg-green-50'
+                                    : 'text-gray-400 hover:bg-gray-100'
+                                    }`}
+                                  title={seccion.visible ? 'Ocultar sección' : 'Mostrar sección'}
+                                >
+                                  {seccion.visible ? <FaEye /> : <FaEyeSlash />}
+                                </button>
+                                <div className="flex-1">
+                                  {estaEditando ? (
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                        type="text"
+                                        value={editandoSeccion.nuevoNombre}
+                                        onChange={(e) => setEditandoSeccion({ ...editandoSeccion, nuevoNombre: e.target.value })}
+                                        onKeyPress={(e) => {
+                                          if (e.key === 'Enter') {
+                                            handleEditarSeccion(seccion.nombre, editandoSeccion.nuevoNombre);
+                                          } else if (e.key === 'Escape') {
+                                            setEditandoSeccion(null);
+                                          }
+                                        }}
+                                        className={`flex-1 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent text-sm`}
+                                        autoFocus
+                                      />
+                                      <button
+                                        onClick={() => handleEditarSeccion(seccion.nombre, editandoSeccion.nuevoNombre)}
+                                        className={`px-2 py-1 ${INSTITUTIONAL_COLORS.textPrimary} hover:bg-green-50 rounded-md transition-colors`}
+                                        title="Guardar"
+                                      >
+                                        <FaCheck />
+                                      </button>
+                                      <button
+                                        onClick={() => setEditandoSeccion(null)}
+                                        className="px-2 py-1 text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                                        title="Cancelar"
+                                      >
+                                        <FaTimes />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium text-gray-900">{seccion.nombre}</span>
+                                        {!seccion.visible && (
+                                          <span className="text-xs text-gray-400">(Oculta)</span>
+                                        )}
+                                        <span className="text-xs text-gray-500">({camposEnSeccion} campo{camposEnSeccion !== 1 ? 's' : ''})</span>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              {!estaEditando && (
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => setEditandoSeccion({ nombre: seccion.nombre, nuevoNombre: seccion.nombre })}
+                                    className={`px-3 py-1 text-xs ${INSTITUTIONAL_COLORS.textPrimary} hover:bg-green-50 rounded-md transition-colors`}
+                                    title="Editar nombre"
+                                  >
+                                    <FaEdit />
+                                  </button>
+                                  <div className="flex flex-col gap-1">
+                                    <button
+                                      onClick={() => handleMoverSeccion(seccion.nombre, 'arriba')}
+                                      disabled={!puedeSubir}
+                                      className={`p-1 rounded transition-colors ${puedeSubir
+                                        ? 'text-gray-600 hover:bg-gray-100'
+                                        : 'text-gray-300 cursor-not-allowed'
+                                        }`}
+                                      title="Mover arriba"
+                                    >
+                                      <FaArrowUp className="text-xs" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleMoverSeccion(seccion.nombre, 'abajo')}
+                                      disabled={!puedeBajar}
+                                      className={`p-1 rounded transition-colors ${puedeBajar
+                                        ? 'text-gray-600 hover:bg-gray-100'
+                                        : 'text-gray-300 cursor-not-allowed'
+                                        }`}
+                                      title="Mover abajo"
+                                    >
+                                      <FaArrowDown className="text-xs" />
+                                    </button>
+                                  </div>
+                                  <button
+                                    onClick={() => handleEliminarSeccion(seccion.nombre)}
+                                    className="px-3 py-1 text-xs text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                                    title="Eliminar sección"
+                                  >
+                                    <FaTrash />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Personalización de Estados */}
+                {configSubsection === 'estados' && configuracion && (
+                  <div className="bg-white rounded-lg p-6 border border-gray-200">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Personalización de Estados</h4>
+
+                    {/* Agregar nuevo estado */}
+                    <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <label className="block mb-2 text-sm font-medium text-gray-700">
+                        Agregar Nuevo Estado
+                      </label>
+                      <div className="space-y-3">
+                        <input
+                          type="text"
+                          value={nuevoEstado.nombre}
+                          onChange={(e) => setNuevoEstado({ ...nuevoEstado, nombre: e.target.value })}
+                          placeholder="Nombre del estado"
+                          className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
+                        />
+                        <div className="flex gap-3">
+                          <select
+                            value={nuevoEstado.color}
+                            onChange={(e) => setNuevoEstado({ ...nuevoEstado, color: e.target.value })}
+                            className={`flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
+                          >
+                            <option value="bg-green-100 text-green-800">Verde</option>
+                            <option value="bg-blue-100 text-blue-800">Azul</option>
+                            <option value="bg-yellow-100 text-yellow-800">Amarillo</option>
+                            <option value="bg-red-100 text-red-800">Rojo</option>
+                            <option value="bg-purple-100 text-purple-800">Morado</option>
+                            <option value="bg-gray-100 text-gray-800">Gris</option>
+                          </select>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={nuevoEstado.requerido}
+                              onChange={(e) => setNuevoEstado({ ...nuevoEstado, requerido: e.target.checked })}
+                              className="rounded"
+                            />
+                            <span className="text-sm text-gray-700">Requerido</span>
+                          </label>
+                        </div>
+                        <button
+                          onClick={handleAgregarEstado}
+                          className={`w-full px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium`}
+                        >
+                          Agregar Estado
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Lista de estados */}
+                    <div className="space-y-2">
+                      <h5 className="text-sm font-semibold text-gray-700 mb-3">Estados Configurados</h5>
+                      {configuracion.estados.map((estado: EstadoPersonalizado, index: number) => (
+                        <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <span className={`px-3 py-1 rounded-md text-sm font-medium ${estado.color}`}>
+                            {estado.nombre}
+                          </span>
+                          {estado.requerido && (
+                            <span className="text-xs text-gray-500">(Requerido)</span>
+                          )}
+                          <div className="ml-auto flex gap-2">
+                            <button
+                              onClick={() => handleEliminarEstado(estado.nombre)}
+                              className="px-3 py-1 text-sm text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                              title="Eliminar estado"
+                            >
+                              <FaTrash />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Configuración del Formulario */}
+                {configSubsection === 'formulario' && configuracion && (
+                  <div className="bg-white rounded-lg p-6 border border-gray-200">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Configuración del Formulario de Items</h4>
+                    <p className="text-sm text-gray-600 mb-6">
+                      Configura qué campos se muestran en el formulario de agregar/editar items, su orden y si son obligatorios.
+                    </p>
+
+                    {/* Botón para abrir modal de nuevo campo */}
+                    <div className="mb-6 flex justify-end">
+                      <button
+                        onClick={() => {
+                          setMostrarModalCampoFormulario(true);
+                          setNuevoCampoFormulario({
+                            nombre: '',
+                            seccion: 'Información General',
+                            etiqueta: '',
+                            obligatorio: false,
+                            tipo: 'text'
+                          });
+                        }}
+                        className="px-4 py-2 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium flex items-center gap-2"
+                      >
+                        <FaPlus />
+                        Agregar Campo Personalizado
+                      </button>
+                    </div>
+
+                    {configuracion.seccionesFormulario
+                      .filter((s: SeccionFormulario) => s.visible)
+                      .sort((a: SeccionFormulario, b: SeccionFormulario) => a.orden - b.orden)
+                      .map((seccion: SeccionFormulario) => {
+                        const camposSeccion = configuracion.formulario
+                          .filter((c: CampoFormulario) => c.seccion === seccion.nombre)
+                          .sort((a: CampoFormulario, b: CampoFormulario) => a.orden - b.orden);
+
+                        if (camposSeccion.length === 0) return null;
+
+                        return (
+                          <div key={seccion.nombre} className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h5 className="text-base font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-300">
+                              {seccion.nombre}
+                            </h5>
+                            <div className="space-y-2">
+                              {camposSeccion.map((campo: CampoFormulario, index: number) => {
+                                const puedeSubir = index > 0;
+                                const puedeBajar = index < camposSeccion.length - 1;
+
+                                return (
+                                  <div key={campo.nombre} className="flex items-center gap-3 p-3 bg-white rounded-md border border-gray-200">
+                                    <div className="flex items-center gap-2 flex-1">
+                                      <button
+                                        onClick={() => handleToggleCampoVisible(campo.nombre)}
+                                        className={`p-2 rounded-md transition-colors ${campo.visible
+                                          ? 'text-green-800 hover:bg-green-50'
+                                          : 'text-gray-400 hover:bg-gray-100'
+                                          }`}
+                                        title={campo.visible ? 'Ocultar campo' : 'Mostrar campo'}
+                                      >
+                                        {campo.visible ? <FaEye /> : <FaEyeSlash />}
+                                      </button>
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-medium text-gray-900">
+                                            {campo.etiqueta || campo.nombre}
+                                          </span>
+                                          {campo.obligatorio && (
+                                            <span className="text-xs text-red-600 font-semibold">*</span>
+                                          )}
+                                          {!campo.visible && (
+                                            <span className="text-xs text-gray-400">(Oculto)</span>
+                                          )}
+                                        </div>
+                                        <span className="text-xs text-gray-500">{campo.nombre}</span>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => handleToggleCampoObligatorio(campo.nombre)}
+                                        className={`px-3 py-1 text-xs rounded-md transition-colors ${campo.obligatorio
+                                          ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                          }`}
+                                        title={campo.obligatorio ? 'Marcar como opcional' : 'Marcar como obligatorio'}
+                                      >
+                                        {campo.obligatorio ? 'Obligatorio' : 'Opcional'}
+                                      </button>
+                                      <div className="flex flex-col gap-1">
+                                        <button
+                                          onClick={() => handleMoverCampo(campo.nombre, 'arriba')}
+                                          disabled={!puedeSubir}
+                                          className={`p-1 rounded transition-colors ${puedeSubir
+                                            ? 'text-gray-600 hover:bg-gray-100'
+                                            : 'text-gray-300 cursor-not-allowed'
+                                            }`}
+                                          title="Mover arriba"
+                                        >
+                                          <FaArrowUp className="text-xs" />
+                                        </button>
+                                        <button
+                                          onClick={() => handleMoverCampo(campo.nombre, 'abajo')}
+                                          disabled={!puedeBajar}
+                                          className={`p-1 rounded transition-colors ${puedeBajar
+                                            ? 'text-gray-600 hover:bg-gray-100'
+                                            : 'text-gray-300 cursor-not-allowed'
+                                            }`}
+                                          title="Mover abajo"
+                                        >
+                                          <FaArrowDown className="text-xs" />
+                                        </button>
+                                      </div>
+                                      <button
+                                        onClick={() => handleEliminarCampoFormulario(campo.nombre)}
+                                        className="px-3 py-1 text-xs text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                                        title="Eliminar campo del formulario"
+                                      >
+                                        <FaTrash />
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                    {/* Sección para restaurar campos eliminados */}
+                    {(() => {
+                      // Definir todos los campos posibles del formulario
+                      const todosLosCampos: Array<{ nombre: string; seccion: string; etiqueta: string; orden: number; obligatorio: boolean }> = [
+                        // Información General
+                        { nombre: 'nombre', seccion: 'Información General', etiqueta: 'Nombre del Equipo', orden: 1, obligatorio: true },
+                        { nombre: 'categoria', seccion: 'Información General', etiqueta: 'Categoría', orden: 2, obligatorio: true },
+                        { nombre: 'estado', seccion: 'Información General', etiqueta: 'Estado', orden: 3, obligatorio: true },
+                        { nombre: 'tipoUso', seccion: 'Información General', etiqueta: 'Tipo de Uso', orden: 4, obligatorio: true },
+                        // Ubicación y Responsabilidad
+                        { nombre: 'sede', seccion: 'Ubicación y Responsabilidad', etiqueta: 'Sede', orden: 1, obligatorio: true },
+                        { nombre: 'ubicacion', seccion: 'Ubicación y Responsabilidad', etiqueta: 'Ubicación', orden: 2, obligatorio: true },
+                        { nombre: 'piso', seccion: 'Ubicación y Responsabilidad', etiqueta: 'Piso', orden: 3, obligatorio: false },
+                        { nombre: 'edificio', seccion: 'Ubicación y Responsabilidad', etiqueta: 'Edificio', orden: 4, obligatorio: false },
+                        { nombre: 'responsable', seccion: 'Ubicación y Responsabilidad', etiqueta: 'Responsable', orden: 5, obligatorio: true },
+                        // Especificaciones Técnicas
+                        { nombre: 'marca', seccion: 'Especificaciones Técnicas', etiqueta: 'Marca', orden: 1, obligatorio: true },
+                        { nombre: 'modelo', seccion: 'Especificaciones Técnicas', etiqueta: 'Modelo', orden: 2, obligatorio: true },
+                        { nombre: 'numeroSerie', seccion: 'Especificaciones Técnicas', etiqueta: 'Número de Serie', orden: 3, obligatorio: true },
+                        { nombre: 'procesador', seccion: 'Especificaciones Técnicas', etiqueta: 'Procesador', orden: 4, obligatorio: false },
+                        { nombre: 'ram', seccion: 'Especificaciones Técnicas', etiqueta: 'RAM', orden: 5, obligatorio: false },
+                        { nombre: 'discoDuro', seccion: 'Especificaciones Técnicas', etiqueta: 'Disco Duro', orden: 6, obligatorio: false },
+                        // Observaciones
+                        { nombre: 'observaciones', seccion: 'Observaciones', etiqueta: 'Observaciones', orden: 1, obligatorio: false }
+                      ];
+
+                      // Encontrar campos que no están en la configuración actual
+                      const camposActuales = configuracion.formulario.map((c: CampoFormulario) => c.nombre);
+                      const camposEliminados = todosLosCampos.filter(
+                        campo => !camposActuales.includes(campo.nombre)
+                      );
+
+                      if (camposEliminados.length === 0) return null;
+
+                      return (
+                        <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                          <h5 className="text-base font-semibold text-gray-800 mb-3 pb-2 border-b border-yellow-300">
+                            Campos Eliminados (Click para restaurar)
+                          </h5>
+                          <div className="space-y-2">
+                            {camposEliminados.map((campo) => {
+                              const maxOrdenSeccion = configuracion.formulario
+                                .filter((c: CampoFormulario) => c.seccion === campo.seccion)
+                                .reduce((max: number, c: CampoFormulario) => Math.max(max, c.orden), 0);
+
+                              return (
+                                <button
+                                  key={campo.nombre}
+                                  onClick={() => handleRestaurarCampo(
+                                    campo.nombre,
+                                    campo.seccion,
+                                    campo.etiqueta,
+                                    maxOrdenSeccion + 1,
+                                    campo.obligatorio
+                                  )}
+                                  className="w-full text-left p-3 bg-white rounded-md border border-yellow-300 hover:bg-yellow-100 transition-colors"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <span className="font-medium text-gray-900">{campo.etiqueta}</span>
+                                      <span className="text-xs text-gray-500 ml-2">({campo.nombre})</span>
+                                      <span className="text-xs text-gray-400 ml-2">- {campo.seccion}</span>
+                                    </div>
+                                    <span className="text-xs text-green-700 font-medium flex items-center gap-1">
+                                      Restaurar <FaArrowRight />
+                                    </span>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {loadingConfig && (
+                  <div className="text-center py-8 text-gray-500">
+                    Cargando configuración...
+                  </div>
+                )}
+              </div>
+            )}
+
+
+
+            {showForm && (
+              <ItemForm
+                item={editingItem}
+                categorias={categorias}
+                sedes={sedes}
+                items={items}
+                onSave={onSaveItem}
+                onCancel={onCancelForm}
+                currentUserEmail={currentUserEmail}
+                currentUserName={currentUserName}
+                isAdmin={isAdmin}
+                usuarios={users}
+              />
+            )}
+
+            {/* Modal para agregar nuevo campo personalizado */}
+            {
+              mostrarModalCampoFormulario && configuracion && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                  <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                    <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                      <h3 className="text-xl font-semibold text-gray-900">Agregar Nuevo Campo Personalizado</h3>
+                      <button
+                        onClick={() => {
+                          setMostrarModalCampoFormulario(false);
+                          setNuevoCampoFormulario({
+                            nombre: '',
+                            seccion: 'Información General',
+                            etiqueta: '',
+                            obligatorio: false,
+                            tipo: 'text'
+                          });
+                        }}
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                        title="Cerrar"
+                      >
+                        <FaTimes className="text-xl" />
+                      </button>
+                    </div>
+
+                    <div className="p-6 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block mb-1 text-sm font-medium text-gray-700">
+                            Nombre del Campo (técnico) *
+                          </label>
+                          <input
+                            type="text"
+                            value={nuevoCampoFormulario.nombre}
+                            onChange={(e) => setNuevoCampoFormulario({ ...nuevoCampoFormulario, nombre: e.target.value })}
+                            placeholder="Ej: precio, proveedor, numeroFactura"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Se convertirá a minúsculas y sin espacios</p>
+                        </div>
+                        <div>
+                          <label className="block mb-1 text-sm font-medium text-gray-700">
+                            Etiqueta (lo que verá el usuario) *
+                          </label>
+                          <input
+                            type="text"
+                            value={nuevoCampoFormulario.etiqueta}
+                            onChange={(e) => setNuevoCampoFormulario({ ...nuevoCampoFormulario, etiqueta: e.target.value })}
+                            placeholder="Ej: Precio, Proveedor, Número de Factura"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block mb-1 text-sm font-medium text-gray-700">
+                            Sección
+                          </label>
+                          <select
+                            value={nuevoCampoFormulario.seccion}
+                            onChange={(e) => setNuevoCampoFormulario({ ...nuevoCampoFormulario, seccion: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
+                          >
+                            {configuracion?.seccionesFormulario
+                              ?.filter((s: SeccionFormulario) => s.visible)
+                              .sort((a: SeccionFormulario, b: SeccionFormulario) => a.orden - b.orden)
+                              .map((seccion: SeccionFormulario) => (
+                                <option key={seccion.nombre} value={seccion.nombre}>{seccion.nombre}</option>
+                              ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block mb-1 text-sm font-medium text-gray-700">
+                            Tipo de Campo
+                          </label>
+                          <select
+                            value={nuevoCampoFormulario.tipo}
+                            onChange={(e) => setNuevoCampoFormulario({ ...nuevoCampoFormulario, tipo: e.target.value as 'text' | 'number' | 'date' | 'select' | 'textarea' })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
+                          >
+                            <option value="text">Texto</option>
+                            <option value="number">Número</option>
+                            <option value="date">Fecha</option>
+                            <option value="textarea">Área de Texto</option>
+                            <option value="select">Selector</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={nuevoCampoFormulario.obligatorio}
+                            onChange={(e) => setNuevoCampoFormulario({ ...nuevoCampoFormulario, obligatorio: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm text-gray-700">Campo obligatorio</span>
+                        </label>
+                      </div>
+
+                      <div className="flex gap-3 pt-4 border-t border-gray-200">
+                        <button
+                          onClick={handleAgregarCampoFormulario}
+                          disabled={!nuevoCampoFormulario.nombre.trim() || !nuevoCampoFormulario.etiqueta.trim()}
+                          className="flex-1 px-4 py-2 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Agregar Campo
+                        </button>
+                        <button
+                          onClick={() => {
+                            setMostrarModalCampoFormulario(false);
+                            setNuevoCampoFormulario({
+                              nombre: '',
+                              seccion: 'Información General',
+                              etiqueta: '',
+                              obligatorio: false,
+                              tipo: 'text'
+                            });
+                          }}
+                          className="px-4 py-2 bg-gray-300 text-gray-700 hover:bg-gray-400 rounded-md transition-colors text-sm font-medium"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+
+            {/* Modal para agregar nuevo usuario */}
+            {mostrarFormularioUsuario && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                  <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                    <h3 className="text-xl font-semibold text-gray-900">Agregar Nuevo Usuario</h3>
+                    <button
+                      onClick={() => {
+                        setMostrarFormularioUsuario(false);
+                        setErrorUsers(null);
+                        setNuevoUsuario({
+                          email: '',
+                          password: '',
+                          displayName: '',
+                          role: 'usuario'
+                        });
+                      }}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      title="Cerrar"
+                    >
+                      <FaTimes className="text-xl" />
+                    </button>
+                  </div>
+
+                  <div className="p-6 space-y-4">
+                    {errorUsers && (
+                      <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+                        {errorUsers}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          Email *
+                        </label>
+                        <input
+                          type="email"
+                          value={nuevoUsuario.email}
+                          onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, email: e.target.value })}
+                          placeholder="usuario@ejemplo.com"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          Contraseña *
+                        </label>
+                        <input
+                          type="password"
+                          value={nuevoUsuario.password}
+                          onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, password: e.target.value })}
+                          placeholder="Mínimo 6 caracteres"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          Nombre Completo
+                        </label>
+                        <input
+                          type="text"
+                          value={nuevoUsuario.displayName}
+                          onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, displayName: e.target.value })}
+                          placeholder="Nombre del usuario"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block mb-1 text-sm font-medium text-gray-700">
+                          Rol *
+                        </label>
+                        <select
+                          value={nuevoUsuario.role}
+                          onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, role: e.target.value as UserRole })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
+                        >
+                          <option value="usuario">Usuario</option>
+                          <option value="administrador">Administrador</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-4 border-t border-gray-200">
+                      <button
+                        onClick={handleAgregarUsuario}
+                        disabled={loadingUsers || !nuevoUsuario.email.trim() || !nuevoUsuario.password.trim()}
+                        className="flex-1 px-4 py-2 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loadingUsers ? 'Creando...' : 'Crear Usuario'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setMostrarFormularioUsuario(false);
+                          setErrorUsers(null);
+                          setNuevoUsuario({
+                            email: '',
+                            password: '',
+                            displayName: '',
+                            role: 'usuario'
+                          });
+                        }}
+                        className="px-4 py-2 bg-gray-300 text-gray-700 hover:bg-gray-400 rounded-md transition-colors text-sm font-medium"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
+        </div>
+        {/* ── BOTTOM NAV BAR MÓVIL ── */}
+        {isMobile && (
+          <nav className="fixed bottom-0 left-0 right-0 z-50 h-16 bg-white border-t border-slate-200 flex items-stretch shadow-[0_-4px_24px_rgba(0,0,0,0.06)]">
+            {navItems.map(item => (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id as any)}
+                className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-all relative ${activeSection === item.id
+                    ? 'text-green-700'
+                    : 'text-slate-400 hover:text-slate-600'
+                  }`}
+              >
+                {activeSection === item.id && (
+                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-green-600 rounded-b-full" />
+                )}
+                <item.icon className={`text-lg transition-transform ${activeSection === item.id ? 'scale-110 text-green-600' : ''
+                  }`} />
+                <span className={`text-[9px] font-bold uppercase tracking-wider leading-none ${activeSection === item.id ? 'text-green-700' : 'text-slate-400'
+                  }`}>
+                  {item.label}
+                </span>
+              </button>
+            ))}
+          </nav>
         )}
-      </div>
+      </main>
     </div>
   );
 }

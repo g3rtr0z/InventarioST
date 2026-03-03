@@ -568,14 +568,14 @@ export default function UserPanel({
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                     <div className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200">
                       <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{estadisticas.total}</div>
-                      <div className="text-xs sm:text-sm text-gray-600 font-medium">Total Items</div>
+                      <div className="text-xs sm:text-sm text-gray-600 font-medium">Total Activos</div>
                     </div>
                     <div className={`bg-green-50 rounded-lg p-3 sm:p-4 border ${INSTITUTIONAL_COLORS.borderPrimary}`}>
                       <div className={`text-2xl sm:text-3xl font-bold ${INSTITUTIONAL_COLORS.textPrimary} mb-1`}>{estadisticas.disponible}</div>
                       <div className="text-xs sm:text-sm text-gray-600 font-medium">Disponibles</div>
                     </div>
-                    <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-200">
-                      <div className="text-2xl sm:text-3xl font-bold text-blue-700 mb-1">{estadisticas.enUso}</div>
+                    <div className="bg-green-50/50 rounded-lg p-3 sm:p-4 border border-green-100">
+                      <div className="text-2xl sm:text-3xl font-bold text-green-700 mb-1">{estadisticas.enUso}</div>
                       <div className="text-xs sm:text-sm text-gray-600 font-medium">En Uso</div>
                     </div>
                     <div className="bg-yellow-50 rounded-lg p-3 sm:p-4 border border-yellow-200">

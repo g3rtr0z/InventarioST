@@ -28,7 +28,6 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     estado: 'Disponible',
     ubicacion: '',
     responsable: '',
-    observaciones: '',
     piso: '',
     edificio: '',
     sede: sedes.length > 0 ? sedes[0] : '',
@@ -141,8 +140,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
   const camposConocidos = [
     'nombre', 'categoria', 'estado', 'tipoUso',
     'sede', 'ubicacion', 'piso', 'edificio', 'responsable', 'encargado',
-    'marca', 'modelo', 'numeroSerie', 'procesador', 'ram', 'discoDuro',
-    'observaciones'
+    'marca', 'modelo', 'numeroSerie', 'procesador', 'ram', 'discoDuro'
   ];
 
   // Función para renderizar un campo genérico basándose en su tipo
@@ -272,7 +270,6 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         estado: rest.estado,
         ubicacion: rest.ubicacion,
         responsable: rest.responsable,
-        observaciones: rest.observaciones || '',
         piso: rest.piso || '',
         edificio: rest.edificio || '',
         sede: rest.sede || (sedes.length > 0 ? sedes[0] : ''),
@@ -313,7 +310,6 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         ubicacion: '',
         responsable: '',
         descripcion: '',
-        observaciones: '',
         piso: '',
         edificio: '',
         sede: sedes.length > 0 ? sedes[0] : '',
@@ -411,7 +407,6 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       numeroSerie: sanitizeText(formData.numeroSerie),
       ubicacion: sanitizeText(formData.ubicacion),
       responsable: sanitizeText(formData.responsable),
-      observaciones: sanitizeText(formData.observaciones || ''),
       piso: sanitizeText(formData.piso || ''),
       edificio: sanitizeText(formData.edificio || ''),
       procesador: sanitizeText(formData.procesador || ''),
@@ -430,7 +425,6 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       sanitizedData.numeroSerie,
       sanitizedData.ubicacion,
       sanitizedData.responsable,
-      sanitizedData.observaciones,
       sanitizedData.encargado
     ];
 
@@ -1181,25 +1175,6 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                         }
                       }
 
-                      if (campoConfig.nombre === 'observaciones') {
-                        return (
-                          <div key={campoConfig.nombre} className="md:col-span-2">
-                            <label htmlFor="observaciones" className="block mb-1 text-sm text-gray-700">
-                              {getCampoLabel('observaciones', 'Observaciones')} {isCampoObligatorio('observaciones') && '*'}
-                            </label>
-                            <textarea
-                              id="observaciones"
-                              name="observaciones"
-                              value={formData.observaciones}
-                              onChange={handleChange}
-                              required={isCampoObligatorio('observaciones')}
-                              rows={3}
-                              placeholder="Notas adicionales, problemas conocidos, etc..."
-                              className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-800 resize-y rounded-md"
-                            />
-                          </div>
-                        );
-                      }
 
                       // Para campos personalizados, usar renderCampoGenerico
                       return renderCampoGenerico(campoConfig);

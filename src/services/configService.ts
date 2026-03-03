@@ -68,8 +68,7 @@ const CONFIG_DEFAULT: ConfiguracionSistema = {
   seccionesFormulario: [
     { nombre: 'Información General', visible: true, orden: 1 },
     { nombre: 'Ubicación y Responsabilidad', visible: true, orden: 2 },
-    { nombre: 'Especificaciones Técnicas', visible: true, orden: 3 },
-    { nombre: 'Observaciones', visible: true, orden: 4 }
+    { nombre: 'Especificaciones Técnicas', visible: true, orden: 3 }
   ],
   formulario: [
     // Información General
@@ -89,9 +88,7 @@ const CONFIG_DEFAULT: ConfiguracionSistema = {
     { nombre: 'numeroSerie', seccion: 'Especificaciones Técnicas', visible: true, obligatorio: true, orden: 3, etiqueta: 'Número de Serie' },
     { nombre: 'procesador', seccion: 'Especificaciones Técnicas', visible: true, obligatorio: false, orden: 4, etiqueta: 'Procesador' },
     { nombre: 'ram', seccion: 'Especificaciones Técnicas', visible: true, obligatorio: false, orden: 5, etiqueta: 'RAM' },
-    { nombre: 'discoDuro', seccion: 'Especificaciones Técnicas', visible: true, obligatorio: false, orden: 6, etiqueta: 'Disco Duro' },
-    // Observaciones
-    { nombre: 'observaciones', seccion: 'Observaciones', visible: true, obligatorio: false, orden: 1, etiqueta: 'Observaciones' }
+    { nombre: 'discoDuro', seccion: 'Especificaciones Técnicas', visible: true, obligatorio: false, orden: 6, etiqueta: 'Disco Duro' }
   ]
 };
 

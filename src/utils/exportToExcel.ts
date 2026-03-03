@@ -23,8 +23,7 @@ export const exportToExcel = (items: ItemInventario[], filename: string = 'inven
     'RAM': item.ram || '',
     'Disco Duro': item.discoDuro || '',
     'Horas Normales': item.horasNormales || '',
-    'Horas Eco': item.horasEco || '',
-    'Observaciones': item.observaciones || ''
+    'Horas Eco': item.horasEco || ''
   }));
 
   // Crear un libro de trabajo
@@ -51,8 +50,7 @@ export const exportToExcel = (items: ItemInventario[], filename: string = 'inven
     { wch: 15 }, // RAM
     { wch: 20 }, // Disco Duro
     { wch: 15 }, // Horas Normales
-    { wch: 15 }, // Horas Eco
-    { wch: 30 }  // Observaciones
+    { wch: 15 }  // Horas Eco
   ];
   ws['!cols'] = colWidths;
 
@@ -123,8 +121,7 @@ export const importFromExcel = async (file: File): Promise<Omit<ItemInventario, 
       ram: getString('RAM') || undefined,
       discoDuro: getString('Disco Duro') || undefined,
       horasNormales: getString('Horas Normales') || undefined,
-      horasEco: getString('Horas Eco') || undefined,
-      observaciones: getString('Observaciones') || undefined
+      horasEco: getString('Horas Eco') || undefined
     };
   }).filter(item => item.nombre); // Solo filas con nombre
 

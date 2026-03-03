@@ -9,7 +9,6 @@ export interface ItemInventario {
   ubicacion: string;
   responsable: string;
   // Campos adicionales
-  observaciones?: string;
   piso?: string;
   edificio?: string;
   sede: string;
