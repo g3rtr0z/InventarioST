@@ -872,7 +872,7 @@ export default function AdminPanel({
     { id: 'inventario', label: 'Activos', icon: FaBox, adminOnly: false },
     { id: 'usuarios', label: 'Usuarios', icon: FaUsers, adminOnly: true },
     { id: 'reportes', label: 'Reportes', icon: FaFileAlt, adminOnly: false },
-    { id: 'configuracion', label: 'Config', icon: FaCog, adminOnly: true },
+    // 'configuracion' excluida de mobile nav — solo disponible en sidebar desktop
   ].filter(item => !item.adminOnly || isAdmin);
 
   return (
@@ -968,6 +968,15 @@ export default function AdminPanel({
                 </div>
                 <span className="text-[10px] font-bold text-slate-600 max-w-[80px] truncate">{currentUserName || 'Admin'}</span>
               </div>
+              {isAdmin && (
+                <button
+                  onClick={() => setActiveSection('configuracion' as any)}
+                  className={`p-1.5 rounded-lg transition-colors ${activeSection === 'configuracion' ? 'text-green-700 bg-green-50' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'}`}
+                  title="Configuración"
+                >
+                  <FaCog className="text-sm" />
+                </button>
+              )}
               <button
                 onClick={onLogout}
                 className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -989,35 +998,44 @@ export default function AdminPanel({
           )}
 
           {/* Header Area */}
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-8 gap-6">
-            <div className="space-y-1">
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                {activeSection === 'inventario' ? 'Vista General del Inventario' :
-                  activeSection === 'dashboard' ? 'Panel de Control' :
-                    activeSection === 'usuarios' ? 'Asignaciones y Usuarios' :
-                      activeSection === 'reportes' ? 'Reportes del Sistema' :
-                        'Configuración'}
-              </h1>
-              <p className="text-slate-500 text-sm font-medium">
-                Monitorea y gestiona todos los activos de TI institucionales desde un solo lugar.
-              </p>
-            </div>
+          <div className="flex flex-col gap-3 mb-6">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-0.5">
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+                  {activeSection === 'inventario' ? 'Inventario' :
+                    activeSection === 'dashboard' ? 'Panel de Control' :
+                      activeSection === 'usuarios' ? 'Gestión de Usuarios' :
+                        activeSection === 'reportes' ? 'Reportes' :
+                          'Configuración'}
+                </h1>
+                <p className="text-slate-400 text-xs font-medium hidden sm:block">
+                  {activeSection === 'inventario' ? 'Monitorea y gestiona todos los activos de TI.' :
+                    activeSection === 'dashboard' ? 'Resumen general del sistema.' :
+                      activeSection === 'usuarios' ? 'Administra los usuarios y sus permisos.' :
+                        activeSection === 'reportes' ? 'Exporta y analiza datos del inventario.' :
+                          'Personaliza la configuración del sistema.'}
+                </p>
+              </div>
 
-            <div className="flex items-center gap-3">
-              <button
-                onClick={onExportExcel}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white text-slate-700 font-bold text-sm rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-all active:scale-95"
-              >
-                <FaFileExport className="text-slate-400" />
-                <span>Exportar CSV</span>
-              </button>
-              <button
-                onClick={onAddItem}
-                className={`flex items-center gap-2 px-6 py-2.5 ${INSTITUTIONAL_COLORS.bgPrimary} text-white font-bold text-sm rounded-xl shadow-lg shadow-green-100 hover:${INSTITUTIONAL_COLORS.bgPrimaryHover} transition-all active:scale-95`}
-              >
-                <FaPlus className="text-sm" />
-                <span>Nuevo Activo</span>
-              </button>
+              {/* Botones solo en sección inventario */}
+              {activeSection === 'inventario' && (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={onExportExcel}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-white text-slate-700 font-bold text-xs rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-all active:scale-95"
+                  >
+                    <FaFileExport className="text-slate-400 text-xs" />
+                    <span className="hidden sm:inline">Exportar</span>
+                  </button>
+                  <button
+                    onClick={onAddItem}
+                    className={`flex items-center gap-1.5 px-3 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white font-bold text-xs rounded-xl shadow-sm hover:${INSTITUTIONAL_COLORS.bgPrimaryHover} transition-all active:scale-95`}
+                  >
+                    <FaPlus className="text-xs" />
+                    <span>Nuevo</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1026,77 +1044,77 @@ export default function AdminPanel({
             const pctEnUso = estadisticas.total > 0 ? Math.round((estadisticas.enUso / estadisticas.total) * 100) : 0;
             const bajasYMant = estadisticas.baja + estadisticas.mantenimiento;
             return (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
                 {/* Card 1 - Total */}
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4">
-                    <span className="bg-green-100 text-green-700 text-[10px] font-black px-2 py-1 rounded-full">
-                      {new Set(items.map(i => i.categoria).filter(Boolean)).size} categorías
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-2">
+                    <span className="bg-green-100 text-green-700 text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                      {new Set(items.map(i => i.categoria).filter(Boolean)).size} cat.
                     </span>
                   </div>
-                  <div className="flex flex-col gap-4">
-                    <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-600">
-                      <FaBox className="text-xl" />
+                  <div className="flex flex-col gap-2">
+                    <div className="w-9 h-9 bg-green-50 rounded-xl flex items-center justify-center text-green-600">
+                      <FaBox className="text-base" />
                     </div>
                     <div>
-                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Total Activos</p>
-                      <p className="text-2xl font-black text-slate-900">{estadisticas.total.toLocaleString()}</p>
+                      <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Total Activos</p>
+                      <p className="text-xl font-black text-slate-900">{estadisticas.total.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Card 2 - Mantenimiento */}
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4">
-                    <span className={`text-[10px] font-black px-2 py-1 rounded-full ${estadisticas.mantenimiento > 0 ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-500'
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-2">
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${estadisticas.mantenimiento > 0 ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-500'
                       }`}>
-                      {estadisticas.mantenimiento > 0 ? `${estadisticas.mantenimiento} activo${estadisticas.mantenimiento !== 1 ? 's' : ''}` : 'Sin pendientes'}
+                      {estadisticas.mantenimiento > 0 ? `${estadisticas.mantenimiento} act.` : 'OK'}
                     </span>
                   </div>
-                  <div className="flex flex-col gap-4">
-                    <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600">
-                      <FaCog className="text-xl" />
+                  <div className="flex flex-col gap-2">
+                    <div className="w-9 h-9 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600">
+                      <FaCog className="text-base" />
                     </div>
                     <div>
-                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Mantenimiento Pendiente</p>
-                      <p className="text-2xl font-black text-slate-900">{estadisticas.mantenimiento}</p>
+                      <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Mantenimiento</p>
+                      <p className="text-xl font-black text-slate-900">{estadisticas.mantenimiento}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Card 3 - En Uso */}
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4">
-                    <span className="bg-green-100 text-green-700 text-[10px] font-black px-2 py-1 rounded-full">
-                      {pctEnUso}% Utilización
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-2">
+                    <span className="bg-green-100 text-green-700 text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                      {pctEnUso}%
                     </span>
                   </div>
-                  <div className="flex flex-col gap-4">
-                    <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-600">
-                      <FaUserShield className="text-xl" />
+                  <div className="flex flex-col gap-2">
+                    <div className="w-9 h-9 bg-green-50 rounded-xl flex items-center justify-center text-green-600">
+                      <FaUserShield className="text-base" />
                     </div>
                     <div>
-                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Equipos Asignados</p>
-                      <p className="text-2xl font-black text-slate-900">{estadisticas.enUso.toLocaleString()}</p>
+                      <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">En Uso</p>
+                      <p className="text-xl font-black text-slate-900">{estadisticas.enUso.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Card 4 - Bajas/Sin uso */}
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4">
-                    <span className={`text-[10px] font-black px-2 py-1 rounded-full ${bajasYMant > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                {/* Card 4 - Alertas */}
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-2">
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${bajasYMant > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                       }`}>
-                      {bajasYMant > 0 ? 'Requiere Acción' : 'Sin alertas'}
+                      {bajasYMant > 0 ? 'Alertas' : 'OK'}
                     </span>
                   </div>
-                  <div className="flex flex-col gap-4">
-                    <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
-                      <FaExclamationTriangle className="text-xl" />
+                  <div className="flex flex-col gap-2">
+                    <div className="w-9 h-9 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
+                      <FaExclamationTriangle className="text-base" />
                     </div>
                     <div>
-                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Bajas + Mantenimiento</p>
-                      <p className="text-2xl font-black text-slate-900">{bajasYMant}</p>
+                      <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Bajas + Mant.</p>
+                      <p className="text-xl font-black text-slate-900">{bajasYMant}</p>
                     </div>
                   </div>
                 </div>
@@ -1119,39 +1137,40 @@ export default function AdminPanel({
                 <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-lg">
                   {/* Row principal: búsqueda + botones */}
                   {/* Toolbar compacto de búsqueda y acciones */}
-                  <div className="flex flex-col md:flex-row items-stretch md:items-center">
-                    {/* Búsqueda Minimalista */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center flex-wrap">
+                    {/* Búsqueda */}
                     <div className="flex-1 relative group">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                        <FaSearch className="text-gray-400 text-base group-focus-within:text-green-700 transition-colors" />
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                        <FaSearch className="text-gray-400 text-sm group-focus-within:text-green-700 transition-colors" />
                       </div>
                       <input
                         type="text"
                         placeholder="Buscar por nombre, serie, marca..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-4 text-base bg-transparent border-none focus:outline-none focus:ring-0 placeholder-gray-400 text-gray-700 font-medium"
+                        className="w-full pl-10 pr-4 py-3.5 text-sm bg-transparent border-none focus:outline-none focus:ring-0 placeholder-gray-400 text-gray-700 font-medium"
                       />
                     </div>
 
-                    {/* Botones de acción compactos */}
-                    <div className="flex items-center justify-between md:justify-end gap-2 px-4 py-2 border-t md:border-t-0 md:border-l border-gray-100 w-full md:w-auto">
-                      <div className="flex bg-gray-50 p-1 rounded-lg">
+                    {/* Botones de acción */}
+                    <div className="flex items-center justify-between sm:justify-end gap-2 px-3 py-2 flex-wrap border-t sm:border-t-0 sm:border-l border-gray-100 shrink-0">
+                      {/* Toggle vista */}
+                      <div className="flex bg-gray-50 p-0.5 rounded-lg">
                         <button
                           onClick={() => setViewMode('cards')}
                           type="button"
-                          className={`p-1.5 rounded-md transition-all ${viewMode === 'cards' ? `bg-white text-green-700 shadow-sm` : 'text-gray-400 hover:text-gray-600'}`}
+                          className={`p-1.5 rounded-md transition-all ${viewMode === 'cards' ? 'bg-white text-green-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                           title="Vista Cuadrícula"
                         >
-                          <FaThLarge className="text-sm" />
+                          <FaThLarge className="text-[11px]" />
                         </button>
                         <button
                           onClick={() => setViewMode('table')}
                           type="button"
-                          className={`p-1.5 rounded-md transition-all ${viewMode === 'table' ? `bg-white text-green-700 shadow-sm` : 'text-gray-400 hover:text-gray-600'}`}
+                          className={`p-1.5 rounded-md transition-all ${viewMode === 'table' ? 'bg-white text-green-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                           title="Vista Tabla"
                         >
-                          <FaList className="text-sm" />
+                          <FaList className="text-[11px]" />
                         </button>
                       </div>
 
@@ -1167,7 +1186,7 @@ export default function AdminPanel({
                             }
                           }}
                           type="button"
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold transition-all ${showFilterPanel || (filterEstado !== 'Todos' || filterCategoria !== 'Todas' || filterSede !== 'Todas' || filterMarca !== 'Todas' || filterPiso !== 'Todos' || filterEdificio !== 'Todos' || filterEncargado !== 'Todos') ? 'bg-green-50 text-green-700 border border-green-100' : 'text-gray-600 hover:bg-gray-50'}`}
+                          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${showFilterPanel || (filterEstado !== 'Todos' || filterCategoria !== 'Todas' || filterSede !== 'Todas' || filterMarca !== 'Todas' || filterPiso !== 'Todos' || filterEdificio !== 'Todos' || filterEncargado !== 'Todos') ? 'bg-green-50 text-green-700 border border-green-100' : 'text-gray-600 hover:bg-gray-50'}`}
                         >
                           <FaFilter className="text-sm" />
                           <span className="hidden sm:inline">FILTROS</span>
@@ -1181,10 +1200,10 @@ export default function AdminPanel({
                         <button
                           onClick={onAddItem}
                           type="button"
-                          className={`flex items-center gap-2 px-4 py-2 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-lg shadow-sm transition-all text-sm font-bold`}
+                          className={`flex items-center gap-2 px-3 py-1.5 ${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900 rounded-lg shadow-sm transition-all text-[11px] font-bold`}
                         >
                           <FaPlus className="text-xs" />
-                          <span className="hidden lg:inline uppercase">Nuevo</span>
+                          <span className="hidden sm:inline uppercase">Nuevo</span>
                         </button>
                       </div>
                     </div>
@@ -1192,7 +1211,7 @@ export default function AdminPanel({
 
                   {/* Panel de filtros Minimalista */}
                   {showFilterPanel && (
-                    <div className="px-6 py-6 bg-gray-50/50 border-t border-gray-100 animate-fadeIn">
+                    <div className="px-4 py-5 bg-gray-50/50 border-t border-gray-100 animate-fadeIn">
                       {(() => {
                         const marcasUnicas = [...new Set(items.map(i => i.marca).filter(Boolean))].sort();
                         const pisosUnicos = [...new Set(items.map(i => i.piso).filter(Boolean))].sort();
@@ -1203,7 +1222,7 @@ export default function AdminPanel({
                           `w-full pl-3 pr-7 py-2 text-sm font-semibold rounded-lg border transition-all appearance-none cursor-pointer focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} ${active ? `bg-green-50 text-green-800 border-green-200 ring-1 ring-green-100` : 'bg-white text-gray-600 border-gray-100 hover:border-gray-200 hover:bg-gray-50'}`;
 
                         return (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             {/* Categoría */}
                             <div className="space-y-1.5">
                               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Categoría</label>
@@ -1332,21 +1351,21 @@ export default function AdminPanel({
                 {sortedItems.length > 0 && (
                   <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                     {/* Barra superior: ordenar + info + items por página */}
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-3 border-b border-slate-100">
+                    <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-slate-100">
                       {/* Ordenamiento */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ordenar</span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest shrink-0">Ordenar</span>
                         <div className="flex bg-slate-50 rounded-xl p-0.5 border border-slate-100">
                           {(['nombre', 'categoria', 'estado', 'ubicacion'] as const).map(opt => (
                             <button
                               key={opt}
                               onClick={() => { setSortBy(opt); setCurrentPage(1); }}
-                              className={`px-3 py-1 text-[11px] font-bold rounded-lg transition-all capitalize ${sortBy === opt
+                              className={`px-2 py-1 text-[10px] font-bold rounded-lg transition-all ${sortBy === opt
                                 ? 'bg-white text-green-700 shadow-sm'
                                 : 'text-slate-400 hover:text-slate-600'
                                 }`}
                             >
-                              {opt === 'nombre' ? 'Nombre' : opt === 'categoria' ? 'Categ.' : opt === 'estado' ? 'Estado' : 'Ubic.'}
+                              {opt === 'nombre' ? 'Nomb.' : opt === 'categoria' ? 'Cat.' : opt === 'estado' ? 'Est.' : 'Ubic.'}
                             </button>
                           ))}
                         </div>
@@ -1354,28 +1373,26 @@ export default function AdminPanel({
                           onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                           className={`p-1.5 rounded-lg border transition-all ${sortOrder === 'asc'
                             ? 'bg-green-50 text-green-700 border-green-100'
-                            : 'bg-slate-50 text-slate-500 border-slate-100 hover:border-slate-200'
+                            : 'bg-slate-50 text-slate-500 border-slate-100'
                             }`}
-                          title={sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
                         >
-                          {sortOrder === 'asc' ? <FaArrowUp className="text-xs" /> : <FaArrowDown className="text-xs" />}
+                          {sortOrder === 'asc' ? <FaArrowUp className="text-[10px]" /> : <FaArrowDown className="text-[10px]" />}
                         </button>
                       </div>
 
                       {/* Info + items por página */}
-                      <div className="flex items-center gap-3">
-                        <span className="text-[11px] font-semibold text-slate-400">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-semibold text-slate-400">
                           <span className="text-slate-700 font-black">{startIndex + 1}–{Math.min(endIndex, sortedItems.length)}</span>
-                          {' '}de{' '}
+                          {' '}/{' '}
                           <span className="text-slate-700 font-black">{sortedItems.length}</span>
-                          {' '}activos
                         </span>
                         <div className="flex bg-slate-50 rounded-xl p-0.5 border border-slate-100">
                           {[6, 12, 24, 48].map(n => (
                             <button
                               key={n}
                               onClick={() => { setItemsPerPage(n); setCurrentPage(1); }}
-                              className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${itemsPerPage === n
+                              className={`px-2 py-1 text-[10px] font-bold rounded-lg transition-all ${itemsPerPage === n
                                 ? 'bg-white text-green-700 shadow-sm'
                                 : 'text-slate-400 hover:text-slate-600'
                                 }`}
@@ -1389,7 +1406,7 @@ export default function AdminPanel({
 
                     {/* Paginación */}
                     {totalPages > 1 && (
-                      <div className="flex items-center justify-center gap-1.5 px-5 py-3">
+                      <div className="flex items-center justify-center flex-wrap gap-1.5 px-4 py-3">
                         <button
                           onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                           disabled={currentPage === 1}
@@ -1578,8 +1595,7 @@ export default function AdminPanel({
             )}
 
             {activeSection === 'usuarios' && isAdmin && (
-              <div className="space-y-4">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Gestión de Usuarios</h3>
+              <div className="space-y-4 animate-fadeIn">
 
                 {errorUsers && (
                   <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
@@ -1587,162 +1603,106 @@ export default function AdminPanel({
                   </div>
                 )}
 
-                {/* Botón para abrir modal de nuevo usuario */}
-                <div className="mb-4 flex justify-end">
+                {/* Toolbar */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por email o nombre..."
+                      value={searchTermUsers}
+                      onChange={(e) => setSearchTermUsers(e.target.value)}
+                      className={`w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent bg-white`}
+                    />
+                  </div>
                   <button
                     onClick={() => {
                       setMostrarFormularioUsuario(true);
                       setErrorUsers(null);
-                      setNuevoUsuario({
-                        email: '',
-                        password: '',
-                        displayName: '',
-                        role: 'usuario'
-                      });
+                      setNuevoUsuario({ email: '', password: '', displayName: '', role: 'usuario' });
                     }}
-                    className="px-4 py-2 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium flex items-center gap-2"
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-800 text-white hover:bg-green-900 rounded-xl transition-colors text-sm font-bold shrink-0"
                   >
-                    <FaPlus />
-                    Agregar Usuario
+                    <FaPlus className="text-xs" /> Agregar Usuario
                   </button>
                 </div>
 
-                {/* Búsqueda */}
-                <div className="mb-4">
-                  <input
-                    type="text"
-                    placeholder="Buscar por email o nombre..."
-                    value={searchTermUsers}
-                    onChange={(e) => setSearchTermUsers(e.target.value)}
-                    className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${INSTITUTIONAL_COLORS.ringPrimaryFocus} focus:border-transparent`}
-                  />
-                </div>
-
-                {/* Contador de usuarios */}
-                <div className="mb-4">
-                  <div className="text-sm text-gray-600">
-                    Total de usuarios: <span className="font-semibold">{filteredUsers.length}</span>
-                  </div>
-                </div>
+                <p className="text-xs text-slate-400 font-semibold">
+                  {filteredUsers.length} usuario{filteredUsers.length !== 1 ? 's' : ''}
+                </p>
 
                 {/* Lista de usuarios */}
                 {loadingUsers && users.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    Cargando usuarios...
-                  </div>
+                  <div className="text-center py-8 text-gray-500 text-sm">Cargando usuarios...</div>
                 ) : filteredUsers.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No se encontraron usuarios
-                  </div>
+                  <div className="text-center py-8 text-gray-500 text-sm">No se encontraron usuarios</div>
                 ) : (
                   <div className="space-y-3">
                     {filteredUsers.map((user) => (
                       <div
                         key={user.email}
-                        className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors bg-white"
+                        className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow"
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <div>
-                                <div className="font-semibold text-gray-900">
-                                  {user.displayName || 'Sin nombre'}
-                                  {user.email === currentUserEmail && (
-                                    <span className="ml-2 text-xs text-blue-600 font-normal">(Tú)</span>
-                                  )}
-                                </div>
-                                <div className="text-sm text-gray-600">{user.email}</div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 mt-2 flex-wrap">
-                              <span className={`text-xs font-semibold px-2 py-1 rounded border ${getRoleBadgeColor(user.role)} flex items-center gap-1`}>
-                                {user.role === 'administrador' ? (
-                                  <>
-                                    <FaCrown /> Administrador
-                                  </>
-                                ) : (
-                                  <>
-                                    <FaUser /> Usuario
-                                  </>
-                                )}
+                        {/* Fila superior: avatar + info */}
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className={`w-10 h-10 rounded-xl ${INSTITUTIONAL_COLORS.bgPrimary} flex items-center justify-center text-white font-black text-base shrink-0`}>
+                            {(user.displayName || user.email).charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-black text-slate-800 text-sm truncate">
+                                {user.displayName || 'Sin nombre'}
                               </span>
-                              <span className={`text-xs font-semibold px-2 py-1 rounded border ${getStatusBadgeColor(user.isActive)} flex items-center gap-1`}>
-                                {user.isActive ? (
-                                  <>
-                                    <FaCheckCircle /> Activo
-                                  </>
-                                ) : (
-                                  <>
-                                    <FaTimesCircle /> Inactivo
-                                  </>
-                                )}
-                              </span>
-                              {user.createdAt && (
-                                <span className="text-xs text-gray-500">
-                                  Creado: {new Date(user.createdAt).toLocaleString('es-MX', {
-                                    year: 'numeric',
-                                    month: '2-digit',
-                                    day: '2-digit',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}
-                                </span>
-                              )}
-                              {user.lastLogin && (
-                                <span className="text-xs text-gray-500">
-                                  Último acceso: {new Date(user.lastLogin).toLocaleString('es-MX', {
-                                    year: 'numeric',
-                                    month: '2-digit',
-                                    day: '2-digit',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}
-                                </span>
+                              {user.email === currentUserEmail && (
+                                <span className="text-[10px] bg-blue-50 text-blue-600 font-bold px-1.5 py-0.5 rounded-full border border-blue-100">Tú</span>
                               )}
                             </div>
+                            <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5">{user.email}</p>
+                            {/* Badges rol + estado */}
+                            <div className="flex gap-1.5 flex-wrap mt-1.5">
+                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg border flex items-center gap-1 ${getRoleBadgeColor(user.role)}`}>
+                                {user.role === 'administrador' ? <><FaCrown className="text-[8px]" /> Admin</> : <><FaUser className="text-[8px]" /> Usuario</>}
+                              </span>
+                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg border flex items-center gap-1 ${getStatusBadgeColor(user.isActive)}`}>
+                                {user.isActive ? <><FaCheckCircle className="text-[8px]" /> Activo</> : <><FaTimesCircle className="text-[8px]" /> Inactivo</>}
+                              </span>
+                            </div>
+                            {/* Fechas compactas */}
+                            {(user.lastLogin || user.createdAt) && (
+                              <p className="text-[10px] text-slate-300 mt-1">
+                                {user.lastLogin && `Acceso: ${new Date(user.lastLogin).toLocaleDateString('es-CL')}`}
+                              </p>
+                            )}
                           </div>
+                        </div>
 
-                          <div className="flex flex-col gap-2 ml-4">
-                            {/* Cambiar rol */}
-                            <select
-                              value={user.role}
-                              onChange={(e) => handleRoleChange(user.email, e.target.value as UserRole)}
-                              disabled={user.email === currentUserEmail}
-                              className={`px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 ${user.email === currentUserEmail ? 'bg-gray-100 cursor-not-allowed opacity-50' : 'bg-white'
-                                }`}
-                              title={user.email === currentUserEmail ? 'No puedes cambiar tu propio rol' : ''}
-                            >
-                              <option value="usuario">Usuario</option>
-                              <option value="administrador">Administrador</option>
-                            </select>
+                        {/* Fila inferior: controles */}
+                        <div className="flex items-center gap-2 flex-wrap border-t border-slate-50 pt-3">
+                          <select
+                            value={user.role}
+                            onChange={(e) => handleRoleChange(user.email, e.target.value as UserRole)}
+                            disabled={user.email === currentUserEmail}
+                            className={`flex-1 min-w-[100px] px-3 py-1.5 text-xs font-bold border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 ${user.email === currentUserEmail ? 'bg-slate-50 cursor-not-allowed opacity-50' : 'bg-white'}`}
+                          >
+                            <option value="usuario">Usuario</option>
+                            <option value="administrador">Administrador</option>
+                          </select>
 
-                            {/* Activar/Desactivar */}
-                            <button
-                              onClick={() => handleToggleStatus(user.email, user.isActive)}
-                              disabled={user.email === currentUserEmail}
-                              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${user.isActive
-                                ? 'bg-yellow-500 text-white hover:bg-yellow-600'
-                                : `${INSTITUTIONAL_COLORS.bgPrimary} text-white hover:bg-green-900`
-                                } ${user.email === currentUserEmail ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                              title={user.email === currentUserEmail ? 'No puedes desactivarte a ti mismo' : ''}
-                            >
-                              {user.isActive ? 'Desactivar' : 'Activar'}
-                            </button>
+                          <button
+                            onClick={() => handleToggleStatus(user.email, user.isActive)}
+                            disabled={user.email === currentUserEmail}
+                            className={`px-3 py-1.5 text-xs font-black rounded-xl transition-colors ${user.isActive ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100' : 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'} ${user.email === currentUserEmail ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            {user.isActive ? 'Desactivar' : 'Activar'}
+                          </button>
 
-                            {/* Eliminar usuario */}
-                            <button
-                              onClick={() => handleEliminarUsuario(user.email)}
-                              disabled={user.email === currentUserEmail}
-                              className={`px-3 py-1.5 text-sm rounded-md transition-colors bg-red-600 text-white hover:bg-red-700 flex items-center gap-2 ${user.email === currentUserEmail ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                              title={user.email === currentUserEmail ? 'No puedes eliminarte a ti mismo' : 'Eliminar permanentemente'}
-                            >
-                              <FaTrash />
-                              Eliminar
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => handleEliminarUsuario(user.email)}
+                            disabled={user.email === currentUserEmail}
+                            className={`px-3 py-1.5 text-xs font-black rounded-xl bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition-colors flex items-center gap-1 ${user.email === currentUserEmail ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            <FaTrash className="text-[9px]" /> Eliminar
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -1750,6 +1710,7 @@ export default function AdminPanel({
                 )}
               </div>
             )}
+
 
             {activeSection === 'categorias' && (
               <div className="space-y-4">
@@ -2660,8 +2621,8 @@ export default function AdminPanel({
                 key={item.id}
                 onClick={() => setActiveSection(item.id as any)}
                 className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-all relative ${activeSection === item.id
-                    ? 'text-green-700'
-                    : 'text-slate-400 hover:text-slate-600'
+                  ? 'text-green-700'
+                  : 'text-slate-400 hover:text-slate-600'
                   }`}
               >
                 {activeSection === item.id && (
