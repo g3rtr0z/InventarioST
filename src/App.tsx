@@ -1,0 +1,598 @@
+import { useState, useEffect, useRef } from 'react';
+import type { ItemInventario } from './types/inventario';
+import AdminPanel from './components/AdminPanel';
+import UserPanel from './components/UserPanel';
+import Login from './components/Login';
+import Loader from './components/Loader';
+import {
+  subscribeToItems,
+  subscribeToCategorias,
+  subscribeToSedes,
+  addItem,
+  updateItem,
+  deleteItem,
+  saveCategorias,
+  saveSedes
+} from './services/inventarioService';
+import { isFirebaseReady, auth } from './config/firebase';
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { exportToExcel, importFromExcel } from './utils/exportToExcel';
+import { useSecurityHeaders } from './hooks/useSecurityHeaders';
+import { useUserRole } from './hooks/useUserRole';
+import { isUserActive } from './services/userRoleService';
+import { getEncargadoKey } from './utils/userUtils';
+
+const CATEGORIAS_DEFAULT = [
+  'Computadora',
+  'Laptop',
+  'Monitor',
+  'Teclado',
+  'Mouse',
+  'Impresora',
+  'Router',
+  'Switch',
+  'Servidor',
+  'Tablet',
+  'Teléfono',
+  'Otro'
+];
+
+function App() {
+  // Configurar headers de seguridad
+  useSecurityHeaders();
+
+  const [user, setUser] = useState<User | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const { isAdmin, loading: loadingRole } = useUserRole(user);
+  const [items, setItems] = useState<ItemInventario[]>([]);
+  const [categorias, setCategorias] = useState<string[]>(CATEGORIAS_DEFAULT);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<ItemInventario | null>(null);
+  const [filterEstado, setFilterEstado] = useState<string>('Todos');
+  const [filterCategoria, setFilterCategoria] = useState<string>('Todas');
+  const [filterSede, setFilterSede] = useState<string>('Todas');
+  const [filterTipoUso, setFilterTipoUso] = useState<string>('Todos');
+  const [filterMarca, setFilterMarca] = useState<string>('Todas');
+  const [filterPiso, setFilterPiso] = useState<string>('Todos');
+  const [filterEdificio, setFilterEdificio] = useState<string>('Todos');
+  const [filterProcesador, setFilterProcesador] = useState<string>('Todos');
+  const [filterRam, setFilterRam] = useState<string>('Todas');
+  const [filterDiscoDuro, setFilterDiscoDuro] = useState<string>('Todos');
+  const [filterEncargado, setFilterEncargado] = useState<string>('Todos');
+  const [filterHorasProyector, setFilterHorasProyector] = useState<string>('Todas');
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [sedes, setSedes] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loadStartTime, setLoadStartTime] = useState<number | null>(null);
+  const [isNewLogin, setIsNewLogin] = useState(false);
+
+  // Verificar estado de autenticación
+  const wasAuthenticatedRef = useRef(false);
+  const isInitialCheckRef = useRef(true);
+
+  useEffect(() => {
+    if (!auth) {
+      setCheckingAuth(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      const isAuthenticated = !!currentUser;
+
+      // Si hay un usuario autenticado, verificar si está activo
+      if (isAuthenticated && currentUser?.email && auth) {
+        try {
+          const userActive = await isUserActive(currentUser.email);
+          if (!userActive) {
+            // Si el usuario está desactivado, cerrar sesión
+            await signOut(auth);
+            setUser(null);
+            setCheckingAuth(false);
+            return;
+          }
+        } catch (err) {
+          console.error('Error al verificar estado de usuario:', err);
+          // En caso de error, permitir acceso
+        }
+      }
+
+      // En la primera verificación (recarga de página), no considerar como nuevo login
+      if (isInitialCheckRef.current) {
+        isInitialCheckRef.current = false;
+        wasAuthenticatedRef.current = isAuthenticated;
+        setUser(currentUser);
+        setCheckingAuth(false);
+        // Si hay usuario en la recarga, no mostrar loader
+        if (isAuthenticated) {
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Si el usuario estaba desautenticado y ahora está autenticado, es un nuevo login
+      if (!wasAuthenticatedRef.current && isAuthenticated) {
+        setIsNewLogin(true);
+        setLoadStartTime(Date.now());
+        setLoading(true);
+      }
+
+      // Si el usuario estaba autenticado y ahora está desautenticado, resetear estados
+      if (wasAuthenticatedRef.current && !isAuthenticated) {
+        setIsNewLogin(false);
+        setLoadStartTime(null);
+        setLoading(false);
+      }
+
+      wasAuthenticatedRef.current = isAuthenticated;
+      setUser(currentUser);
+      setCheckingAuth(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    if (auth) {
+      try {
+        await signOut(auth);
+      } catch (error) {
+        // Error silencioso
+      }
+    }
+  };
+
+  // Suscribirse a cambios en tiempo real de items
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    if (!isFirebaseReady) {
+      setLoading(false);
+      setError('Firebase no está configurado. Por favor, configura las variables de entorno en el archivo .env');
+      return;
+    }
+
+    // Solo mostrar loader si es un nuevo login, no al recargar la página
+    if (!isNewLogin) {
+      setLoading(false);
+    }
+
+    let unsubscribeItems: (() => void) | undefined;
+    let timeoutId: ReturnType<typeof setTimeout>;
+    let minTimeTimeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    try {
+      unsubscribeItems = subscribeToItems((itemsData) => {
+        setItems(itemsData);
+        setError(null);
+
+        // Solo aplicar tiempo mínimo si es un nuevo login
+        if (isNewLogin && loadStartTime) {
+          const elapsedTime = Date.now() - loadStartTime;
+          const minDisplayTime = 3000; // 3 segundos
+
+          if (elapsedTime < minDisplayTime) {
+            const remainingTime = minDisplayTime - elapsedTime;
+            minTimeTimeoutId = setTimeout(() => {
+              setLoading(false);
+              setIsNewLogin(false);
+            }, remainingTime);
+          } else {
+            setLoading(false);
+            setIsNewLogin(false);
+          }
+        } else {
+          setLoading(false);
+        }
+      });
+
+      // Timeout de seguridad: si después de 10 segundos no hay respuesta, mostrar error
+      timeoutId = setTimeout(() => {
+        if (loading) {
+          setLoading(false);
+          setError('Error al conectar con Firebase. Verifica tu conexión y configuración.');
+        }
+      }, 10000);
+    } catch (err: any) {
+      setLoading(false);
+
+      if (err?.code === 'permission-denied' || err?.message?.includes('permission')) {
+        setError('Permisos denegados. Verifica las reglas de Firestore.');
+      } else {
+        setError('Error al conectar con Firebase. Verifica tu conexión.');
+      }
+    }
+
+    return () => {
+      if (unsubscribeItems) unsubscribeItems();
+      clearTimeout(timeoutId);
+      if (minTimeTimeoutId) clearTimeout(minTimeTimeoutId);
+    };
+  }, [user, isFirebaseReady, loadStartTime, isNewLogin]);
+
+  // Suscribirse a cambios en tiempo real de categorías
+  useEffect(() => {
+    if (!isFirebaseReady) {
+      return;
+    }
+
+    let unsubscribeCategorias: (() => void) | undefined;
+
+    try {
+      unsubscribeCategorias = subscribeToCategorias((categoriasData) => {
+        if (categoriasData.length > 0) {
+          setCategorias(categoriasData);
+        } else {
+          // Si no hay categorías en Firebase, inicializar con las por defecto
+          saveCategorias(CATEGORIAS_DEFAULT).catch(() => {
+            // Error silencioso
+          });
+        }
+      });
+    } catch (err) {
+      // Error silencioso
+    }
+
+    return () => {
+      if (unsubscribeCategorias) unsubscribeCategorias();
+    };
+  }, [isFirebaseReady]);
+
+  // Guardar categorías cuando cambien
+  useEffect(() => {
+    if (isFirebaseReady && categorias.length > 0 && categorias !== CATEGORIAS_DEFAULT) {
+      saveCategorias(categorias).catch(() => {
+        // Error silencioso
+      });
+    }
+  }, [categorias, isFirebaseReady]);
+
+  // Suscribirse a cambios en tiempo real de sedes
+  useEffect(() => {
+    if (!isFirebaseReady) return;
+
+    let unsubscribeSedes: (() => void) | undefined;
+
+    try {
+      unsubscribeSedes = subscribeToSedes((sedesData: string[]) => {
+        if (sedesData && sedesData.length > 0) {
+          setSedes(sedesData);
+        } else {
+          // Si no hay sedes en Firebase, inicializar con las por defecto
+          const sedesDefault = ['Manuel Rodriguez', 'Pedro de Valdivia'];
+          setSedes(sedesDefault);
+          saveSedes(sedesDefault).catch(() => {
+            // Error silencioso
+          });
+        }
+      });
+    } catch (err) {
+      // Error silencioso
+    }
+
+    return () => {
+      if (unsubscribeSedes) unsubscribeSedes();
+    };
+  }, [isFirebaseReady]);
+
+
+  const handleAddItem = () => {
+    setEditingItem(null);
+    setShowForm(true);
+  };
+
+  const handleEditItem = (item: ItemInventario) => {
+    setEditingItem(item);
+    setShowForm(true);
+  };
+
+  const handleSaveItem = async (item: ItemInventario) => {
+    try {
+      // Validar que el nombre sea único
+      const nombreNormalizado = item.nombre.trim().toLowerCase();
+      const nombreDuplicado = items.find(existingItem => {
+        const existingNombreNormalizado = existingItem.nombre.trim().toLowerCase();
+        // Ignorar equipos dados de baja al validar duplicados
+        if (existingItem.estado === 'Baja') {
+          return false;
+        }
+        // Si estamos editando, excluir el item actual de la validación
+        if (editingItem && existingItem.id === editingItem.id) {
+          return false;
+        }
+        return existingNombreNormalizado === nombreNormalizado;
+      });
+
+      if (nombreDuplicado) {
+        throw new Error(`El nombre "${item.nombre}" ya existe en la base de datos. Por favor, usa un nombre diferente.`);
+      }
+
+      if (editingItem) {
+        // Actualizar item existente
+        await updateItem(item.id, item);
+      } else {
+        // Agregar nuevo item
+        const { id, ...itemData } = item;
+        await addItem(itemData);
+      }
+      setShowForm(false);
+      setEditingItem(null);
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Error desconocido al guardar el item';
+      alert(`Error al guardar el item: ${errorMessage}`);
+    }
+  };
+
+  const handleDeleteItem = async (id: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este item?')) {
+      try {
+        await deleteItem(id);
+      } catch (error) {
+        alert('Error al eliminar el item. Por favor, intenta nuevamente.');
+      }
+    }
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingItem(null);
+  };
+
+  const handleCategoriasChange = async (nuevasCategorias: string[]): Promise<void> => {
+    try {
+      setCategorias(nuevasCategorias);
+      await saveCategorias(nuevasCategorias);
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Error desconocido';
+      alert(`Error al guardar las categorías: ${errorMessage}`);
+      throw error; // Re-lanzar el error para que el componente pueda manejarlo
+    }
+  };
+
+  const handleSedesChange = async (nuevasSedes: string[]) => {
+    try {
+      setSedes(nuevasSedes);
+      await saveSedes(nuevasSedes);
+    } catch (error) {
+      alert('Error al guardar las sedes. Por favor, intenta nuevamente.');
+    }
+  };
+
+  const filteredItems = items.filter(item => {
+    if (filterEstado !== 'Todos' && item.estado !== filterEstado) return false;
+    if (filterCategoria !== 'Todas' && item.categoria !== filterCategoria) return false;
+    if (filterSede !== 'Todas' && item.sede !== filterSede) return false;
+    if (filterTipoUso !== 'Todos' && item.tipoUso !== filterTipoUso) return false;
+    if (filterMarca !== 'Todas' && item.marca !== filterMarca) return false;
+    if (filterPiso !== 'Todos' && item.piso !== filterPiso) return false;
+    if (filterEdificio !== 'Todos' && item.edificio !== filterEdificio) return false;
+    if (filterProcesador !== 'Todos' && item.procesador !== filterProcesador) return false;
+    if (filterRam !== 'Todas' && item.ram !== filterRam) return false;
+    if (filterDiscoDuro !== 'Todos' && item.discoDuro !== filterDiscoDuro) return false;
+    if (filterEncargado !== 'Todos' && getEncargadoKey(item.encargado) !== getEncargadoKey(filterEncargado)) return false;
+    // Filtro de Horas de Proyector
+    if (filterHorasProyector !== 'Todas') {
+      const esProyector = item.categoria === 'Otro' && (item.nombre.toLowerCase().includes('proy') || item.nombre.toLowerCase().includes('epson'));
+      if (!esProyector) return false;
+      const horas = parseInt(item.horasNormales || '0');
+      if (filterHorasProyector === 'Crítico (>2000 hrs)' && horas <= 2000) return false;
+      if (filterHorasProyector === 'Estado Normal' && horas > 2000) return false;
+    }
+
+    return true;
+  });
+
+  // Items filtrados también por búsqueda (para mostrar en la lista)
+  const filteredAndSearchedItems = filteredItems.filter(item =>
+    item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.marca.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.numeroSerie.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.ubicacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.responsable.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+
+  const handleExportExcel = () => {
+    // Exportar los items que están siendo mostrados (con filtros y búsqueda aplicados)
+    const itemsToExport = filteredAndSearchedItems.length > 0 ? filteredAndSearchedItems : filteredItems;
+
+    if (itemsToExport.length === 0) {
+      alert('No hay items para exportar');
+      return;
+    }
+    exportToExcel(itemsToExport, 'inventario_departamento_informatica');
+  };
+
+  const handleImportExcel = async (file: File) => {
+    try {
+      const importedWithoutId = await importFromExcel(file);
+
+      if (importedWithoutId.length === 0) {
+        alert('El archivo no contiene registros válidos.');
+        return;
+      }
+
+      // Mapa de items existentes por nombre normalizado
+      const existingByName = new Map<string, ItemInventario>();
+      for (const item of items) {
+        existingByName.set(item.nombre.trim().toLowerCase(), item);
+      }
+
+      // Usar mapas para que, si en el archivo hay filas repetidas
+      // para el mismo nombre, se tome solo una (la última leída)
+      const createsByName = new Map<string, Omit<ItemInventario, 'id'>>();
+      const updatesById = new Map<string, Omit<ItemInventario, 'id'>>();
+
+      for (const imported of importedWithoutId) {
+        const nombreNormalizado = imported.nombre.trim().toLowerCase();
+        if (!nombreNormalizado) continue;
+
+        const existing = existingByName.get(nombreNormalizado);
+        if (existing) {
+          // Si el item ya existe, preparar actualización de sus datos
+          updatesById.set(existing.id, imported);
+        } else {
+          // Si no existe, preparar creación
+          createsByName.set(nombreNormalizado, imported);
+        }
+      }
+
+      const toAdd = Array.from(createsByName.values());
+      const toUpdate = Array.from(updatesById.entries()); // [id, data]
+
+      if (toAdd.length === 0 && toUpdate.length === 0) {
+        alert('No hay cambios para aplicar desde el archivo (todos los registros están vacíos o sin nombre).');
+        return;
+      }
+
+      let createdCount = 0;
+      let updatedCount = 0;
+      let errorCount = 0;
+
+      // Crear nuevos items
+      for (const itemData of toAdd) {
+        try {
+          await addItem(itemData);
+          createdCount += 1;
+        } catch {
+          errorCount += 1;
+        }
+      }
+
+      // Actualizar items existentes
+      for (const [id, data] of toUpdate) {
+        try {
+          await updateItem(id, data);
+          updatedCount += 1;
+        } catch {
+          errorCount += 1;
+        }
+      }
+
+      if (createdCount === 0 && updatedCount === 0) {
+        alert('No se pudo aplicar ningún cambio. Revisa que los datos sean válidos.');
+        return;
+      }
+
+      alert(
+        `Importación completada. ` +
+        `Nuevos: ${createdCount}. ` +
+        `Actualizados: ${updatedCount}.` +
+        (errorCount ? ` Errores: ${errorCount}.` : '')
+      );
+    } catch (error) {
+      console.error('Error al importar Excel:', error);
+      alert('Hubo un error al procesar el archivo de Excel.');
+    }
+  };
+
+  // Mostrar login si no está autenticado
+  if (checkingAuth) {
+    return null;
+  }
+
+  if (!user) {
+    return <Login />;
+  }
+
+  if (loading || loadingRole) {
+    return <Loader />;
+  }
+
+  // Si es administrador, mostrar el panel de administración como vista principal
+  if (isAdmin) {
+    return (
+      <AdminPanel
+        isAdmin={isAdmin}
+        currentUserEmail={user?.email || ''}
+        currentUserName={user?.displayName || ''}
+        categorias={categorias}
+        sedes={sedes}
+        items={items}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        filterEstado={filterEstado}
+        setFilterEstado={setFilterEstado}
+        filterCategoria={filterCategoria}
+        setFilterCategoria={setFilterCategoria}
+        filterSede={filterSede}
+        setFilterSede={setFilterSede}
+        filterTipoUso={filterTipoUso}
+        setFilterTipoUso={setFilterTipoUso}
+        filterMarca={filterMarca}
+        setFilterMarca={setFilterMarca}
+        filterPiso={filterPiso}
+        setFilterPiso={setFilterPiso}
+        filterEdificio={filterEdificio}
+        setFilterEdificio={setFilterEdificio}
+        filterProcesador={filterProcesador}
+        setFilterProcesador={setFilterProcesador}
+        filterRam={filterRam}
+        setFilterRam={setFilterRam}
+        filterDiscoDuro={filterDiscoDuro}
+        setFilterDiscoDuro={setFilterDiscoDuro}
+        filterEncargado={filterEncargado}
+        setFilterEncargado={setFilterEncargado}
+        filterHorasProyector={filterHorasProyector}
+        setFilterHorasProyector={setFilterHorasProyector}
+        onCategoriasChange={handleCategoriasChange}
+        onSedesChange={handleSedesChange}
+        onAddItem={handleAddItem}
+        onEditItem={handleEditItem}
+        onDeleteItem={handleDeleteItem}
+        onSaveItem={handleSaveItem}
+        onCancelForm={handleCancelForm}
+        showForm={showForm}
+        editingItem={editingItem}
+        filteredAndSearchedItems={filteredAndSearchedItems}
+        onExportExcel={handleExportExcel}
+        onImportExcel={handleImportExcel}
+        onLogout={handleLogout}
+        error={error}
+      />
+    );
+  }
+
+  // Si es usuario normal, mostrar el panel de usuario
+  return (
+    <UserPanel
+      currentUserEmail={user?.email || ''}
+      currentUserName={user?.displayName || ''}
+      categorias={categorias}
+      sedes={sedes}
+      items={items}
+      searchTerm={searchTerm}
+      setSearchTerm={setSearchTerm}
+      viewMode={viewMode}
+      setViewMode={setViewMode}
+      filterEstado={filterEstado}
+      setFilterEstado={setFilterEstado}
+      filterCategoria={filterCategoria}
+      setFilterCategoria={setFilterCategoria}
+      filterSede={filterSede}
+      setFilterSede={setFilterSede}
+      filterTipoUso={filterTipoUso}
+      setFilterTipoUso={setFilterTipoUso}
+      onAddItem={handleAddItem}
+      onEditItem={handleEditItem}
+      onDeleteItem={handleDeleteItem}
+      onSaveItem={handleSaveItem}
+      onCancelForm={handleCancelForm}
+      showForm={showForm}
+      editingItem={editingItem}
+      filteredAndSearchedItems={filteredAndSearchedItems}
+      onExportExcel={handleExportExcel}
+      onLogout={handleLogout}
+      error={error}
+    />
+  );
+}
+
+export default App;
