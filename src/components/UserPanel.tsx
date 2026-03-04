@@ -350,8 +350,8 @@ export default function UserPanel({
           </div>
 
           {/* Contenido principal */}
-          <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 bg-gray-50 w-full">
-            <div className="max-w-[1200px] mx-auto">
+          <div className="flex-1 min-w-0 overflow-y-auto p-3 sm:p-4 md:p-6 bg-gray-50 w-full max-w-full">
+            <div className="max-w-[1200px] mx-auto w-full">
               {/* Mensaje de error */}
               {error && (
                 <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">

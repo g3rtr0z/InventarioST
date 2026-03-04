@@ -1,6 +1,6 @@
-import { 
-  doc, 
-  getDoc, 
+import {
+  doc,
+  getDoc,
   setDoc,
   deleteDoc,
   getDocs,
@@ -38,12 +38,12 @@ export const getUserRole = async (userEmail: string): Promise<UserRole> => {
   try {
     const userRoleRef = doc(db as Firestore, ROLES_COLLECTION, userEmail);
     const userRoleDoc = await getDoc(userRoleRef);
-    
+
     if (userRoleDoc.exists()) {
       const data = userRoleDoc.data();
       return (data.role as UserRole) || 'usuario';
     }
-    
+
     // Si no existe el documento, crear uno con rol 'usuario' por defecto
     await setDoc(userRoleRef, { role: 'usuario' });
     return 'usuario';
@@ -78,7 +78,7 @@ export const isUserAdmin = async (userEmail: string | null | undefined): Promise
   if (!userEmail) {
     return false;
   }
-  
+
   const role = await getUserRole(userEmail);
   return role === 'administrador';
 };
@@ -88,7 +88,7 @@ export const isUserAdmin = async (userEmail: string | null | undefined): Promise
  * Se llama automáticamente cuando un usuario inicia sesión
  */
 export const registerUser = async (
-  email: string, 
+  email: string,
   displayName?: string,
   lastLogin?: string
 ): Promise<void> => {
@@ -99,10 +99,10 @@ export const registerUser = async (
   try {
     const userRef = doc(db as Firestore, USERS_COLLECTION, email);
     const userDoc = await getDoc(userRef);
-    
+
     const role = await getUserRole(email);
     const now = new Date().toISOString();
-    
+
     if (userDoc.exists()) {
       // Actualizar usuario existente
       await setDoc(userRef, {
@@ -143,7 +143,7 @@ export const getAllUsers = async (): Promise<UserInfo[]> => {
       orderBy('createdAt', 'desc')
     );
     const querySnapshot = await getDocs(q);
-    
+
     return querySnapshot.docs.map(doc => ({
       ...doc.data()
     })) as UserInfo[];
@@ -154,10 +154,32 @@ export const getAllUsers = async (): Promise<UserInfo[]> => {
 };
 
 /**
+ * Obtener los datos de un usuario por su email
+ */
+export const getUserData = async (userEmail: string): Promise<UserInfo | null> => {
+  if (!db) {
+    return null;
+  }
+
+  try {
+    const userRef = doc(db as Firestore, USERS_COLLECTION, userEmail);
+    const userDoc = await getDoc(userRef);
+
+    if (userDoc.exists()) {
+      return userDoc.data() as UserInfo;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error al obtener datos de usuario:', error);
+    return null;
+  }
+};
+
+/**
  * Cambiar el rol de un usuario
  */
 export const changeUserRole = async (
-  userEmail: string, 
+  userEmail: string,
   newRole: UserRole
 ): Promise<void> => {
   if (!db) {
@@ -167,11 +189,11 @@ export const changeUserRole = async (
   try {
     // Actualizar rol en la colección de roles
     await setUserRole(userEmail, newRole);
-    
+
     // Actualizar rol en la información del usuario
     const userRef = doc(db as Firestore, USERS_COLLECTION, userEmail);
     const userDoc = await getDoc(userRef);
-    
+
     if (userDoc.exists()) {
       await setDoc(userRef, { role: newRole }, { merge: true });
     } else {
@@ -228,7 +250,7 @@ export const createUser = async (
     // Crear usuario en Firebase Authentication
     // Esto automáticamente inicia sesión con el usuario recién creado
     await createUserWithEmailAndPassword(auth, email, password);
-    
+
     // Crear registro en Firestore
     const now = new Date().toISOString();
     const userRef = doc(db as Firestore, USERS_COLLECTION, email);
@@ -249,7 +271,7 @@ export const createUser = async (
     await signOut(auth);
   } catch (error: any) {
     console.error('Error al crear usuario:', error);
-    
+
     // Si el usuario ya existe en Auth pero no en Firestore, crear solo el registro en Firestore
     if (error.code === 'auth/email-already-in-use') {
       throw new Error('El email ya está en uso');
@@ -270,13 +292,13 @@ export const isUserActive = async (userEmail: string): Promise<boolean> => {
   try {
     const userRef = doc(db as Firestore, USERS_COLLECTION, userEmail);
     const userDoc = await getDoc(userRef);
-    
+
     if (userDoc.exists()) {
       const data = userDoc.data();
       // Si isActive no está definido, asumir que está activo (compatibilidad hacia atrás)
       return data.isActive !== false;
     }
-    
+
     // Si el usuario no existe en Firestore, asumir que está activo
     return true;
   } catch (error) {

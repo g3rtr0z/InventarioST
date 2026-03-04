@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import type { User } from 'firebase/auth';
-import { getUserRole, isUserAdmin, registerUser, type UserRole } from '../services/userRoleService';
+import { getUserRole, isUserAdmin, registerUser, getUserData, type UserRole } from '../services/userRoleService';
 
 export function useUserRole(user: User | null) {
   const [userRole, setUserRole] = useState<UserRole>('usuario');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [displayName, setDisplayName] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user || !user.email) {
       setUserRole('usuario');
       setIsAdmin(false);
+      setDisplayName('');
       setLoading(false);
       return;
     }
@@ -20,7 +22,15 @@ export function useUserRole(user: User | null) {
         setLoading(true);
         // Registrar/actualizar usuario en Firestore
         await registerUser(user.email!, user.displayName || undefined, new Date().toISOString());
-        
+
+        // Obtener datos del usuario desde Firestore
+        const userData = await getUserData(user.email!);
+        if (userData && userData.displayName) {
+          setDisplayName(userData.displayName);
+        } else {
+          setDisplayName(user.displayName || '');
+        }
+
         // Obtener rol del usuario
         const role = await getUserRole(user.email!);
         const admin = await isUserAdmin(user.email);
@@ -38,6 +48,6 @@ export function useUserRole(user: User | null) {
     checkRole();
   }, [user]);
 
-  return { userRole, isAdmin, loading };
+  return { userRole, isAdmin, displayName, loading };
 }
 

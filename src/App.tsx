@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { ItemInventario } from './types/inventario';
 import AdminPanel from './components/AdminPanel';
-import UserPanel from './components/UserPanel';
+
 import Login from './components/Login';
 import Loader from './components/Loader';
 import {
@@ -43,7 +43,7 @@ function App() {
 
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const { isAdmin, loading: loadingRole } = useUserRole(user);
+  const { isAdmin, loading: loadingRole, displayName: firestoreName } = useUserRole(user);
   const [items, setItems] = useState<ItemInventario[]>([]);
   const [categorias, setCategorias] = useState<string[]>(CATEGORIAS_DEFAULT);
   const [searchTerm, setSearchTerm] = useState('');
@@ -504,67 +504,11 @@ function App() {
     return <Loader />;
   }
 
-  // Si es administrador, mostrar el panel de administración como vista principal
-  if (isAdmin) {
-    return (
-      <AdminPanel
-        isAdmin={isAdmin}
-        currentUserEmail={user?.email || ''}
-        currentUserName={user?.displayName || ''}
-        categorias={categorias}
-        sedes={sedes}
-        items={items}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        filterEstado={filterEstado}
-        setFilterEstado={setFilterEstado}
-        filterCategoria={filterCategoria}
-        setFilterCategoria={setFilterCategoria}
-        filterSede={filterSede}
-        setFilterSede={setFilterSede}
-        filterTipoUso={filterTipoUso}
-        setFilterTipoUso={setFilterTipoUso}
-        filterMarca={filterMarca}
-        setFilterMarca={setFilterMarca}
-        filterPiso={filterPiso}
-        setFilterPiso={setFilterPiso}
-        filterEdificio={filterEdificio}
-        setFilterEdificio={setFilterEdificio}
-        filterProcesador={filterProcesador}
-        setFilterProcesador={setFilterProcesador}
-        filterRam={filterRam}
-        setFilterRam={setFilterRam}
-        filterDiscoDuro={filterDiscoDuro}
-        setFilterDiscoDuro={setFilterDiscoDuro}
-        filterEncargado={filterEncargado}
-        setFilterEncargado={setFilterEncargado}
-        filterHorasProyector={filterHorasProyector}
-        setFilterHorasProyector={setFilterHorasProyector}
-        onCategoriasChange={handleCategoriasChange}
-        onSedesChange={handleSedesChange}
-        onAddItem={handleAddItem}
-        onEditItem={handleEditItem}
-        onDeleteItem={handleDeleteItem}
-        onSaveItem={handleSaveItem}
-        onCancelForm={handleCancelForm}
-        showForm={showForm}
-        editingItem={editingItem}
-        filteredAndSearchedItems={filteredAndSearchedItems}
-        onExportExcel={handleExportExcel}
-        onImportExcel={handleImportExcel}
-        onLogout={handleLogout}
-        error={error}
-      />
-    );
-  }
-
-  // Si es usuario normal, mostrar el panel de usuario
   return (
-    <UserPanel
+    <AdminPanel
+      isAdmin={isAdmin}
       currentUserEmail={user?.email || ''}
-      currentUserName={user?.displayName || ''}
+      currentUserName={firestoreName || user?.displayName || ''}
       categorias={categorias}
       sedes={sedes}
       items={items}
@@ -580,6 +524,24 @@ function App() {
       setFilterSede={setFilterSede}
       filterTipoUso={filterTipoUso}
       setFilterTipoUso={setFilterTipoUso}
+      filterMarca={filterMarca}
+      setFilterMarca={setFilterMarca}
+      filterPiso={filterPiso}
+      setFilterPiso={setFilterPiso}
+      filterEdificio={filterEdificio}
+      setFilterEdificio={setFilterEdificio}
+      filterProcesador={filterProcesador}
+      setFilterProcesador={setFilterProcesador}
+      filterRam={filterRam}
+      setFilterRam={setFilterRam}
+      filterDiscoDuro={filterDiscoDuro}
+      setFilterDiscoDuro={setFilterDiscoDuro}
+      filterEncargado={filterEncargado}
+      setFilterEncargado={setFilterEncargado}
+      filterHorasProyector={filterHorasProyector}
+      setFilterHorasProyector={setFilterHorasProyector}
+      onCategoriasChange={handleCategoriasChange}
+      onSedesChange={handleSedesChange}
       onAddItem={handleAddItem}
       onEditItem={handleEditItem}
       onDeleteItem={handleDeleteItem}
@@ -589,6 +551,7 @@ function App() {
       editingItem={editingItem}
       filteredAndSearchedItems={filteredAndSearchedItems}
       onExportExcel={handleExportExcel}
+      onImportExcel={handleImportExcel}
       onLogout={handleLogout}
       error={error}
     />

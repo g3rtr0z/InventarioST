@@ -115,8 +115,8 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                       <FaTag className="text-[8px]" /> {item.categoria}
                     </span>
                     <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg ${item.tipoUso === 'Alumnos'
-                        ? 'bg-emerald-50 border border-emerald-100 text-emerald-700'
-                        : 'bg-green-50 border border-green-100 text-green-800'
+                      ? 'bg-emerald-50 border border-emerald-100 text-emerald-700'
+                      : 'bg-green-50 border border-green-100 text-green-800'
                       }`}>
                       {item.tipoUso}
                     </span>
@@ -266,8 +266,8 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                       <td className="px-4 py-3 align-middle text-slate-500 text-xs">{item.piso || '—'}</td>
                       <td className="px-4 py-3 align-middle">
                         <span className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-lg whitespace-nowrap ${item.tipoUso === 'Alumnos'
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : `${INSTITUTIONAL_COLORS.bgPrimary} text-white`
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : `${INSTITUTIONAL_COLORS.bgPrimary} text-white`
                           }`}>
                           {item.tipoUso}
                         </span>

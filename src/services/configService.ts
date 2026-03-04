@@ -25,6 +25,8 @@ export interface ConfiguracionGeneral {
   moneda: string; // 'MXN', 'USD', etc.
   alertaMantenimiento: number; // Días antes de alertar
   alertaGarantia: number; // Días antes de alertar
+  nombreInstitucion: string;
+  umbralProyector: number;
 }
 
 export interface CampoFormulario {
@@ -49,6 +51,8 @@ export interface ConfiguracionSistema {
   general: ConfiguracionGeneral;
   formulario: CampoFormulario[];
   seccionesFormulario: SeccionFormulario[];
+  categorias: string[];
+  sedes: string[];
 }
 
 const CONFIG_DEFAULT: ConfiguracionSistema = {
@@ -63,7 +67,9 @@ const CONFIG_DEFAULT: ConfiguracionSistema = {
     formatoFecha: 'DD/MM/YYYY',
     moneda: 'MXN',
     alertaMantenimiento: 30,
-    alertaGarantia: 30
+    alertaGarantia: 30,
+    nombreInstitucion: 'Universidad Santo Tomás',
+    umbralProyector: 2000
   },
   seccionesFormulario: [
     { nombre: 'Información General', visible: true, orden: 1 },
@@ -89,7 +95,9 @@ const CONFIG_DEFAULT: ConfiguracionSistema = {
     { nombre: 'procesador', seccion: 'Especificaciones Técnicas', visible: true, obligatorio: false, orden: 4, etiqueta: 'Procesador' },
     { nombre: 'ram', seccion: 'Especificaciones Técnicas', visible: true, obligatorio: false, orden: 5, etiqueta: 'RAM' },
     { nombre: 'discoDuro', seccion: 'Especificaciones Técnicas', visible: true, obligatorio: false, orden: 6, etiqueta: 'Disco Duro' }
-  ]
+  ],
+  categorias: ['Computación', 'Proyectores', 'Audio', 'Accesorios', 'Mobiliario', 'Otros'],
+  sedes: ['Manuel Rodriguez', 'Rancagua', 'Ejército']
 };
 
 /**
@@ -115,7 +123,9 @@ export const getConfig = async (): Promise<ConfiguracionSistema> => {
       estados: data.estados || CONFIG_DEFAULT.estados,
       general: { ...CONFIG_DEFAULT.general, ...(data.general || {}) },
       formulario: data.formulario || CONFIG_DEFAULT.formulario,
-      seccionesFormulario: data.seccionesFormulario || CONFIG_DEFAULT.seccionesFormulario
+      seccionesFormulario: data.seccionesFormulario || CONFIG_DEFAULT.seccionesFormulario,
+      categorias: data.categorias || CONFIG_DEFAULT.categorias,
+      sedes: data.sedes || CONFIG_DEFAULT.sedes
     } as ConfiguracionSistema;
   } catch (error) {
     console.error('Error al obtener configuración:', error);
@@ -150,7 +160,9 @@ export const subscribeToConfig = (
           estados: data.estados || CONFIG_DEFAULT.estados,
           general: { ...CONFIG_DEFAULT.general, ...(data.general || {}) },
           formulario: data.formulario || CONFIG_DEFAULT.formulario,
-          seccionesFormulario: data.seccionesFormulario || CONFIG_DEFAULT.seccionesFormulario
+          seccionesFormulario: data.seccionesFormulario || CONFIG_DEFAULT.seccionesFormulario,
+          categorias: data.categorias || CONFIG_DEFAULT.categorias,
+          sedes: data.sedes || CONFIG_DEFAULT.sedes
         };
         callback(config);
       },
@@ -222,6 +234,24 @@ export const updateFormulario = async (formulario: CampoFormulario[]): Promise<v
 export const updateSeccionesFormulario = async (secciones: SeccionFormulario[]): Promise<void> => {
   const config = await getConfig();
   config.seccionesFormulario = secciones;
+  await saveConfig(config);
+};
+
+/**
+ * Actualizar solo las categorías
+ */
+export const updateCategorias = async (categorias: string[]): Promise<void> => {
+  const config = await getConfig();
+  config.categorias = categorias;
+  await saveConfig(config);
+};
+
+/**
+ * Actualizar solo las sedes
+ */
+export const updateSedes = async (sedes: string[]): Promise<void> => {
+  const config = await getConfig();
+  config.sedes = sedes;
   await saveConfig(config);
 };
 

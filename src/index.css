@@ -8,8 +8,27 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-weight: 600;
   }
+}
+
+/* Ocultar barras de scroll visualmente pero mantener funcionalidad */
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+* {
+  -ms-overflow-style: none !important;
+  /* IE y Edge antiguos */
+  scrollbar-width: none !important;
+  /* Firefox */
 }

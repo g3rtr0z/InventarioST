@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { ItemInventario } from '../types/inventario';
 import { sanitizeText, validateNoXSS, validateNoSQLInjection } from '../utils/security';
-import { getConfig, subscribeToConfig, type CampoFormulario, type SeccionFormulario } from '../services/configService';
+import { getConfig, subscribeToConfig, type ConfiguracionSistema, type CampoFormulario, type SeccionFormulario } from '../services/configService';
 import { INSTITUTIONAL_COLORS } from '../constants/colors';
 import type { UserInfo } from '../services/userRoleService';
 
@@ -40,6 +40,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     encargado: ''
   });
   const [nombreError, setNombreError] = useState<string>('');
+  const [configuracion, setConfiguracion] = useState<ConfiguracionSistema | null>(null);
   const [configFormulario, setConfigFormulario] = useState<CampoFormulario[]>([]);
   const [seccionesFormulario, setSeccionesFormulario] = useState<SeccionFormulario[]>([]);
 
@@ -48,6 +49,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     const loadConfig = async () => {
       try {
         const config = await getConfig();
+        setConfiguracion(config);
         setConfigFormulario(config.formulario || []);
         setSeccionesFormulario(config.seccionesFormulario || []);
 
@@ -71,6 +73,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
 
     // Suscribirse a cambios en la configuración
     const unsubscribe = subscribeToConfig((config) => {
+      setConfiguracion(config);
       setConfigFormulario(config.formulario || []);
       setSeccionesFormulario(config.seccionesFormulario || []);
 
@@ -626,10 +629,18 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                                     required={isCampoObligatorio('estado')}
                                     className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-xl`}
                                   >
-                                    <option value="Disponible">Disponible</option>
-                                    <option value="En Uso">En Uso</option>
-                                    <option value="Mantenimiento">Mantenimiento</option>
-                                    <option value="Baja">Baja</option>
+                                    {configuracion?.estados && configuracion.estados.length > 0 ? (
+                                      configuracion.estados.map(estado => (
+                                        <option key={estado.nombre} value={estado.nombre}>{estado.nombre}</option>
+                                      ))
+                                    ) : (
+                                      <>
+                                        <option value="Disponible">Disponible</option>
+                                        <option value="En Uso">En Uso</option>
+                                        <option value="Mantenimiento">Mantenimiento</option>
+                                        <option value="Baja">Baja</option>
+                                      </>
+                                    )}
                                   </select>
                                 </div>
                               );
