@@ -2282,7 +2282,7 @@ export default function AdminPanel({
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id as any)}
-                className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-all relative ${activeSection === item.id
+                className={`flex-1 flex flex-col items-center justify-center transition-all relative ${activeSection === item.id
                   ? 'text-green-700'
                   : 'text-slate-400 hover:text-slate-600'
                   }`}
@@ -2290,9 +2290,14 @@ export default function AdminPanel({
                 {activeSection === item.id && (
                   <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-green-600 rounded-b-full" />
                 )}
-                <item.icon className={`text-lg transition-transform ${activeSection === item.id ? 'scale-110 text-green-600' : ''
-                  }`} />
-                <span className={`text-[9px] font-bold uppercase tracking-wider leading-none ${activeSection === item.id ? 'text-green-700' : 'text-slate-400'
+
+                {/* Contenedor de icono con altura fija para normalizar el espacio */}
+                <div className="h-6 flex items-center justify-center mb-0.5">
+                  <item.icon className={`text-lg transition-all duration-300 ${activeSection === item.id ? 'scale-115 text-green-600' : ''
+                    }`} />
+                </div>
+
+                <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${activeSection === item.id ? 'text-green-700' : 'text-slate-400'
                   }`}>
                   {item.label}
                 </span>
