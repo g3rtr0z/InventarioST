@@ -14,8 +14,11 @@ import {
   FaSearch,
   FaUser,
   FaArrowUp,
-  FaArrowDown
+  FaArrowDown,
+  FaMoon,
+  FaSun
 } from 'react-icons/fa';
+import { useDarkMode } from '../hooks/useDarkMode';
 
 interface UserPanelProps {
   currentUserEmail: string;
@@ -79,6 +82,7 @@ export default function UserPanel({
   error
 }: UserPanelProps) {
   const [activeSection, setActiveSection] = useState<'inventario' | 'estadisticas'>('inventario');
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -214,8 +218,15 @@ export default function UserPanel({
 
             <div className="flex items-center gap-2 sm:gap-3">
               <button
+                onClick={toggleDarkMode}
+                className="p-2 sm:px-3 sm:py-1.5 text-sm font-medium text-white/90 hover:text-white bg-black/10 hover:bg-black/20 rounded-md transition-colors flex items-center gap-2"
+                title={isDarkMode ? 'Activar modo claro' : 'Activar modo oscuro'}
+              >
+                {isDarkMode ? <FaSun className="text-sm" /> : <FaMoon className="text-sm" />}
+              </button>
+              <button
                 onClick={onExportExcel}
-                className="px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white bg-black/10 hover:bg-black/20 rounded-md transition-colors flex items-center gap-2"
+                className="hidden sm:flex px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white bg-black/10 hover:bg-black/20 rounded-md transition-colors flex-center gap-2"
               >
                 <FaFileExport className="text-sm" />
                 <span className="hidden sm:inline">Exportar</span>

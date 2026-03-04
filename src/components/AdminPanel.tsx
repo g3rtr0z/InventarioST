@@ -45,10 +45,15 @@ import {
   FaChartPie,
   FaTag,
   FaBuilding,
-  FaMicrochip,
-  FaProjectDiagram
+  FaProjectDiagram,
+  FaDesktop,
+  FaBell,
+  FaShieldAlt,
+  FaDatabase,
+  FaCloudDownloadAlt
 } from 'react-icons/fa';
 import { getUniqueEncargados } from '../utils/userUtils';
+import { useDarkMode } from '../hooks/useDarkMode';
 
 interface AdminPanelProps {
   isAdmin: boolean;
@@ -83,8 +88,6 @@ interface AdminPanelProps {
   setFilterDiscoDuro: (disco: string) => void;
   filterEncargado: string;
   setFilterEncargado: (encargado: string) => void;
-  filterHorasProyector: string;
-  setFilterHorasProyector: (horas: string) => void;
   onCategoriasChange: (categorias: string[]) => void;
   onSedesChange: (sedes: string[]) => void;
   onAddItem: () => void;
@@ -134,8 +137,6 @@ export default function AdminPanel({
   setFilterDiscoDuro,
   filterEncargado,
   setFilterEncargado,
-  filterHorasProyector,
-  setFilterHorasProyector,
   onCategoriasChange,
   onSedesChange,
   onAddItem,
@@ -151,7 +152,8 @@ export default function AdminPanel({
   error
 }: AdminPanelProps) {
   const [activeSection, setActiveSection] = useState<'inventario' | 'dashboard' | 'usuarios' | 'reportes' | 'configuracion'>('inventario');
-  const [configSubsection, setConfigSubsection] = useState<'general' | 'categorias' | 'sedes' | 'estados' | 'avanzado'>('general');
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
+
 
 
 
@@ -166,8 +168,7 @@ export default function AdminPanel({
   // Estados para paginación
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(12);
-  const [sortBy, setSortBy] = useState<'nombre' | 'categoria' | 'estado' | 'ubicacion'>('nombre');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
 
   // Estados para gestión de usuarios
   const [users, setUsers] = useState<UserInfo[]>([]);
@@ -197,7 +198,6 @@ export default function AdminPanel({
 
   // Estados para configuración general editables
   const [nombreInstitucionEdit, setNombreInstitucionEdit] = useState('');
-  const [umbralProyectorEdit, setUmbralProyectorEdit] = useState(2000);
 
   const sidebarTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -236,34 +236,10 @@ export default function AdminPanel({
     setCurrentPage(1);
   }, [filterEstado, filterCategoria, filterSede, filterTipoUso, searchTerm]);
 
-  // Ordenar items
-  const sortedItems = [...filteredAndSearchedItems].sort((a, b) => {
-    let aValue: string | number = '';
-    let bValue: string | number = '';
-
-    switch (sortBy) {
-      case 'nombre':
-        aValue = a.nombre.toLowerCase();
-        bValue = b.nombre.toLowerCase();
-        break;
-      case 'categoria':
-        aValue = a.categoria.toLowerCase();
-        bValue = b.categoria.toLowerCase();
-        break;
-      case 'estado':
-        aValue = a.estado;
-        bValue = b.estado;
-        break;
-      case 'ubicacion':
-        aValue = a.ubicacion.toLowerCase();
-        bValue = b.ubicacion.toLowerCase();
-        break;
-    }
-
-    if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
-    return 0;
-  });
+  // Ordenar items alfabéticamente por nombre (fijo)
+  const sortedItems = [...filteredAndSearchedItems].sort((a, b) =>
+    a.nombre.toLowerCase().localeCompare(b.nombre.toLowerCase())
+  );
 
   // Paginación
   const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
@@ -309,180 +285,10 @@ export default function AdminPanel({
       setConfiguracion(config);
       if (config.general) {
         setNombreInstitucionEdit(config.general.nombreInstitucion || 'Universidad Santo Tomás');
-        setUmbralProyectorEdit(config.general.umbralProyector || 2000);
       }
     } catch (err) {
       console.error('Error al cargar configuración:', err);
     }
-  };
-
-  const handleAgregarEstado = async () => {
-    if (!nuevoEstado.nombre.trim() || !configuracion) return;
-
-    const estadoExiste = configuracion.estados.some((e: EstadoPersonalizado) => e.nombre.toLowerCase() === nuevoEstado.nombre.trim().toLowerCase());
-    if (estadoExiste) {
-      alert('Este estado ya existe');
-      return;
-    }
-
-    try {
-      const nuevosEstados = [...configuracion.estados, { ...nuevoEstado, nombre: nuevoEstado.nombre.trim() }];
-      await updateEstados(nuevosEstados);
-      setNuevoEstado({ nombre: '', color: 'bg-gray-100 text-gray-800', requerido: false });
-    } catch (err) {
-      alert('Error al agregar estado');
-      console.error(err);
-    }
-  };
-
-  const handleEliminarEstado = async (nombre: string) => {
-    if (!configuracion) return;
-    if (!window.confirm(`¿Estás seguro de eliminar el estado "${nombre}"?`)) return;
-
-    try {
-      const nuevosEstados = configuracion.estados.filter((e: EstadoPersonalizado) => e.nombre !== nombre);
-      await updateEstados(nuevosEstados);
-    } catch (err) {
-      alert('Error al eliminar estado');
-      console.error(err);
-    }
-  };
-
-
-  const handleActualizarFormulario = async (formulario: CampoFormulario[]) => {
-    try {
-      await updateFormulario(formulario);
-    } catch (err) {
-      alert('Error al actualizar configuración del formulario');
-      console.error(err);
-    }
-  };
-
-  const handleToggleCampoVisible = (nombreCampo: string) => {
-    if (!configuracion) return;
-    const nuevosCampos = configuracion.formulario.map((campo: CampoFormulario) =>
-      campo.nombre === nombreCampo ? { ...campo, visible: !campo.visible } : campo
-    );
-    handleActualizarFormulario(nuevosCampos);
-  };
-
-  const handleToggleCampoObligatorio = (nombreCampo: string) => {
-    if (!configuracion) return;
-    const nuevosCampos = configuracion.formulario.map((campo: CampoFormulario) =>
-      campo.nombre === nombreCampo ? { ...campo, obligatorio: !campo.obligatorio } : campo
-    );
-    handleActualizarFormulario(nuevosCampos);
-  };
-
-
-  const [nuevoCampoFormulario, setNuevoCampoFormulario] = useState({
-    nombre: '',
-    seccion: 'Información General',
-    etiqueta: '',
-    obligatorio: false,
-    tipo: 'text' as 'text' | 'number' | 'date' | 'select' | 'textarea'
-  });
-
-  const handleAgregarCampoFormulario = async () => {
-    if (!configuracion || !nuevoCampoFormulario.nombre.trim() || !nuevoCampoFormulario.etiqueta.trim()) {
-      alert('Por favor completa el nombre y la etiqueta del campo');
-      return;
-    }
-
-    try {
-      const maxOrdenSeccion = configuracion.formulario
-        .filter((c: CampoFormulario) => c.seccion === nuevoCampoFormulario.seccion)
-        .reduce((max: number, c: CampoFormulario) => Math.max(max, c.orden), 0);
-
-      const nuevoCampo: CampoFormulario = {
-        nombre: nuevoCampoFormulario.nombre.trim().toLowerCase().replace(/\s+/g, '_'),
-        seccion: nuevoCampoFormulario.seccion,
-        visible: true,
-        obligatorio: nuevoCampoFormulario.obligatorio,
-        orden: maxOrdenSeccion + 1,
-        etiqueta: nuevoCampoFormulario.etiqueta.trim(),
-        tipo: nuevoCampoFormulario.tipo
-      };
-
-      const nuevosCampos = [...configuracion.formulario, nuevoCampo];
-      await updateFormulario(nuevosCampos);
-      setMostrarModalCampoFormulario(false);
-      setNuevoCampoFormulario({
-        nombre: '',
-        seccion: 'Información General',
-        etiqueta: '',
-        obligatorio: false,
-        tipo: 'text'
-      });
-    } catch (err) {
-      alert('Error al agregar campo');
-    }
-  }; const handleMoverCampo = (nombreCampo: string, seccion: string, direccion: 'arriba' | 'abajo') => {
-    if (!configuracion) return;
-    const camposSeccion = configuracion.formulario
-      .filter((c: CampoFormulario) => c.seccion === seccion)
-      .sort((a, b) => a.orden - b.orden);
-
-    const index = camposSeccion.findIndex((c: CampoFormulario) => c.nombre === nombreCampo);
-    if (index === -1) return;
-
-    if (direccion === 'arriba' && index > 0) {
-      const prev = camposSeccion[index - 1];
-      const curr = camposSeccion[index];
-      const tempOrden = prev.orden;
-      prev.orden = curr.orden;
-      curr.orden = tempOrden;
-    } else if (direccion === 'abajo' && index < camposSeccion.length - 1) {
-      const next = camposSeccion[index + 1];
-      const curr = camposSeccion[index];
-      const tempOrden = next.orden;
-      next.orden = curr.orden;
-      curr.orden = tempOrden;
-    } else {
-      return;
-    }
-
-    handleActualizarFormulario([...configuracion.formulario]);
-  };
-
-  const handleEliminarCampo = (nombreCampo: string) => {
-    if (!configuracion) return;
-    if (window.confirm('¿Estás seguro de que deseas eliminar este campo personalizado?')) {
-      const nuevosCampos = configuracion.formulario.filter((c: CampoFormulario) => c.nombre !== nombreCampo);
-      handleActualizarFormulario(nuevosCampos);
-    }
-  };
-  const handleMoverSeccion = (nombreSeccion: string, direccion: 'arriba' | 'abajo') => {
-    if (!configuracion) return;
-
-    const secciones = [...configuracion.seccionesFormulario];
-    const index = secciones.findIndex((s: SeccionFormulario) => s.nombre === nombreSeccion);
-    if (index === -1) return;
-
-    const seccion = secciones[index];
-    const seccionesOrdenadas = [...secciones].sort((a: SeccionFormulario, b: SeccionFormulario) => a.orden - b.orden);
-    const indexEnOrden = seccionesOrdenadas.findIndex((s: SeccionFormulario) => s.nombre === nombreSeccion);
-
-    if (direccion === 'arriba' && indexEnOrden > 0) {
-      const seccionAnterior = seccionesOrdenadas[indexEnOrden - 1];
-      const tempOrden = seccion.orden;
-      seccion.orden = seccionAnterior.orden;
-      seccionAnterior.orden = tempOrden;
-    } else if (direccion === 'abajo' && indexEnOrden < seccionesOrdenadas.length - 1) {
-      const seccionSiguiente = seccionesOrdenadas[indexEnOrden + 1];
-      const tempOrden = seccion.orden;
-      seccion.orden = seccionSiguiente.orden;
-      seccionSiguiente.orden = tempOrden;
-    } else {
-      return;
-    }
-
-    // Reasignar órdenes secuenciales
-    seccionesOrdenadas.forEach((s: SeccionFormulario, idx: number) => {
-      s.orden = idx + 1;
-    });
-
-    updateSeccionesFormulario(secciones);
   };
 
   const loadUsers = async () => {
@@ -600,72 +406,6 @@ export default function AdminPanel({
       const errorMessage = err.message || 'Error al eliminar el usuario';
       setErrorUsers(errorMessage);
       console.error(err);
-    }
-  };
-
-  const handleAgregarCategoria = async () => {
-    const categoriaTrimmed = nuevaCategoria.trim();
-
-    if (!categoriaTrimmed) {
-      alert('Por favor, ingresa un nombre para la categoría.');
-      return;
-    }
-
-    // Verificar si la categoría ya existe (comparación case-insensitive)
-    const categoriaExiste = categorias.some(
-      cat => cat.trim().toLowerCase() === categoriaTrimmed.toLowerCase()
-    );
-
-    if (categoriaExiste) {
-      alert(`La categoría "${categoriaTrimmed}" ya existe.`);
-      return;
-    }
-
-    try {
-      const nuevasCategorias = [...categorias, categoriaTrimmed];
-      await onCategoriasChange(nuevasCategorias);
-      await updateCategorias(nuevasCategorias);
-      setNuevaCategoria('');
-    } catch (error) {
-      alert('Error al agregar la categoría. Por favor, intenta nuevamente.');
-    }
-  };
-
-  const handleEliminarCategoria = async (categoriaNombre: string) => {
-    if (window.confirm(`¿Estás seguro de eliminar la categoría "${categoriaNombre}"?`)) {
-      try {
-        const nuevasCategorias = categorias.filter(cat => cat !== categoriaNombre);
-        await onCategoriasChange(nuevasCategorias);
-        await updateCategorias(nuevasCategorias);
-      } catch (error) {
-        alert('Error al eliminar la categoría.');
-      }
-    }
-  };
-
-  const handleAgregarSede = async () => {
-    const sedeTrimmed = nuevaSede.trim();
-    if (sedeTrimmed && !sedes.includes(sedeTrimmed)) {
-      try {
-        const nuevasSedes = [...sedes, sedeTrimmed];
-        await onSedesChange(nuevasSedes);
-        await updateSedes(nuevasSedes);
-        setNuevaSede('');
-      } catch (error) {
-        alert('Error al registrar la sede.');
-      }
-    }
-  };
-
-  const handleEliminarSede = async (sedeNombre: string) => {
-    if (window.confirm(`¿Estás seguro de eliminar la sede "${sedeNombre}"?`)) {
-      try {
-        const nuevasSedes = sedes.filter(s => s !== sedeNombre);
-        await onSedesChange(nuevasSedes);
-        await updateSedes(nuevasSedes);
-      } catch (error) {
-        alert('Error al eliminar la sede.');
-      }
     }
   };
 
@@ -1162,13 +902,6 @@ export default function AdminPanel({
                                   <option value="Alumnos">Alu.</option>
                                 </select>
                               </div>
-                              <div className="mt-2">
-                                <select value={filterHorasProyector} onChange={e => setFilterHorasProyector(e.target.value)} className={selectClass(filterHorasProyector !== 'Todas')}>
-                                  <option value="Todas">Lámpara Proyector (Todas)</option>
-                                  <option value="Estado Normal">Estado Normal</option>
-                                  <option value="Crítico (>2000 hrs)">Estado Crítico</option>
-                                </select>
-                              </div>
                             </div>
 
                             {/* Acciones */}
@@ -1186,7 +919,6 @@ export default function AdminPanel({
                                   setFilterRam('Todas');
                                   setFilterDiscoDuro('Todos');
                                   setFilterEncargado('Todos');
-                                  setFilterHorasProyector('Todas');
                                   setSearchTerm('');
                                 }}
                                 className="w-full sm:w-auto py-1.5 px-6 text-[10px] font-black text-gray-400 hover:text-red-700 hover:bg-red-50 border border-gray-100 rounded-lg transition-all uppercase tracking-widest"
@@ -1201,39 +933,11 @@ export default function AdminPanel({
                   )}
                 </div>
 
-                {/* Controles de ordenamiento y paginación */}
+                {/* Controles de paginación */}
                 {sortedItems.length > 0 && (
                   <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    {/* Barra superior: ordenar + info + items por página */}
+                    {/* Barra superior: info + items por página */}
                     <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-slate-100">
-                      {/* Ordenamiento */}
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest shrink-0">Ordenar</span>
-                        <div className="flex bg-slate-50 rounded-xl p-0.5 border border-slate-100">
-                          {(['nombre', 'categoria', 'estado', 'ubicacion'] as const).map(opt => (
-                            <button
-                              key={opt}
-                              onClick={() => { setSortBy(opt); setCurrentPage(1); }}
-                              className={`px-2 py-1 text-[10px] font-bold rounded-lg transition-all ${sortBy === opt
-                                ? 'bg-white text-green-700 shadow-sm'
-                                : 'text-slate-400 hover:text-slate-600'
-                                }`}
-                            >
-                              {opt === 'nombre' ? 'Nomb.' : opt === 'categoria' ? 'Cat.' : opt === 'estado' ? 'Est.' : 'Ubic.'}
-                            </button>
-                          ))}
-                        </div>
-                        <button
-                          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                          className={`p-1.5 rounded-lg border transition-all ${sortOrder === 'asc'
-                            ? 'bg-green-50 text-green-700 border-green-100'
-                            : 'bg-slate-50 text-slate-500 border-slate-100'
-                            }`}
-                        >
-                          {sortOrder === 'asc' ? <FaArrowUp className="text-[10px]" /> : <FaArrowDown className="text-[10px]" />}
-                        </button>
-                      </div>
-
                       {/* Info + items por página */}
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-semibold text-slate-400">
@@ -1598,7 +1302,7 @@ export default function AdminPanel({
                           <button
                             onClick={() => handleEliminarUsuario(user.email)}
                             disabled={user.email === currentUserEmail}
-                            className={`px-3 py-1.5 text-xs font-black rounded-xl bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition-colors flex items-center gap-1 ${user.email === currentUserEmail ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`px-3 py-1.5 text-xs font-black rounded-xl bg-red-50 text-red-600 border border-red-100 btn-delete-override hover:bg-red-100 transition-colors flex items-center gap-1 ${user.email === currentUserEmail ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
                             <FaTrash className="text-[9px]" /> Eliminar
                           </button>
@@ -1647,33 +1351,11 @@ export default function AdminPanel({
               <div className="space-y-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
                   <h3 className="text-2xl font-bold text-slate-800">Panel de Configuración</h3>
-                  <div className="flex bg-slate-100 p-1 rounded-xl">
-                    {[
-                      { id: 'general', label: 'General', icon: FaCog },
-                      { id: 'categorias', label: 'Categorías', icon: FaTag },
-                      { id: 'sedes', label: 'Sedes', icon: FaBuilding },
-                      { id: 'estados', label: 'Estados', icon: FaChartBar },
-                      { id: 'avanzado', label: 'Avanzado', icon: FaProjectDiagram },
-                    ].map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setConfigSubsection(tab.id as any)}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all ${configSubsection === tab.id
-                          ? 'bg-green-800 text-white shadow-sm'
-                          : 'text-slate-500 hover:text-slate-700'
-                          }`}
-                      >
-                        <tab.icon className="text-xs" />
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
                 </div>
-
                 {/* Contenido de Subsecciones */}
-                <div className="min-h-[500px]">
+                <div className="space-y-10 min-h-[500px] pb-12">
                   {/* CONFIGURACIÓN GENERAL */}
-                  {configSubsection === 'general' && (
+                  <div id="general" className="scroll-mt-6">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
                         <h4 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
@@ -1710,307 +1392,165 @@ export default function AdminPanel({
                         </div>
                       </div>
 
+                      {/* PREFERENCIAS DE INTERFAZ */}
                       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
                         <h4 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
-                            <FaMicrochip />
+                          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                            <FaDesktop />
                           </div>
-                          Parámetros del Sistema
+                          Preferencias de Interfaz
                         </h4>
                         <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Umbral Horas de Proyector (Crítico)</label>
-                            <div className="flex items-center gap-3">
-                              <input
-                                type="number"
-                                value={umbralProyectorEdit}
-                                onChange={(e) => setUmbralProyectorEdit(parseInt(e.target.value))}
-                                className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
-                              />
-                              <span className="text-slate-400 text-sm font-medium">Horas</span>
-                            </div>
-                            <p className="mt-1 text-[10px] text-slate-400">Define cuándo la lámpara de un proyector se considera en estado crítico.</p>
-                          </div>
-                          <button
-                            onClick={async () => {
-                              try {
-                                await updateConfigGeneral({ umbralProyector: umbralProyectorEdit });
-                                alert('Parámetros actualizados');
-                              } catch (e) {
-                                alert('Error al guardar');
-                              }
-                            }}
-                            className="w-full py-2.5 bg-green-800 text-white font-bold rounded-xl hover:bg-green-900 transition-colors shadow-lg shadow-green-900/10"
-                          >
-                            Actualizar Parámetros
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* GESTIÓN DE CATEGORÍAS (Integrado) */}
-                  {configSubsection === 'categorias' && (
-                    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
-                      <div className="flex items-center justify-between mb-6">
-                        <h4 className="text-lg font-bold text-slate-800">Administrar Categorías</h4>
-                        <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold">
-                          {categorias.length} Categorías
-                        </span>
-                      </div>
-
-                      <div className="flex gap-2 mb-8">
-                        <div className="relative flex-1">
-                          <FaTag className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                          <input
-                            type="text"
-                            value={nuevaCategoria}
-                            onChange={(e) => setNuevaCategoria(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleAgregarCategoria()}
-                            placeholder="Nombre de la nueva categoría..."
-                            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
-                          />
-                        </div>
-                        <button
-                          onClick={handleAgregarCategoria}
-                          disabled={!nuevaCategoria.trim()}
-                          className="px-6 py-2.5 bg-green-800 text-white font-bold rounded-xl hover:bg-green-900 transition-colors disabled:opacity-50"
-                        >
-                          Agregar
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {categorias.map((cat, idx) => (
-                          <div key={idx} className="group flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-white hover:border-green-200 hover:shadow-md hover:shadow-green-500/5 transition-all">
-                            <span className="font-semibold text-slate-700">{cat}</span>
-                            <button
-                              onClick={() => handleEliminarCategoria(cat)}
-                              className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                            >
-                              <FaTrash className="text-sm" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* GESTIÓN DE SEDES (Integrado) */}
-                  {configSubsection === 'sedes' && (
-                    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
-                      <div className="flex items-center justify-between mb-6">
-                        <h4 className="text-lg font-bold text-slate-800">Ubicaciones y Sedes</h4>
-                        <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold">
-                          {sedes.length} Sedes
-                        </span>
-                      </div>
-
-                      <div className="flex gap-2 mb-8">
-                        <div className="relative flex-1">
-                          <FaBuilding className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                          <input
-                            type="text"
-                            value={nuevaSede}
-                            onChange={(e) => setNuevaSede(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleAgregarSede()}
-                            placeholder="Nombre de la nueva sede (ej: Los Leones)..."
-                            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
-                          />
-                        </div>
-                        <button
-                          onClick={handleAgregarSede}
-                          disabled={!nuevaSede.trim()}
-                          className="px-6 py-2.5 bg-green-800 text-white font-bold rounded-xl hover:bg-green-900 transition-colors disabled:opacity-50"
-                        >
-                          Registrar Sede
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {sedes.map((sede, idx) => (
-                          <div key={idx} className="group flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-white hover:border-green-200 hover:shadow-md hover:shadow-green-500/5 transition-all">
-                            <span className="font-semibold text-slate-700">{sede}</span>
-                            <button
-                              onClick={() => handleEliminarSede(sede)}
-                              className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                            >
-                              <FaTrash className="text-sm" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* PERSONALIZACIÓN DE ESTADOS */}
-                  {configSubsection === 'estados' && (
-                    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
-                      <h4 className="text-lg font-bold text-slate-800 mb-6">Estados del Inventario</h4>
-
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Columna de agregar */}
-                        <div className="lg:col-span-1 p-5 bg-slate-50 rounded-2xl border border-slate-200 h-fit">
-                          <h5 className="font-bold text-slate-700 mb-4 text-sm uppercase tracking-wider">Nuevo Estado</h5>
-                          <div className="space-y-4">
+                          <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl">
                             <div>
-                              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Nombre</label>
-                              <input
-                                type="text"
-                                value={nuevoEstado.nombre}
-                                onChange={(e) => setNuevoEstado({ ...nuevoEstado, nombre: e.target.value })}
-                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-green-500/20"
-                              />
+                              <p className="text-sm font-semibold text-slate-700">Modo Oscuro</p>
+                              <p className="text-[10px] text-slate-400">Reduce el cansancio visual.</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input type="checkbox" className="sr-only peer" checked={isDarkMode} onChange={toggleDarkMode} />
+                              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+                            </label>
+                          </div>
+                          <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-700">Densidad de Datos (Tablas)</p>
+                              <p className="text-[10px] text-slate-400">Ajusta el tamaño de filas.</p>
+                            </div>
+                            <select className="text-xs font-semibold bg-white border border-slate-200 rounded-lg px-2 py-1 outline-none text-slate-600">
+                              <option>Cómoda</option>
+                              <option>Compacta</option>
+                            </select>
+                          </div>
+                          <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-700">Animaciones Fluídas</p>
+                              <p className="text-[10px] text-slate-400">Transiciones visuales de la aplicación.</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input type="checkbox" className="sr-only peer" defaultChecked />
+                              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* NOTIFICACIONES Y SEGURIDAD */}
+                  <div id="notificaciones" className="scroll-mt-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300 delay-100">
+
+                      {/* NOTIFICACIONES */}
+                      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                        <h4 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center">
+                            <FaBell />
+                          </div>
+                          Alertas y Notificaciones
+                        </h4>
+                        <div className="space-y-4">
+                          <div className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                            <div className="mt-1">
+                              <input type="checkbox" defaultChecked className="w-4 h-4 text-green-600 rounded bg-white border-gray-300" />
                             </div>
                             <div>
-                              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Color del Badge</label>
-                              <select
-                                value={nuevoEstado.color}
-                                onChange={(e) => setNuevoEstado({ ...nuevoEstado, color: e.target.value })}
-                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none"
-                              >
-                                <option value="bg-green-100 text-green-800">Verde (Normal)</option>
-                                <option value="bg-emerald-100 text-emerald-800">Esmeralda (Activo)</option>
-                                <option value="bg-blue-100 text-blue-800">Azul (Información)</option>
-                                <option value="bg-amber-100 text-amber-800">Ámbar (Precaución)</option>
-                                <option value="bg-red-100 text-red-800">Rojo (Baja/Crítico)</option>
-                                <option value="bg-purple-100 text-purple-800">Púrpura (Especial)</option>
-                                <option value="bg-slate-100 text-slate-800">Gris (Inactivo)</option>
-                              </select>
+                              <p className="text-sm font-semibold text-slate-700">Stock de Insumos Crítico</p>
+                              <p className="text-[11px] text-slate-500">Recibe una alerta visual en el panel cuando un ítem pase a estado de "Baja" o esté averiado.</p>
                             </div>
-                            <button
-                              onClick={handleAgregarEstado}
-                              className="w-full py-2 bg-green-800 text-white font-bold rounded-lg hover:bg-green-900 transition-colors"
-                            >
-                              Agregar Estado
-                            </button>
+                          </div>
+                          <div className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                            <div className="mt-1">
+                              <input type="checkbox" className="w-4 h-4 text-green-600 rounded bg-white border-gray-300" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-700">Resumen Semanal por Email</p>
+                              <p className="text-[11px] text-slate-500">Recibe el reporte de los últimos movimientos a tu correo: <span className="font-semibold text-slate-600">{currentUserEmail}</span>.</p>
+                            </div>
                           </div>
                         </div>
+                      </div>
 
-                        {/* Lista de estados */}
-                        <div className="lg:col-span-2 space-y-3">
-                          <h5 className="font-bold text-slate-700 mb-4 text-sm uppercase tracking-wider">Estados Definidos</h5>
-                          {configuracion?.estados.map((estado, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl shadow-sm">
-                              <div className="flex items-center gap-3">
-                                <span className={`px-4 py-1 rounded-full text-xs font-black ${estado.color}`}>
-                                  {estado.nombre}
-                                </span>
-                                {estado.requerido && <span className="text-[10px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full font-bold">REQUERIDO</span>}
-                              </div>
-                              <button
-                                onClick={() => handleEliminarEstado(estado.nombre)}
-                                className="p-2 text-slate-300 hover:text-red-500 transition-colors"
-                              >
-                                <FaTrash className="text-sm" />
-                              </button>
+                      {/* SEGURIDAD */}
+                      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                        <h4 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
+                            <FaShieldAlt />
+                          </div>
+                          Seguridad y Accesos
+                        </h4>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-700">Cierre Automático</p>
+                              <p className="text-[10px] text-slate-400">Por inactividad de sesión.</p>
                             </div>
-                          ))}
+                            <select className="text-xs font-semibold bg-white border border-slate-200 rounded-lg px-2 py-1 outline-none text-slate-600">
+                              <option>30 minutos</option>
+                              <option>1 hora (Sugerido)</option>
+                              <option>Nunca</option>
+                            </select>
+                          </div>
+                          <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-700">Registro Extendido (Logs)</p>
+                              <p className="text-[10px] text-slate-400">Auditar todos los movimientos minuciosamente.</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input type="checkbox" className="sr-only peer" defaultChecked />
+                              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+                            </label>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  )}
+                  </div>
 
-                  {/* CONFIGURACIÓN AVANZADA (Form builder) */}
-                  {configSubsection === 'avanzado' && (
-                    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
-                      <div className="flex items-center justify-between mb-6">
+                  {/* DATOS Y RESPALDO */}
+                  <div id="respaldos" className="scroll-mt-6">
+                    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300 delay-200">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                         <div>
-                          <h4 className="text-lg font-bold text-slate-800">Configuración Avanzada del Formulario</h4>
-                          <p className="text-sm text-slate-500">Personaliza los campos y secciones del inventario.</p>
+                          <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center">
+                              <FaDatabase />
+                            </div>
+                            Respaldo de la Plataforma
+                          </h4>
+                          <p className="text-sm text-slate-500 mt-1">Reglas de procesamiento, exportación y copias de seguridad de la base de datos centralizada.</p>
                         </div>
-                        <button
-                          onClick={() => setMostrarModalCampoFormulario(true)}
-                          className="px-4 py-2.5 bg-green-800 text-white font-bold rounded-xl hover:bg-green-900 transition-colors flex items-center gap-2 shadow-lg shadow-green-900/10"
-                        >
-                          <FaPlus />
-                          Agregar Campo
-                        </button>
                       </div>
 
-                      <div className="space-y-4">
-                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-4">
-                          <div className="p-2 bg-amber-100 text-amber-700 rounded-lg">
-                            <FaCog />
-                          </div>
-                          <div>
-                            <h5 className="font-bold text-amber-800">Zona de Control de Estructura</h5>
-                            <p className="text-sm text-amber-700/80">
-                              Desde aquí puedes definir qué campos son obligatorios o cuáles deben ocultarse en el formulario.
-                              Usa esta sección con precaución para no eliminar campos necesarios para los reportes.
-                            </p>
-                          </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="p-5 border border-slate-100 bg-slate-50 rounded-2xl hover:border-slate-300 transition-colors group">
+                          <FaFileExport className="text-3xl text-slate-300 group-hover:text-green-600 mb-4 transition-colors" />
+                          <h5 className="font-bold text-slate-700 mb-1">Formato Predeterminado</h5>
+                          <p className="text-xs text-slate-500 mb-4">Exportación de los reportes.</p>
+                          <select className="w-full text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2.5 outline-none focus:border-green-500">
+                            <option>Excel (.xlsx)</option>
+                            <option>EAN o CSV nativo</option>
+                            <option>JSON RestData</option>
+                          </select>
                         </div>
-
-                        {/* Listado de secciones/campos simplificado */}
-                        <div className="space-y-6">
-                          {configuracion?.seccionesFormulario.sort((a, b) => a.orden - b.orden).map((sec) => (
-                            <div key={sec.nombre} className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-                              <div className="bg-slate-50 px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-                                <span className="font-bold text-slate-700 flex items-center gap-2">
-                                  <FaProjectDiagram className="text-slate-400 text-xs" />
-                                  {sec.nombre}
-                                </span>
-                                <div className="flex gap-2">
-                                  <button onClick={() => handleMoverSeccion(sec.nombre, 'arriba')} className="p-1.5 text-slate-400 hover:text-slate-600"><FaArrowUp className="text-xs" /></button>
-                                  <button onClick={() => handleMoverSeccion(sec.nombre, 'abajo')} className="p-1.5 text-slate-400 hover:text-slate-600"><FaArrowDown className="text-xs" /></button>
-                                </div>
-                              </div>
-                              <div className="p-2 space-y-1">
-                                {configuracion.formulario.filter(f => f.seccion === sec.nombre).sort((a, b) => a.orden - b.orden).map(campo => (
-                                  <div key={campo.nombre} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors group">
-                                    <div className="flex items-center gap-3">
-                                      <button
-                                        onClick={() => handleToggleCampoVisible(campo.nombre)}
-                                        className={`transition-colors ${campo.visible ? 'text-green-600' : 'text-slate-300'}`}
-                                      >
-                                        {campo.visible ? <FaEye /> : <FaEyeSlash />}
-                                      </button>
-                                      <div>
-                                        <p className="text-sm font-semibold text-slate-700 leading-none mb-1">{campo.etiqueta || campo.nombre}</p>
-                                        <p className="text-[10px] text-slate-400 font-mono">{campo.nombre}</p>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <div className="flex gap-1 mr-2 border-r border-slate-200 pr-2">
-                                        <button
-                                          onClick={() => handleMoverCampo(campo.nombre, sec.nombre, 'arriba')}
-                                          className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded"
-                                          title="Mover Arriba"
-                                        >
-                                          <FaArrowUp className="text-[10px]" />
-                                        </button>
-                                        <button
-                                          onClick={() => handleMoverCampo(campo.nombre, sec.nombre, 'abajo')}
-                                          className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded"
-                                          title="Mover Abajo"
-                                        >
-                                          <FaArrowDown className="text-[10px]" />
-                                        </button>
-                                      </div>
-                                      <button
-                                        onClick={() => handleToggleCampoObligatorio(campo.nombre)}
-                                        className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors ${campo.obligatorio ? 'bg-red-50 text-red-700 border-red-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}
-                                      >
-                                        {campo.obligatorio ? 'OBLIGATORIO' : 'OPCIONAL'}
-                                      </button>
-                                      <button
-                                        onClick={() => handleEliminarCampo(campo.nombre)}
-                                        className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded transition-colors ml-1"
-                                        title="Eliminar Campo"
-                                      >
-                                        <FaTrash className="text-xs" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
+                        <div className="p-5 border border-slate-100 bg-slate-50 rounded-2xl hover:border-slate-300 transition-colors group">
+                          <FaCloudDownloadAlt className="text-3xl text-slate-300 group-hover:text-blue-600 mb-4 transition-colors" />
+                          <h5 className="font-bold text-slate-700 mb-1">Copia Automática Diario</h5>
+                          <p className="text-xs text-slate-500 mb-4">Snapshots de base de datos en clúster.</p>
+                          <select className="w-full text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2.5 outline-none focus:border-blue-500">
+                            <option>Diario (Mediodía y 00:00)</option>
+                            <option>Semanal (Solo Domingos)</option>
+                            <option>Desactivado - Solo manual</option>
+                          </select>
+                        </div>
+                        <div className="p-5 border border-slate-100 bg-green-50/50 rounded-2xl flex flex-col justify-center items-center text-center">
+                          <div className="w-14 h-14 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-2xl mb-3 shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                            <FaCheckCircle />
+                          </div>
+                          <h5 className="font-bold text-slate-800">Todo Operativo</h5>
+                          <p className="text-xs text-slate-500 mt-2 px-2 leading-relaxed">Última sincronía del sistema confirmada hace 3 minutos. El sistema y la persistencia de datos están saludables.</p>
                         </div>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             )}
@@ -2031,136 +1571,6 @@ export default function AdminPanel({
                 usuarios={users}
               />
             )}
-
-            {/* Modal para agregar nuevo campo personalizado */}
-            {
-              mostrarModalCampoFormulario && configuracion && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                  <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                    <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-                      <h3 className="text-xl font-semibold text-gray-900">Agregar Nuevo Campo Personalizado</h3>
-                      <button
-                        onClick={() => {
-                          setMostrarModalCampoFormulario(false);
-                          setNuevoCampoFormulario({
-                            nombre: '',
-                            seccion: 'Información General',
-                            etiqueta: '',
-                            obligatorio: false,
-                            tipo: 'text'
-                          });
-                        }}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
-                        title="Cerrar"
-                      >
-                        <FaTimes className="text-xl" />
-                      </button>
-                    </div>
-
-                    <div className="p-6 space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block mb-1 text-sm font-medium text-gray-700">
-                            Nombre del Campo (técnico) *
-                          </label>
-                          <input
-                            type="text"
-                            value={nuevoCampoFormulario.nombre}
-                            onChange={(e) => setNuevoCampoFormulario({ ...nuevoCampoFormulario, nombre: e.target.value })}
-                            placeholder="Ej: precio, proveedor, numeroFactura"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">Se convertirá a minúsculas y sin espacios</p>
-                        </div>
-                        <div>
-                          <label className="block mb-1 text-sm font-medium text-gray-700">
-                            Etiqueta (lo que verá el usuario) *
-                          </label>
-                          <input
-                            type="text"
-                            value={nuevoCampoFormulario.etiqueta}
-                            onChange={(e) => setNuevoCampoFormulario({ ...nuevoCampoFormulario, etiqueta: e.target.value })}
-                            placeholder="Ej: Precio, Proveedor, Número de Factura"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block mb-1 text-sm font-medium text-gray-700">
-                            Sección
-                          </label>
-                          <select
-                            value={nuevoCampoFormulario.seccion}
-                            onChange={(e) => setNuevoCampoFormulario({ ...nuevoCampoFormulario, seccion: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
-                          >
-                            {configuracion?.seccionesFormulario
-                              ?.filter((s: SeccionFormulario) => s.visible)
-                              .sort((a: SeccionFormulario, b: SeccionFormulario) => a.orden - b.orden)
-                              .map((seccion: SeccionFormulario) => (
-                                <option key={seccion.nombre} value={seccion.nombre}>{seccion.nombre}</option>
-                              ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block mb-1 text-sm font-medium text-gray-700">
-                            Tipo de Campo
-                          </label>
-                          <select
-                            value={nuevoCampoFormulario.tipo}
-                            onChange={(e) => setNuevoCampoFormulario({ ...nuevoCampoFormulario, tipo: e.target.value as 'text' | 'number' | 'date' | 'select' | 'textarea' })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent text-sm"
-                          >
-                            <option value="text">Texto</option>
-                            <option value="number">Número</option>
-                            <option value="date">Fecha</option>
-                            <option value="textarea">Área de Texto</option>
-                            <option value="select">Selector</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={nuevoCampoFormulario.obligatorio}
-                            onChange={(e) => setNuevoCampoFormulario({ ...nuevoCampoFormulario, obligatorio: e.target.checked })}
-                            className="rounded"
-                          />
-                          <span className="text-sm text-gray-700">Campo obligatorio</span>
-                        </label>
-                      </div>
-
-                      <div className="flex gap-3 pt-4 border-t border-gray-200">
-                        <button
-                          onClick={handleAgregarCampoFormulario}
-                          disabled={!nuevoCampoFormulario.nombre.trim() || !nuevoCampoFormulario.etiqueta.trim()}
-                          className="flex-1 px-4 py-2 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Agregar Campo
-                        </button>
-                        <button
-                          onClick={() => {
-                            setMostrarModalCampoFormulario(false);
-                            setNuevoCampoFormulario({
-                              nombre: '',
-                              seccion: 'Información General',
-                              etiqueta: '',
-                              obligatorio: false,
-                              tipo: 'text'
-                            });
-                          }}
-                          className="px-4 py-2 bg-gray-300 text-gray-700 hover:bg-gray-400 rounded-md transition-colors text-sm font-medium"
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            }
 
             {/* Modal para agregar nuevo usuario */}
             {mostrarFormularioUsuario && (

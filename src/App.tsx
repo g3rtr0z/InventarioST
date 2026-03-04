@@ -36,10 +36,12 @@ const CATEGORIAS_DEFAULT = [
   'Teléfono',
   'Otro'
 ];
+import { useDarkMode } from './hooks/useDarkMode';
 
 function App() {
   // Configurar headers de seguridad
   useSecurityHeaders();
+  useDarkMode(); // Initializer for dark mode on start
 
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -60,7 +62,6 @@ function App() {
   const [filterRam, setFilterRam] = useState<string>('Todas');
   const [filterDiscoDuro, setFilterDiscoDuro] = useState<string>('Todos');
   const [filterEncargado, setFilterEncargado] = useState<string>('Todos');
-  const [filterHorasProyector, setFilterHorasProyector] = useState<string>('Todas');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [sedes, setSedes] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -373,14 +374,6 @@ function App() {
     if (filterRam !== 'Todas' && item.ram !== filterRam) return false;
     if (filterDiscoDuro !== 'Todos' && item.discoDuro !== filterDiscoDuro) return false;
     if (filterEncargado !== 'Todos' && getEncargadoKey(item.encargado) !== getEncargadoKey(filterEncargado)) return false;
-    // Filtro de Horas de Proyector
-    if (filterHorasProyector !== 'Todas') {
-      const esProyector = item.categoria === 'Otro' && (item.nombre.toLowerCase().includes('proy') || item.nombre.toLowerCase().includes('epson'));
-      if (!esProyector) return false;
-      const horas = parseInt(item.horasNormales || '0');
-      if (filterHorasProyector === 'Crítico (>2000 hrs)' && horas <= 2000) return false;
-      if (filterHorasProyector === 'Estado Normal' && horas > 2000) return false;
-    }
 
     return true;
   });
@@ -538,8 +531,6 @@ function App() {
       setFilterDiscoDuro={setFilterDiscoDuro}
       filterEncargado={filterEncargado}
       setFilterEncargado={setFilterEncargado}
-      filterHorasProyector={filterHorasProyector}
-      setFilterHorasProyector={setFilterHorasProyector}
       onCategoriasChange={handleCategoriasChange}
       onSedesChange={handleSedesChange}
       onAddItem={handleAddItem}

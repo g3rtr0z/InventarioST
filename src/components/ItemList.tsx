@@ -203,7 +203,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                   </button>
                   <button
                     onClick={() => onDelete(item.id)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-red-50 text-red-600 border border-red-100 text-[11px] font-black rounded-xl hover:bg-red-100 transition-all active:scale-95"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-red-50 text-red-600 border border-red-100 btn-delete-override text-[11px] font-black rounded-xl hover:bg-red-100 transition-all active:scale-95"
                   >
                     <FaTrash className="text-[10px]" /> Eliminar
                   </button>
@@ -287,7 +287,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                           </button>
                           <button
                             onClick={() => onDelete(item.id)}
-                            className="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-600 border border-red-100 text-[10px] font-black rounded-lg hover:bg-red-100 transition-all active:scale-95 whitespace-nowrap"
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-600 border border-red-100 btn-delete-override text-[10px] font-black rounded-lg hover:bg-red-100 transition-all active:scale-95 whitespace-nowrap"
                           >
                             <FaTrash className="text-[9px]" /> Eliminar
                           </button>
