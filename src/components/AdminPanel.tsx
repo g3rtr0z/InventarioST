@@ -6,17 +6,13 @@ import type { ItemInventario } from '../types/inventario';
 import { getAllUsers, changeUserRole, toggleUserStatus, createUser, deleteUserAccount, type UserInfo, type UserRole } from '../services/userRoleService';
 import {
   getConfig,
-  updateEstados,
-  updateFormulario,
-  updateSeccionesFormulario,
   updateConfigGeneral,
   updateCategorias,
   updateSedes,
+  updateEdificios,
+  updatePisos,
   subscribeToConfig,
-  type ConfiguracionSistema,
-  type EstadoPersonalizado,
-  type CampoFormulario,
-  type SeccionFormulario
+  type ConfiguracionSistema
 } from '../services/configService';
 import {
   FaBox,
@@ -52,8 +48,8 @@ import {
   FaDatabase,
   FaCloudDownloadAlt
 } from 'react-icons/fa';
-import { getUniqueEncargados } from '../utils/userUtils';
 import { useDarkMode } from '../hooks/useDarkMode';
+import { getUniqueEncargados } from '../utils/userUtils';
 
 interface AdminPanelProps {
   isAdmin: boolean;
@@ -189,10 +185,12 @@ export default function AdminPanel({
   // Estados para gestión de sedes
   const [nuevaSede, setNuevaSede] = useState('');
 
+  // Estados para gestión de edificios y pisos
+  const [nuevoEdificio, setNuevoEdificio] = useState('');
+  const [nuevoPiso, setNuevoPiso] = useState('');
+
   // Estados para configuración del sistema
   const [configuracion, setConfiguracion] = useState<ConfiguracionSistema | null>(null);
-  const [nuevoEstado, setNuevoEstado] = useState({ nombre: '', color: 'bg-gray-100 text-gray-800', requerido: false });
-
   // Estados para gestión de secciones del formulario
   const [mostrarModalCampoFormulario, setMostrarModalCampoFormulario] = useState(false);
 
@@ -808,8 +806,21 @@ export default function AdminPanel({
                     <div className="px-4 py-5 bg-gray-50/50 border-t border-gray-100 animate-fadeIn">
                       {(() => {
                         const marcasUnicas = [...new Set(items.map(i => i.marca).filter(Boolean))].sort();
-                        const pisosUnicos = [...new Set(items.map(i => i.piso).filter(Boolean))].sort();
-                        const edificiosUnicos = [...new Set(items.map(i => i.edificio).filter(Boolean))].sort();
+                        // Calcular pisos únicos dinámicamente para los filtros
+                        const pisosUnicos = [...new Set([
+                          ...(configuracion?.pisos || []),
+                          ...items.map(i => i.piso).filter(Boolean)
+                        ])].sort();
+                        // Calcular edificios únicos dinámicamente para los filtros
+                        const edificiosUnicos = [...new Set([
+                          ...(configuracion?.edificios || []),
+                          ...items.map(i => i.edificio).filter(Boolean)
+                        ])].sort();
+                        // Calcular sedes únicas dinámicamente para los filtros
+                        const sedesUnicasList = [...new Set([
+                          ...(configuracion?.sedes || []),
+                          ...items.map(i => i.sede).filter(Boolean)
+                        ])].sort();
                         const encargadosUnicos = getUniqueEncargados(items);
 
                         const selectClass = (active: boolean) =>
@@ -852,7 +863,7 @@ export default function AdminPanel({
                               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Sede</label>
                               <select value={filterSede} onChange={e => setFilterSede(e.target.value)} className={selectClass(filterSede !== 'Todas')}>
                                 <option value="Todas">Todas las sedes</option>
-                                {sedes.map(s => <option key={s} value={s}>{s}</option>)}
+                                {sedesUnicasList.map(s => <option key={s} value={s}>{s}</option>)}
                               </select>
                             </div>
 
@@ -1436,6 +1447,184 @@ export default function AdminPanel({
                     </div>
                   </div>
 
+                  {/* GESTIÓN DE UBICACIONES (SEDES, EDIFICIOS, PISOS) */}
+                  <div id="ubicaciones" className="scroll-mt-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      {/* GESTIÓN DE SEDES */}
+                      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                        <h4 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
+                            <FaBuilding />
+                          </div>
+                          Gestión de Sedes (Campuses)
+                        </h4>
+                        <div className="space-y-4">
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={nuevaSede}
+                              onChange={(e) => setNuevaSede(e.target.value)}
+                              placeholder="Nueva sede..."
+                              className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
+                            />
+                            <button
+                              onClick={async () => {
+                                if (!nuevaSede.trim()) return;
+                                try {
+                                  const sedesActuales = configuracion?.sedes || [];
+                                  if (sedesActuales.includes(nuevaSede.trim())) {
+                                    alert('Esta sede ya existe');
+                                    return;
+                                  }
+                                  await updateSedes([...sedesActuales, nuevaSede.trim()]);
+                                  setNuevaSede('');
+                                  alert('Sede agregada');
+                                } catch (e) {
+                                  alert('Error al agregar sede');
+                                }
+                              }}
+                              className="px-4 py-2 bg-green-800 text-white font-bold rounded-xl hover:bg-green-900 transition-colors"
+                            >
+                              <FaPlus />
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {(configuracion?.sedes || []).map(sede => (
+                              <div key={sede} className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600">
+                                {sede}
+                                <button
+                                  onClick={async () => {
+                                    if (window.confirm(`¿Eliminar sede ${sede}?`)) {
+                                      await updateSedes((configuracion?.sedes || []).filter(s => s !== sede));
+                                    }
+                                  }}
+                                  className="text-red-400 hover:text-red-600 transition-colors"
+                                >
+                                  <FaTrash className="text-[10px]" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* GESTIÓN DE EDIFICIOS */}
+                      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                        <h4 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                            <FaBuilding />
+                          </div>
+                          Gestión de Edificios
+                        </h4>
+                        <div className="space-y-4">
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={nuevoEdificio}
+                              onChange={(e) => setNuevoEdificio(e.target.value)}
+                              placeholder="Nuevo edificio..."
+                              className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                            />
+                            <button
+                              onClick={async () => {
+                                if (!nuevoEdificio.trim()) return;
+                                try {
+                                  const edificiosActuales = (configuracion as any)?.edificios || [];
+                                  if (edificiosActuales.includes(nuevoEdificio.trim())) {
+                                    alert('Este edificio ya existe');
+                                    return;
+                                  }
+                                  await updateEdificios([...edificiosActuales, nuevoEdificio.trim()]);
+                                  setNuevoEdificio('');
+                                  alert('Edificio agregado');
+                                } catch (e) {
+                                  alert('Error al agregar edificio');
+                                }
+                              }}
+                              className="px-4 py-2 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors"
+                            >
+                              <FaPlus />
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {((configuracion as any)?.edificios || []).map((edi: string) => (
+                              <div key={edi} className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600">
+                                {edi}
+                                <button
+                                  onClick={async () => {
+                                    if (window.confirm(`¿Eliminar edificio ${edi}?`)) {
+                                      await updateEdificios(((configuracion as any)?.edificios || []).filter((e: string) => e !== edi));
+                                    }
+                                  }}
+                                  className="text-red-400 hover:text-red-600 transition-colors"
+                                >
+                                  <FaTrash className="text-[10px]" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* GESTIÓN DE PISOS */}
+                      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                        <h4 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center">
+                            <FaProjectDiagram />
+                          </div>
+                          Gestión de Pisos
+                        </h4>
+                        <div className="space-y-4">
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={nuevoPiso}
+                              onChange={(e) => setNuevoPiso(e.target.value)}
+                              placeholder="Nuevo piso..."
+                              className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all"
+                            />
+                            <button
+                              onClick={async () => {
+                                if (!nuevoPiso.trim()) return;
+                                try {
+                                  const pisosActuales = (configuracion as any)?.pisos || [];
+                                  if (pisosActuales.includes(nuevoPiso.trim())) {
+                                    alert('Este piso ya existe');
+                                    return;
+                                  }
+                                  await updatePisos([...pisosActuales, nuevoPiso.trim()]);
+                                  setNuevoPiso('');
+                                  alert('Piso agregado');
+                                } catch (e) {
+                                  alert('Error al agregar piso');
+                                }
+                              }}
+                              className="px-4 py-2 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-700 transition-colors"
+                            >
+                              <FaPlus />
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {((configuracion as any)?.pisos || []).map((p: string) => (
+                              <div key={p} className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600">
+                                {p}
+                                <button
+                                  onClick={async () => {
+                                    if (window.confirm(`¿Eliminar piso ${p}?`)) {
+                                      await updatePisos(((configuracion as any)?.pisos || []).filter((f: string) => f !== p));
+                                    }
+                                  }}
+                                  className="text-red-400 hover:text-red-600 transition-colors"
+                                >
+                                  <FaTrash className="text-[10px]" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                     </div>
+                  </div>
+
                   {/* NOTIFICACIONES Y SEGURIDAD */}
                   <div id="notificaciones" className="scroll-mt-6">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300 delay-100">
@@ -1547,6 +1736,7 @@ export default function AdminPanel({
                           </div>
                           <h5 className="font-bold text-slate-800">Todo Operativo</h5>
                           <p className="text-xs text-slate-500 mt-2 px-2 leading-relaxed">Última sincronía del sistema confirmada hace 3 minutos. El sistema y la persistencia de datos están saludables.</p>
+                        </div>
                         </div>
                       </div>
                     </div>

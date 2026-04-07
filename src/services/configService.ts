@@ -53,6 +53,8 @@ export interface ConfiguracionSistema {
   seccionesFormulario: SeccionFormulario[];
   categorias: string[];
   sedes: string[];
+  edificios: string[];
+  pisos: string[];
 }
 
 const CONFIG_DEFAULT: ConfiguracionSistema = {
@@ -97,8 +99,11 @@ const CONFIG_DEFAULT: ConfiguracionSistema = {
     { nombre: 'discoDuro', seccion: 'Especificaciones Técnicas', visible: true, obligatorio: false, orden: 6, etiqueta: 'Disco Duro' }
   ],
   categorias: ['Computación', 'Proyectores', 'Audio', 'Accesorios', 'Mobiliario', 'Otros'],
-  sedes: ['Manuel Rodriguez', 'Rancagua', 'Ejército']
+  sedes: ['Manuel Rodriguez', 'Rancagua', 'Ejército', 'Buro', 'Clinica veterinaria'],
+  edificios: ['A', 'B', 'C', 'D', 'E', 'F', 'Principal', 'Anexo'],
+  pisos: ['1', '2', '3', '4', '5', '6', 'Zócalo', 'Sótano']
 };
+
 
 /**
  * Obtener la configuración del sistema
@@ -125,7 +130,9 @@ export const getConfig = async (): Promise<ConfiguracionSistema> => {
       formulario: data.formulario || CONFIG_DEFAULT.formulario,
       seccionesFormulario: data.seccionesFormulario || CONFIG_DEFAULT.seccionesFormulario,
       categorias: data.categorias || CONFIG_DEFAULT.categorias,
-      sedes: data.sedes || CONFIG_DEFAULT.sedes
+      sedes: data.sedes || CONFIG_DEFAULT.sedes,
+      edificios: data.edificios || CONFIG_DEFAULT.edificios,
+      pisos: data.pisos || CONFIG_DEFAULT.pisos
     } as ConfiguracionSistema;
   } catch (error) {
     console.error('Error al obtener configuración:', error);
@@ -162,7 +169,9 @@ export const subscribeToConfig = (
           formulario: data.formulario || CONFIG_DEFAULT.formulario,
           seccionesFormulario: data.seccionesFormulario || CONFIG_DEFAULT.seccionesFormulario,
           categorias: data.categorias || CONFIG_DEFAULT.categorias,
-          sedes: data.sedes || CONFIG_DEFAULT.sedes
+          sedes: data.sedes || CONFIG_DEFAULT.sedes,
+          edificios: data.edificios || CONFIG_DEFAULT.edificios,
+          pisos: data.pisos || CONFIG_DEFAULT.pisos
         };
         callback(config);
       },
@@ -252,6 +261,24 @@ export const updateCategorias = async (categorias: string[]): Promise<void> => {
 export const updateSedes = async (sedes: string[]): Promise<void> => {
   const config = await getConfig();
   config.sedes = sedes;
+  await saveConfig(config);
+};
+
+/**
+ * Actualizar solo los edificios
+ */
+export const updateEdificios = async (edificios: string[]): Promise<void> => {
+  const config = await getConfig();
+  config.edificios = edificios;
+  await saveConfig(config);
+};
+
+/**
+ * Actualizar solo los pisos
+ */
+export const updatePisos = async (pisos: string[]): Promise<void> => {
+  const config = await getConfig();
+  config.pisos = pisos;
   await saveConfig(config);
 };
 

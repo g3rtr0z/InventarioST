@@ -749,9 +749,13 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                                 required={isCampoObligatorio('sede')}
                                 className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-xl"
                               >
-                                {sedes.length > 0 ? (
-                                  sedes.map(sede => (
-                                    <option key={sede} value={sede}>{sede}</option>
+                                {configuracion?.sedes && configuracion.sedes.length > 0 ? (
+                                  configuracion.sedes.map(s => (
+                                    <option key={s} value={s}>{s}</option>
+                                  ))
+                                ) : sedes && sedes.length > 0 ? (
+                                  sedes.map(s => (
+                                    <option key={s} value={s}>{s}</option>
                                   ))
                                 ) : (
                                   <option value="">Sin sedes disponibles</option>
@@ -796,11 +800,19 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                                 className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-xl"
                               >
                                 <option value="">Seleccionar Piso</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
+                                {configuracion?.pisos ? (
+                                  configuracion.pisos.map(p => (
+                                    <option key={p} value={p}>{p}</option>
+                                  ))
+                                ) : (
+                                  <>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                  </>
+                                )}
                               </select>
                             </div>
                           );
@@ -821,9 +833,17 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                                 className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-green-500 bg-white rounded-xl"
                               >
                                 <option value="">Seleccionar Edificio</option>
-                                <option value="A">A</option>
-                                <option value="B">B</option>
-                                <option value="C">C</option>
+                                {configuracion?.edificios ? (
+                                  configuracion.edificios.map(e => (
+                                    <option key={e} value={e}>{e}</option>
+                                  ))
+                                ) : (
+                                  <>
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                  </>
+                                )}
                               </select>
                             </div>
                           );

@@ -5,32 +5,11 @@ import type { ItemInventario } from '../types/inventario';
  * Exporta los items del inventario a un archivo Excel
  */
 export const exportToExcel = (items: ItemInventario[], filename: string = 'inventario') => {
-  // Preparar los datos para Excel
-  const data = items.map(item => ({
-    'Nombre': item.nombre,
-    'Categoría': item.categoria,
-    'Marca': item.marca,
-    'Modelo': item.modelo,
-    'Número de Serie': item.numeroSerie,
-    'Estado': item.estado,
-    'Sede': item.sede,
-    'Ubicación': item.ubicacion,
-    'Responsable': item.responsable,
-    'Edificio': item.edificio || '',
-    'Piso': item.piso || '',
-    'Tipo de Uso': item.tipoUso,
-    'Procesador': item.procesador || '',
-    'RAM': item.ram || '',
-    'Disco Duro': item.discoDuro || '',
-    'Horas Normales': item.horasNormales || '',
-    'Horas Eco': item.horasEco || ''
-  }));
-
   // Crear un libro de trabajo
   const wb = XLSX.utils.book_new();
 
-  // Crear una hoja de cálculo con los datos
-  const ws = XLSX.utils.json_to_sheet(data);
+  // Agrupar items por sede
+  const sedes = Array.from(new Set(items.map(item => item.sede || 'Sin Sede')));
 
   // Ajustar el ancho de las columnas
   const colWidths = [
@@ -52,10 +31,50 @@ export const exportToExcel = (items: ItemInventario[], filename: string = 'inven
     { wch: 15 }, // Horas Normales
     { wch: 15 }  // Horas Eco
   ];
-  ws['!cols'] = colWidths;
 
-  // Agregar la hoja al libro
-  XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
+  if (sedes.length === 0) {
+    const ws = XLSX.utils.json_to_sheet([]);
+    ws['!cols'] = colWidths;
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
+  } else {
+    sedes.forEach((sede) => {
+      const itemsSede = items.filter(item => (item.sede || 'Sin Sede') === sede);
+
+      const data = itemsSede.map(item => ({
+        'Nombre': item.nombre,
+        'Categoría': item.categoria,
+        'Marca': item.marca,
+        'Modelo': item.modelo,
+        'Número de Serie': item.numeroSerie,
+        'Estado': item.estado,
+        'Sede': item.sede || '',
+        'Ubicación': item.ubicacion,
+        'Responsable': item.responsable,
+        'Edificio': item.edificio || '',
+        'Piso': item.piso || '',
+        'Tipo de Uso': item.tipoUso,
+        'Procesador': item.procesador || '',
+        'RAM': item.ram || '',
+        'Disco Duro': item.discoDuro || '',
+        'Horas Normales': item.horasNormales || '',
+        'Horas Eco': item.horasEco || ''
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      ws['!cols'] = colWidths;
+
+      // Habilitar filtros automáticos para la tabla
+      if (ws['!ref']) {
+        ws['!autofilter'] = { ref: ws['!ref'] };
+      }
+
+      // Excel sheet names cannot exceed 31 characters and cannot contain certain characters
+      let sheetName = sede.substring(0, 31).replace(/[\\/?*[\]]/g, '');
+      if (!sheetName) sheetName = 'Inventario';
+
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    });
+  }
 
   // Generar el nombre del archivo con fecha
   const fecha = new Date().toISOString().split('T')[0];
