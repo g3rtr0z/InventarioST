@@ -100,8 +100,8 @@ const CONFIG_DEFAULT: ConfiguracionSistema = {
   ],
   categorias: ['Computación', 'Proyectores', 'Audio', 'Accesorios', 'Mobiliario', 'Otros'],
   sedes: ['Manuel Rodriguez', 'Rancagua', 'Ejército', 'Buro', 'Clinica veterinaria'],
-  edificios: ['A', 'B', 'C', 'D', 'E', 'F', 'Principal', 'Anexo'],
-  pisos: ['1', '2', '3', '4', '5', '6', 'Zócalo', 'Sótano']
+  edificios: ['A', 'B', 'C'],
+  pisos: ['1', '2', '3', '4', '5']
 };
 
 
