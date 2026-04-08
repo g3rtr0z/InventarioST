@@ -23,15 +23,15 @@ const ESTADO_CONFIG: Record<string, { bg: string; text: string; dot: string }> =
 const getEstado = (estado: string) =>
   ESTADO_CONFIG[estado] ?? { bg: 'bg-slate-50', text: 'text-slate-600', dot: 'bg-slate-400' };
 
-// Genera un color de fondo de icono basado en la categoría
+// Genera un color de fondo de icono basado en la categoría (solo colores institucionales verdes)
 const getCategoryAccent = (categoria: string): string => {
   const map: Record<string, string> = {
-    'computadores': 'bg-blue-50 text-blue-600',
-    'notebooks': 'bg-indigo-50 text-indigo-600',
-    'proyectores': 'bg-purple-50 text-purple-600',
-    'impresoras': 'bg-orange-50 text-orange-600',
-    'monitores': 'bg-cyan-50 text-cyan-600',
-    'servidores': 'bg-rose-50 text-rose-600',
+    'computadores': 'bg-green-50 text-green-700',
+    'notebooks': 'bg-green-50 text-green-800',
+    'proyectores': 'bg-green-100 text-green-900',
+    'impresoras': 'bg-green-50 text-green-600',
+    'monitores': 'bg-green-50 text-green-700',
+    'servidores': 'bg-green-100 text-green-800',
   };
   const key = categoria.toLowerCase();
   for (const [k, v] of Object.entries(map)) {
@@ -115,7 +115,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                       <FaTag className="text-[8px]" /> {item.categoria}
                     </span>
                     <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg ${item.tipoUso === 'Alumnos'
-                      ? 'bg-emerald-50 border border-emerald-100 text-emerald-700'
+                      ? 'bg-green-100 border border-green-200 text-green-700'
                       : 'bg-green-50 border border-green-100 text-green-800'
                       }`}>
                       {item.tipoUso}
@@ -180,17 +180,17 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                   {esProyector && (item.horasNormales || item.horasEco || item.tipoConexion) && (
                     <div className="flex gap-2 flex-wrap pt-1">
                       {item.horasNormales && (
-                        <span className="inline-flex items-center gap-1 bg-purple-50 border border-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-lg">
+                        <span className="inline-flex items-center gap-1 bg-green-50 border border-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-lg">
                           <FaProjectDiagram className="text-[8px]" /> {item.horasNormales}h Normal
                         </span>
                       )}
                       {item.horasEco && (
-                        <span className="inline-flex items-center gap-1 bg-purple-50 border border-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-lg">
+                        <span className="inline-flex items-center gap-1 bg-green-50 border border-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-lg">
                           <FaProjectDiagram className="text-[8px]" /> {item.horasEco}h Eco
                         </span>
                       )}
                       {item.tipoConexion && (
-                        <span className="inline-flex items-center gap-1 bg-blue-50 border border-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-lg">
+                        <span className="inline-flex items-center gap-1 bg-green-100 border border-green-200 text-green-800 text-[10px] font-bold px-2 py-0.5 rounded-lg">
                           <FaProjectDiagram className="text-[8px]" /> {item.tipoConexion}
                         </span>
                       )}
