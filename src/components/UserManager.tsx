@@ -71,14 +71,14 @@ export default function UserManager({ isAdmin, currentUserEmail }: UserManagerPr
 
   const getRoleBadgeColor = (role: UserRole) => {
     return role === 'administrador' 
-      ? 'bg-purple-100 text-purple-700 border-purple-200' 
+      ? 'bg-green-100 text-green-800 border-green-200' 
       : 'bg-gray-100 text-gray-700 border-gray-200';
   };
 
   const getStatusBadgeColor = (isActive: boolean) => {
     return isActive 
       ? 'bg-green-100 text-green-700 border-green-200' 
-      : 'bg-red-100 text-red-700 border-red-200';
+      : 'bg-slate-100 text-slate-500 border-slate-200';
   };
 
   // Si no es administrador, no mostrar el botón
@@ -90,7 +90,7 @@ export default function UserManager({ isAdmin, currentUserEmail }: UserManagerPr
     <>
       <button
         onClick={() => setShowManager(true)}
-        className="px-3 py-2.5 bg-purple-600 text-white hover:bg-purple-700 rounded-md transition-colors text-sm"
+        className="px-3 py-2.5 bg-green-800 text-white hover:bg-green-900 rounded-md transition-colors text-sm"
         title="Gestionar Usuarios"
       >
         👥 Usuarios
@@ -125,7 +125,7 @@ export default function UserManager({ isAdmin, currentUserEmail }: UserManagerPr
                   placeholder="Buscar por email o nombre..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 focus:border-transparent"
                 />
               </div>
 
@@ -137,7 +137,7 @@ export default function UserManager({ isAdmin, currentUserEmail }: UserManagerPr
                 <button
                   onClick={loadUsers}
                   disabled={loading}
-                  className="px-4 py-2 bg-gray-500 text-white hover:bg-gray-600 rounded-md transition-colors text-sm disabled:opacity-50"
+                  className="px-4 py-2 bg-green-700 text-white hover:bg-green-800 rounded-md transition-colors text-sm disabled:opacity-50"
                 >
                   {loading ? 'Cargando...' : '🔄 Recargar'}
                 </button>
@@ -166,7 +166,7 @@ export default function UserManager({ isAdmin, currentUserEmail }: UserManagerPr
                               <div className="font-semibold text-gray-900">
                                 {user.displayName || 'Sin nombre'}
                                 {user.email === currentUserEmail && (
-                                  <span className="ml-2 text-xs text-blue-600 font-normal">(Tú)</span>
+                                  <span className="ml-2 text-xs text-green-700 font-normal">(Tú)</span>
                                 )}
                               </div>
                               <div className="text-sm text-gray-600">{user.email}</div>
@@ -194,7 +194,7 @@ export default function UserManager({ isAdmin, currentUserEmail }: UserManagerPr
                             value={user.role}
                             onChange={(e) => handleRoleChange(user.email, e.target.value as UserRole)}
                             disabled={user.email === currentUserEmail}
-                            className={`px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                            className={`px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-800 ${
                               user.email === currentUserEmail ? 'bg-gray-100 cursor-not-allowed opacity-50' : 'bg-white'
                             }`}
                             title={user.email === currentUserEmail ? 'No puedes cambiar tu propio rol' : ''}
@@ -209,8 +209,8 @@ export default function UserManager({ isAdmin, currentUserEmail }: UserManagerPr
                             disabled={user.email === currentUserEmail}
                             className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                               user.isActive
-                                ? 'bg-yellow-500 text-white hover:bg-yellow-600'
-                                : 'bg-green-500 text-white hover:bg-green-600'
+                                ? 'bg-slate-600 text-white hover:bg-slate-700'
+                                : 'bg-green-700 text-white hover:bg-green-800'
                             } ${
                               user.email === currentUserEmail ? 'opacity-50 cursor-not-allowed' : ''
                             }`}

@@ -421,7 +421,7 @@ export default function AdminPanel({
   const getStatusBadgeColor = (isActive: boolean) => {
     return isActive
       ? `${INSTITUTIONAL_COLORS.bgPrimary} text-white border-green-900`
-      : 'bg-red-100 text-red-700 border-red-200';
+      : 'bg-slate-100 text-slate-500 border-slate-200';
   };
 
   const estadisticas = {
@@ -1268,7 +1268,7 @@ export default function AdminPanel({
                                 {user.displayName || 'Sin nombre'}
                               </span>
                               {user.email === currentUserEmail && (
-                                <span className="text-[10px] bg-blue-50 text-blue-600 font-bold px-1.5 py-0.5 rounded-full border border-blue-100">Tú</span>
+                                <span className="text-[10px] bg-green-50 text-green-700 font-bold px-1.5 py-0.5 rounded-full border border-green-100">Tú</span>
                               )}
                             </div>
                             <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5">{user.email}</p>
@@ -1305,7 +1305,7 @@ export default function AdminPanel({
                           <button
                             onClick={() => handleToggleStatus(user.email, user.isActive)}
                             disabled={user.email === currentUserEmail}
-                            className={`px-3 py-1.5 text-xs font-black rounded-xl transition-colors ${user.isActive ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100' : 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'} ${user.email === currentUserEmail ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`px-3 py-1.5 text-xs font-black rounded-xl transition-colors ${user.isActive ? 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200' : 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'} ${user.email === currentUserEmail ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
                             {user.isActive ? 'Desactivar' : 'Activar'}
                           </button>
