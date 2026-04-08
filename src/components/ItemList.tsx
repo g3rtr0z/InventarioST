@@ -177,7 +177,7 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                   )}
 
                   {/* Specs Proyector */}
-                  {esProyector && (item.horasNormales || item.horasEco) && (
+                  {esProyector && (item.horasNormales || item.horasEco || item.tipoConexion) && (
                     <div className="flex gap-2 flex-wrap pt-1">
                       {item.horasNormales && (
                         <span className="inline-flex items-center gap-1 bg-purple-50 border border-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-lg">
@@ -187,6 +187,11 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                       {item.horasEco && (
                         <span className="inline-flex items-center gap-1 bg-purple-50 border border-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-lg">
                           <FaProjectDiagram className="text-[8px]" /> {item.horasEco}h Eco
+                        </span>
+                      )}
+                      {item.tipoConexion && (
+                        <span className="inline-flex items-center gap-1 bg-blue-50 border border-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-lg">
+                          <FaProjectDiagram className="text-[8px]" /> {item.tipoConexion}
                         </span>
                       )}
                     </div>

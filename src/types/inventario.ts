@@ -18,6 +18,7 @@ export interface ItemInventario {
   discoDuro?: string;
   horasNormales?: string; // Horas normales para proyectores
   horasEco?: string; // Horas eco para proyectores
+  tipoConexion?: string; // HDMI, VGA, Display Port
   encargado?: string; // Nombre y correo del usuario que creó el item
 }
 

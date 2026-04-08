@@ -37,6 +37,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
     discoDuro: '',
     horasNormales: '',
     horasEco: '',
+    tipoConexion: '',
     encargado: ''
   });
   const [nombreError, setNombreError] = useState<string>('');
@@ -282,6 +283,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         discoDuro: rest.discoDuro || '',
         horasNormales: (rest as any).horasNormales || '',
         horasEco: (rest as any).horasEco || '',
+        tipoConexion: (rest as any).tipoConexion || '',
       };
 
       // Agregar campos personalizados del item si existen
@@ -322,6 +324,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
         discoDuro: '',
         horasNormales: '',
         horasEco: '',
+        tipoConexion: '',
         encargado: encargadoValue
       });
       setNombreError(''); // Limpiar error al cambiar de item
@@ -417,6 +420,7 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       discoDuro: sanitizeText(formData.discoDuro || ''),
       horasNormales: sanitizeText(formData.horasNormales || ''),
       horasEco: sanitizeText(formData.horasEco || ''),
+      tipoConexion: sanitizeText(formData.tipoConexion || ''),
       encargado: formData.encargado ? sanitizeText(formData.encargado) : undefined
     };
 
@@ -1150,6 +1154,30 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               </div>
                             );
                           }
+
+                          // Renderizar tipoConexion
+                          if (campoConfig.nombre === 'tipoConexion' || (campoConfig.nombre === 'discoDuro' && esProyector)) {
+                            return (
+                              <div key="tipoConexion">
+                                <label htmlFor="tipoConexion" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                                  Tipo de Conexión {isCampoObligatorio('tipoConexion') && '*'}
+                                </label>
+                                <select
+                                  id="tipoConexion"
+                                  name="tipoConexion"
+                                  value={formData.tipoConexion || ''}
+                                  onChange={handleChange}
+                                  required={isCampoObligatorio('tipoConexion')}
+                                  className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-xl`}
+                                >
+                                  <option value="">Seleccione una conexión</option>
+                                  <option value="HDMI">HDMI</option>
+                                  <option value="VGA">VGA</option>
+                                  <option value="Display Port">Display Port</option>
+                                </select>
+                              </div>
+                            );
+                          }
                         }
 
                         // Para otras categorías o secciones, mostrar campos normales
@@ -1301,6 +1329,26 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                               placeholder="Ej: 500h"
                               className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} rounded-xl`}
                             />
+                          </div>
+
+                          {/* Mostrar tipoConexion */}
+                          <div key="tipoConexion-proyector">
+                            <label htmlFor="tipoConexion-proyector" className="block mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                              Tipo de Conexión {isCampoObligatorio('tipoConexion') && '*'}
+                            </label>
+                            <select
+                              id="tipoConexion-proyector"
+                              name="tipoConexion"
+                              value={formData.tipoConexion || ''}
+                              onChange={handleChange}
+                              required={isCampoObligatorio('tipoConexion')}
+                              className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:${INSTITUTIONAL_COLORS.borderPrimary} bg-white rounded-xl`}
+                            >
+                              <option value="">Seleccione una conexión</option>
+                              <option value="HDMI">HDMI</option>
+                              <option value="VGA">VGA</option>
+                              <option value="Display Port">Display Port</option>
+                            </select>
                           </div>
                         </>
                       )}

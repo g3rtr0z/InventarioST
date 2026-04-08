@@ -29,7 +29,8 @@ export const exportToExcel = (items: ItemInventario[], filename: string = 'inven
     { wch: 15 }, // RAM
     { wch: 20 }, // Disco Duro
     { wch: 15 }, // Horas Normales
-    { wch: 15 }  // Horas Eco
+    { wch: 15 },  // Horas Eco
+    { wch: 20 }  // Tipo de Conexión
   ];
 
   if (sedes.length === 0) {
@@ -57,7 +58,8 @@ export const exportToExcel = (items: ItemInventario[], filename: string = 'inven
         'RAM': item.ram || '',
         'Disco Duro': item.discoDuro || '',
         'Horas Normales': item.horasNormales || '',
-        'Horas Eco': item.horasEco || ''
+        'Horas Eco': item.horasEco || '',
+        'Tipo de Conexión': item.tipoConexion || ''
       }));
 
       const ws = XLSX.utils.json_to_sheet(data);
@@ -140,7 +142,8 @@ export const importFromExcel = async (file: File): Promise<Omit<ItemInventario, 
       ram: getString('RAM') || undefined,
       discoDuro: getString('Disco Duro') || undefined,
       horasNormales: getString('Horas Normales') || undefined,
-      horasEco: getString('Horas Eco') || undefined
+      horasEco: getString('Horas Eco') || undefined,
+      tipoConexion: getString('Tipo de Conexión') || undefined
     };
   }).filter(item => item.nombre); // Solo filas con nombre
 
