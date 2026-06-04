@@ -248,12 +248,32 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
       return;
     }
 
+    // Validar nombre único en tiempo real para el nombre sugerido del monitor
+    const nuevoNombre = `${equipo.nombre} - Monitor`;
+    const nombreNormalizado = nuevoNombre.trim().toLowerCase();
+    const nombreDuplicado = items.find(existingItem => {
+      if (existingItem.estado === 'Baja') return false;
+      if (item && existingItem.id === item.id) return false;
+      return existingItem.nombre.trim().toLowerCase() === nombreNormalizado;
+    });
+
+    if (nombreDuplicado) {
+      setNombreError(`El nombre "${nuevoNombre}" ya existe en la base de datos.`);
+    } else {
+      setNombreError('');
+    }
+
     setMonitorAsociadoPopupMensaje(null);
     setMonitorErrorReabrirBuscar(false);
     setFormData((prev) => ({
       ...prev,
       responsable,
-      equipoVinculadoId: equipoId
+      equipoVinculadoId: equipoId,
+      nombre: nuevoNombre,
+      ubicacion: equipo.ubicacion || '',
+      piso: equipo.piso || '',
+      edificio: equipo.edificio || '',
+      sede: equipo.sede || prev.sede
     }));
     setMonitorResponsableAbierto(false);
     setMonitorBuscarAbierto(false);
@@ -1511,7 +1531,8 @@ export default function ItemForm({ item, categorias, sedes, items, onSave, onCan
                         }
 
                         // Para otras categorías o secciones, mostrar campos normales
-                        if (!esProyector || !esSeccionEspecificaciones) {
+                        const esMonitor = esCategoriaMonitor(formData.categoria);
+                        if ((!esProyector && !esMonitor) || !esSeccionEspecificaciones) {
                           if (campoConfig.nombre === 'procesador') {
                             return (
                               <div key={campoConfig.nombre}>
