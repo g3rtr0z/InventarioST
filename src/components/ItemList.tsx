@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import type { ItemInventario } from '../types/inventario';
 import { INSTITUTIONAL_COLORS } from '../constants/colors';
 import {
   FaEdit, FaTrash, FaMapMarkerAlt, FaTag, FaBuilding,
-  FaMicrochip, FaMemory, FaHdd, FaProjectDiagram, FaUser, FaUserTie
+  FaMicrochip, FaMemory, FaHdd, FaProjectDiagram, FaUser, FaUserTie,
+  FaCopy, FaCheck
 } from 'react-icons/fa';
 
 interface ItemListProps {
@@ -44,6 +46,67 @@ const getCategoryAccent = (categoria: string): string => {
 const getCategoryInitial = (categoria: string) => categoria.charAt(0).toUpperCase();
 
 export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode }: ItemListProps) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyText = async (item: ItemInventario) => {
+    const lines = [
+      `📋 *Detalles del Activo:*`,
+      `*Nombre:* ${item.nombre || '—'}`,
+      `*Categoría:* ${item.categoria || '—'}`,
+      `*Marca/Modelo:* ${item.marca || ''} ${item.modelo || ''}`.trim() || '*Marca/Modelo:* —',
+      `*N° Serie:* ${item.numeroSerie || '—'}`,
+      `*Estado:* ${item.estado || '—'}`,
+    ];
+
+    // Sede y Ubicación
+    let locationStr = `*Sede:* ${item.sede || '—'}`;
+    if (item.ubicacion) locationStr += ` · ${item.ubicacion}`;
+    if (item.edificio) locationStr += ` (Edif. ${item.edificio})`;
+    if (item.piso) locationStr += ` (Piso ${item.piso})`;
+    lines.push(locationStr);
+
+    if (item.responsable) {
+      lines.push(`*Responsable:* ${item.responsable}`);
+    }
+    if (item.encargado) {
+      lines.push(`*Encargado:* ${item.encargado}`);
+    }
+
+    const esProyector = item.categoria.toLowerCase().includes('proyector');
+
+    if (esProyector) {
+      const proyectorSpecs = [];
+      if (item.horasNormales) proyectorSpecs.push(`  • Horas Normales: ${item.horasNormales}`);
+      if (item.horasEco) proyectorSpecs.push(`  • Horas Eco: ${item.horasEco}`);
+      if (item.tipoConexion) proyectorSpecs.push(`  • Tipo Conexión: ${item.tipoConexion}`);
+      
+      if (proyectorSpecs.length > 0) {
+        lines.push(`*Especificaciones:*`);
+        lines.push(...proyectorSpecs);
+      }
+    } else {
+      const pcSpecs = [];
+      if (item.procesador) pcSpecs.push(`  • Procesador: ${item.procesador}`);
+      if (item.ram) pcSpecs.push(`  • RAM: ${item.ram}`);
+      if (item.discoDuro) pcSpecs.push(`  • Disco Duro: ${item.discoDuro}`);
+
+      if (pcSpecs.length > 0) {
+        lines.push(`*Especificaciones:*`);
+        lines.push(...pcSpecs);
+      }
+    }
+
+    const textToCopy = lines.join('\n');
+
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setCopiedId(item.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error('Error al copiar texto:', err);
+    }
+  };
+
   const filteredItems = items.filter(item =>
     item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -107,95 +170,114 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                 {/* Divider */}
                 <div className="mx-5 border-t border-slate-100" />
 
-                {/* Body: info compacta */}
-                <div className="px-5 py-3 flex-grow space-y-2">
-                  {/* Categoría + Tipo Uso */}
-                  <div className="flex gap-2 flex-wrap">
-                    <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-lg">
-                      <FaTag className="text-[8px]" /> {item.categoria}
-                    </span>
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg ${item.tipoUso === 'Alumnos'
-                      ? 'bg-green-100 border border-green-200 text-green-700'
-                      : 'bg-green-50 border border-green-100 text-green-800'
-                      }`}>
-                      {item.tipoUso}
-                    </span>
-                  </div>
-
-                  {/* Serie */}
-                  <div className="flex items-center gap-1.5 text-[11px]">
-                    <span className="text-slate-400 font-semibold">Serie</span>
-                    <span className="font-mono text-slate-700 tracking-tight">{item.numeroSerie || '—'}</span>
-                  </div>
-
-                  {/* Sede + Ubicación */}
-                  <div className="flex items-start gap-1.5 text-[11px]">
-                    <FaMapMarkerAlt className="text-slate-300 mt-0.5 shrink-0 text-[10px]" />
-                    <span className="text-slate-600 leading-tight">
-                      <span className="font-bold text-slate-700">{item.sede}</span>
-                      {item.ubicacion && ` · ${item.ubicacion}`}
-                      {item.edificio && ` · Edif. ${item.edificio}`}
-                      {item.piso && ` · Piso ${item.piso}`}
-                    </span>
-                  </div>
-
-                  {/* Responsable + Encargado */}
-                  <div className="flex items-center gap-3 text-[11px] flex-wrap">
-                    {item.responsable && (
-                      <span className="flex items-center gap-1 text-slate-500">
-                        <FaUser className="text-[9px] text-slate-300" />
-                        {item.responsable}
+                {/* Body: info compacta y Botón de copiar */}
+                <div className="px-5 py-3 flex-grow flex gap-3 items-start justify-between">
+                  <div className="space-y-2 flex-1 min-w-0">
+                    {/* Categoría + Tipo Uso */}
+                    <div className="flex gap-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-lg">
+                        <FaTag className="text-[8px]" /> {item.categoria}
                       </span>
-                    )}
-                    {item.encargado && (
-                      <span className="flex items-center gap-1 text-slate-500">
-                        <FaUserTie className="text-[9px] text-slate-300" />
-                        {item.encargado}
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg ${item.tipoUso === 'Alumnos'
+                        ? 'bg-green-100 border border-green-200 text-green-700'
+                        : 'bg-green-50 border border-green-100 text-green-800'
+                        }`}>
+                        {item.tipoUso}
                       </span>
-                    )}
-                  </div>
+                    </div>
 
-                  {/* Specs PC */}
-                  {!esProyector && (item.procesador || item.ram || item.discoDuro) && (
-                    <div className="flex gap-2 flex-wrap pt-1">
-                      {item.procesador && (
-                        <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-lg">
-                          <FaMicrochip className="text-[8px]" /> {item.procesador}
+                    {/* Serie */}
+                    <div className="flex items-center gap-1.5 text-[11px]">
+                      <span className="text-slate-400 font-semibold">Serie</span>
+                      <span className="font-mono text-slate-700 tracking-tight">{item.numeroSerie || '—'}</span>
+                    </div>
+
+                    {/* Sede + Ubicación */}
+                    <div className="flex items-start gap-1.5 text-[11px]">
+                      <FaMapMarkerAlt className="text-slate-300 mt-0.5 shrink-0 text-[10px]" />
+                      <span className="text-slate-600 leading-tight">
+                        <span className="font-bold text-slate-700">{item.sede}</span>
+                        {item.ubicacion && ` · ${item.ubicacion}`}
+                        {item.edificio && ` · Edif. ${item.edificio}`}
+                        {item.piso && ` · Piso ${item.piso}`}
+                      </span>
+                    </div>
+
+                    {/* Responsable + Encargado */}
+                    <div className="flex items-center gap-3 text-[11px] flex-wrap">
+                      {item.responsable && (
+                        <span className="flex items-center gap-1 text-slate-500">
+                          <FaUser className="text-[9px] text-slate-300" />
+                          {item.responsable}
                         </span>
                       )}
-                      {item.ram && (
-                        <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-lg">
-                          <FaMemory className="text-[8px]" /> {item.ram}
-                        </span>
-                      )}
-                      {item.discoDuro && (
-                        <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-lg">
-                          <FaHdd className="text-[8px]" /> {item.discoDuro}
+                      {item.encargado && (
+                        <span className="flex items-center gap-1 text-slate-500">
+                          <FaUserTie className="text-[9px] text-slate-300" />
+                          {item.encargado}
                         </span>
                       )}
                     </div>
-                  )}
 
-                  {/* Specs Proyector */}
-                  {esProyector && (item.horasNormales || item.horasEco || item.tipoConexion) && (
-                    <div className="flex gap-2 flex-wrap pt-1">
-                      {item.horasNormales && (
-                        <span className="inline-flex items-center gap-1 bg-green-50 border border-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-lg">
-                          <FaProjectDiagram className="text-[8px]" /> {item.horasNormales}h Normal
-                        </span>
-                      )}
-                      {item.horasEco && (
-                        <span className="inline-flex items-center gap-1 bg-green-50 border border-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-lg">
-                          <FaProjectDiagram className="text-[8px]" /> {item.horasEco}h Eco
-                        </span>
-                      )}
-                      {item.tipoConexion && (
-                        <span className="inline-flex items-center gap-1 bg-green-100 border border-green-200 text-green-800 text-[10px] font-bold px-2 py-0.5 rounded-lg">
-                          <FaProjectDiagram className="text-[8px]" /> {item.tipoConexion}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                    {/* Specs PC */}
+                    {!esProyector && (item.procesador || item.ram || item.discoDuro) && (
+                      <div className="flex gap-2 flex-wrap pt-1">
+                        {item.procesador && (
+                          <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-lg">
+                            <FaMicrochip className="text-[8px]" /> {item.procesador}
+                          </span>
+                        )}
+                        {item.ram && (
+                          <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-lg">
+                            <FaMemory className="text-[8px]" /> {item.ram}
+                          </span>
+                        )}
+                        {item.discoDuro && (
+                          <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-lg">
+                            <FaHdd className="text-[8px]" /> {item.discoDuro}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Specs Proyector */}
+                    {esProyector && (item.horasNormales || item.horasEco || item.tipoConexion) && (
+                      <div className="flex gap-2 flex-wrap pt-1">
+                        {item.horasNormales && (
+                          <span className="inline-flex items-center gap-1 bg-green-50 border border-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-lg">
+                            <FaProjectDiagram className="text-[8px]" /> {item.horasNormales}h Normal
+                          </span>
+                        )}
+                        {item.horasEco && (
+                          <span className="inline-flex items-center gap-1 bg-green-50 border border-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-lg">
+                            <FaProjectDiagram className="text-[8px]" /> {item.horasEco}h Eco
+                          </span>
+                        )}
+                        {item.tipoConexion && (
+                          <span className="inline-flex items-center gap-1 bg-green-100 border border-green-200 text-green-800 text-[10px] font-bold px-2 py-0.5 rounded-lg">
+                            <FaProjectDiagram className="text-[8px]" /> {item.tipoConexion}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Botón de copiar a la orilla derecha en los datos */}
+                  <button
+                    onClick={() => handleCopyText(item)}
+                    className={`p-1.5 rounded-lg border transition-all active:scale-90 flex items-center justify-center shrink-0 mt-1 ${
+                      copiedId === item.id 
+                        ? 'bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm' 
+                        : 'bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 border-slate-200'
+                    }`}
+                    title="Copiar datos para WhatsApp"
+                  >
+                    {copiedId === item.id ? (
+                      <FaCheck className="text-xs text-emerald-600 animate-bounce" />
+                    ) : (
+                      <FaCopy className="text-xs" />
+                    )}
+                  </button>
                 </div>
 
                 {/* Footer: acciones */}
@@ -284,6 +366,25 @@ export default function ItemList({ items, onEdit, onDelete, searchTerm, viewMode
                       </td>
                       <td className="px-4 py-3 align-middle">
                         <div className="flex gap-1.5 items-center">
+                          <button
+                            onClick={() => handleCopyText(item)}
+                            className={`flex items-center gap-1 px-2.5 py-1.5 ${
+                              copiedId === item.id 
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+                            } text-[10px] font-black rounded-lg transition-all active:scale-95 whitespace-nowrap`}
+                            title="Copiar datos para WhatsApp"
+                          >
+                            {copiedId === item.id ? (
+                              <>
+                                <FaCheck className="text-[9px] text-emerald-600 animate-bounce" /> Copiado
+                              </>
+                            ) : (
+                              <>
+                                <FaCopy className="text-[9px]" /> Copiar
+                              </>
+                            )}
+                          </button>
                           <button
                             onClick={() => onEdit(item)}
                             className={`flex items-center gap-1 px-2.5 py-1.5 ${INSTITUTIONAL_COLORS.bgPrimary} text-white text-[10px] font-black rounded-lg hover:bg-green-900 transition-all active:scale-95 whitespace-nowrap`}
